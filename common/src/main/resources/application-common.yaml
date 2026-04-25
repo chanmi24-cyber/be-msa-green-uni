@@ -1,0 +1,43 @@
+# actuator 라이브러리
+management:
+  endpoints:
+    web:
+      # 모든 엔드포인트를 웹(HTTP)으로 노출 (개발 환경에서만 권장)
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always # 상세한 상태 정보 표시
+    env:
+      show-values: always
+
+# 동기방식으로 처리하면서 성능까지 올리는 세팅
+server:
+  tomcat:
+    threads:
+      max: 200
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    default-property-inclusion: non_null #JSON 응답시 null 속성은 제외
+  web:
+    resources:
+      add-mappings: false #정적 리소스 탐색을 끈다.
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000

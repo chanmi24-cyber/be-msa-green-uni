@@ -1,0 +1,27 @@
+dependencies {
+    // compileOnly: common을 가져다 쓰는 다른 모듈에 전파되지 않음
+    // (각 서비스가 직접 선언해서 쓰도록 하기 위해)
+
+    // JWT 관련 라이브러리
+    compileOnly 'io.jsonwebtoken:jjwt-api:0.13.0'
+    compileOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    compileOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+
+    // 보안 기능 (Security)
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
+
+    // JPA (DB를 객체로 다루는 기술)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // 카프카 (서버 간 메시지 전달 도구)
+    compileOnly 'org.springframework.boot:spring-boot-starter-kafka'
+
+    // AOP (Aspect Oriented Programming: 공통 기능을 여러 곳에 자동 적용하는 기술)
+    // Spring Boot 4.0.x에서 starter-aop가 인식 안 돼서 직접 추가
+    api 'org.springframework:spring-aop'
+    api 'org.aspectj:aspectjweaver'
+}
+
+// common은 실행되는 서버가 아니라 부품 역할이므로
+bootJar { enabled = false }
+jar { enabled = true }

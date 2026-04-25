@@ -1,0 +1,39 @@
+constants:
+  api:
+    prefix: /api/academic
+  enum:
+    scan-package: com.green.academic
+
+server:
+  port: 8084
+
+spring:
+  config:
+    import:
+      - optional:classpath:application-common.yaml
+      - optional:classpath:application-jpa.yaml
+      - optional:classpath:application-auth.yaml
+  application:
+    name: academic-service
+  datasource:
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/gu_academic?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+#  kafka:
+#    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT}
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#      acks: all
+#      retries: 3
+#      properties:
+#        enable.idempotence: true
+#        max.in.flight.requests.per.connection: 5
+#    consumer:
+#      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+#      properties:
+#        spring.json.trusted.packages: "*"

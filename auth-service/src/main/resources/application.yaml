@@ -1,0 +1,40 @@
+constants:
+  api:
+    prefix: /api/auth
+  enum:
+    scan-package: com.green.auth
+
+server:
+  port: 8081
+
+spring:
+  config:
+    import:
+      - optional:classpath:application-common.yaml
+      - optional:classpath:application-jpa.yaml
+      - optional:classpath:application-auth.yaml
+  application:
+    name: auth-service
+  datasource:
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/gu_auth?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    #jdbc: — JAVA-DB 연결
+    #log4jdbc: — log4jdbc 라이브러리. DB에 날아가는 SQL 쿼리문을 로그로 보기 좋게 출력
+    #mysql: — MySQL DB를 쓴다는 선언입니다.
+    #?createDatabaseIfNotExist=true — DB가 없으면 자동으로 만들어줍니다. 팀원이 처음 실행할 때 DB가 없어도 오류 없이 자동 생성됩니다.
+    #&characterEncoding=UTF-8 — 한글이 깨지지 않도록 인코딩(문자 저장 방식)을 UTF-8로 지정합니다.
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+#  kafka:
+#    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT}
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#      acks: all
+#      retries: 3
+#      properties:
+#        enable.idempotence: true
+#        max.in.flight.requests.per.connection: 5

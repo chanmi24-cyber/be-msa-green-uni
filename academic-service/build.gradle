@@ -1,0 +1,40 @@
+dependencies {
+    // 공통 모듈 가져다 쓰기
+    implementation project(':common')
+
+    // 웹 서버 기능 (Controller, REST API 등)
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+    // 보안 기능 (JWT 토큰 검증 등)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JPA (MyBatis 대신 DB를 객체로 다루는 기술)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // 입력값 유효성 검사 (@Valid, @NotNull 등)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 카프카 (서버 간 메시지 전달)
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
+
+    // TSID (시간 기반 고유 ID 생성)
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-70:3.15.2'
+
+    // SQL 로그를 보기 좋게 출력해주는 도구
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+
+    // MySQL 드라이버 (실행 시에만 필요)
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // 테스트용 가짜 데이터 생성 도구
+    testImplementation 'net.datafaker:datafaker:2.5.4'
+}
+
+// JUnit 5 기반으로 테스트 실행
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 실행 가능한 서버 jar 파일로 빌드
+bootJar { enabled = true }
+jar { enabled = false }

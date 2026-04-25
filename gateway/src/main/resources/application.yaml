@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  config:
+    import:
+      - optional:classpath:application-common.yaml
+      - optional:classpath:application-auth.yaml
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: auth-service
+            uri: http://localhost:8081
+            predicates:
+              - Path=/api/auth/**
+
+          - id: member-service
+            uri: http://localhost:8082
+            predicates:
+              - Path=/api/member/**, /api/admin/member/**
+
+          - id: core-service
+            uri: http://localhost:8083
+            predicates:
+              - Path=/api/core/**, /api/admin/core/**
+
+          - id: academic-service
+            uri: http://localhost:8084
+            predicates:
+              - Path=/api/academic/**, /api/admin/academic/**

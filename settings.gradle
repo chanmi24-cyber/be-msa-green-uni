@@ -1,0 +1,8 @@
+rootProject.name = 'green-uni-msa'
+
+include 'common'
+include 'gateway'
+include 'auth-service'
+include 'member-service'
+include 'academic-service'
+include 'core-service'
