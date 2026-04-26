@@ -20,7 +20,8 @@ public class MyCookieUtil {
     }
     public String getValue(HttpServletRequest req, String key){
         Cookie cookie = getCookie(req, key);
-        return cookie == null ? null : cookie.getValue();
+        String value = cookie == null ? null : cookie.getValue();
+        return (value == null || value.isBlank()) ? null : value;
     }
     public Cookie getCookie(HttpServletRequest req, String key) {
         Cookie[] cookies = req.getCookies();

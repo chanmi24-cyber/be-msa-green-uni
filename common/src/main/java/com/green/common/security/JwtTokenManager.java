@@ -2,6 +2,7 @@ package com.green.common.security;
 
 import com.green.common.constants.ConstJwt;
 import com.green.common.model.JwtMember;
+import com.green.common.model.UserPrincipal;
 import com.green.common.utils.MyCookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

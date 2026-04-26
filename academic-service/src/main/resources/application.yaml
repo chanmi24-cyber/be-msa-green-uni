@@ -1,6 +1,6 @@
 constants:
   api:
-    prefix: /api/academic
+    prefix: ""
   enum:
     scan-package: com.green.academic
 

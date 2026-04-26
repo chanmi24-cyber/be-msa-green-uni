@@ -1,6 +1,8 @@
 package com.green.gateway.filter;
 
 import com.green.common.model.JwtMember;
+import com.green.common.model.UserPrincipal;
+import com.green.common.security.JwtTokenManager;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,13 +32,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenManager jwtTokenManager;
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        // 로그인, 재발급, 정적 리소스 등은 필터를 거치지 않음
-        return path.startsWith("/api/auth/login") || path.startsWith("/api/auth/reissue");
-    }
-
-    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         log.info("req-uri: {}", request.getRequestURI()); //요청 주소가 로그에 출력
 
@@ -55,16 +50,17 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
                     JwtMember jwtMember = userPrincipal.getJwtMember();
                     log.info("================== jwtMember: {}", jwtMember);
-                    String encodedMemberRole = URLEncoder.encode(jwtMember.getLoginMemberRole(), StandardCharsets.UTF_8);
+                    // URLEncoder가 필요 없는 영문 'code'를 사용하도록 수정
+                    String memberRole = jwtMember.getLoginMemberRole().getCode();
 
                     requestToUse = new HttpServletRequestWrapper(request) {
                         @Override
                         public String getHeader(String name) {
-                            if ("X-Member-Id".equals(name)) {
+                            if ("X-Member-Code".equals(name)) {
                                 return String.valueOf(jwtMember.getLoginMemberCode());
                             }
                             if ("X-Member-Role".equals(name)) {
-                                return encodedMemberRole;
+                                return memberRole;
                             }
                             return super.getHeader(name);
                         }
@@ -72,18 +68,18 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         @Override
                         public Enumeration<String> getHeaderNames() {
                             List<String> names = Collections.list(super.getHeaderNames());
-                            if (!names.contains("X-Member-Id")) names.add("X-Member-Id");
+                            if (!names.contains("X-Member-Code")) names.add("X-Member-Code");
                             if (!names.contains("X-Member-Role")) names.add("X-Member-Role");
                             return Collections.enumeration(names);
                         }
 
                         @Override
                         public Enumeration<String> getHeaders(String name) {
-                            if ("X-Member-Id".equals(name)) {
+                            if ("X-Member-Code".equals(name)) {
                                 return Collections.enumeration(Collections.singletonList(String.valueOf(jwtMember.getLoginMemberCode())));
                             }
                             if ("X-Member-Role".equals(name)) {
-                                return Collections.enumeration(Collections.singletonList(encodedMemberRole));
+                                return Collections.enumeration(Collections.singletonList(memberRole));
                             }
                             return super.getHeaders(name);
                         }

@@ -56,7 +56,7 @@ public class AuthController {
         // 저장된 유저 정보 가져오기
         MemberDto memberDto = MemberContext.get();
 
-    // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
+        // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
         if (memberDto != null) {
             authService.deleteRefreshToken(memberDto.memberCode());
         }

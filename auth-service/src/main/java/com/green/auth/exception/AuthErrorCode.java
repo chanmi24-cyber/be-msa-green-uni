@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum AuthErrorCode implements ErrorCode {
     LOGIN_FAIL("A001", "코드와 비밀번호를 확인해주세요.", HttpStatus.BAD_REQUEST)
     , ACCOUNT_TERMINATED("A002", "로그인 불가 계정입니다.", HttpStatus.BAD_REQUEST)
-        ;
-        private final String code;
-        private final String message;
-        private final HttpStatus httpStatus;
-    }
+    ;
+    private final String code;
+    private final String message;
+    private final HttpStatus httpStatus;
+}

@@ -38,7 +38,7 @@ public class WebSecurityConfiguration {
                         .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
 
                         // 3. 인증된 사용자만 접근 가능한 경로 (로그인이 필요한 일반 기능들)
-                        .requestMatchers("/api/member/**", "/api/core/**", "/api/academic/**").authenticated()
+                        .requestMatchers("/api/member/**").authenticated()
 
                         // 4. 그 외 모든 요청은 허용 (필요에 따라 .authenticated()로 변경 가능)
                         .anyRequest().permitAll()
