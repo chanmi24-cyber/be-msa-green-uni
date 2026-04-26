@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class JwtMember {
-    private long loginUserId;
-    private EnumMemberRole enumMemberRole;
+    private Integer loginMemberCode;
+    private EnumMemberRole loginMemberRole;
 }
