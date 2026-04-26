@@ -52,7 +52,7 @@ public class AuthController {
     // 로그아웃
     @PostMapping("/logout")
     public ResultResponse<?> logout(HttpServletResponse res,
-                                    @RequestHeader("X-User-Id") Integer memberCode) {
+                                    @RequestHeader("X-Member-Id") Integer memberCode) {
 //        Integer memberCode = MemberContext.get().getMemberCode();
         authService.logout(memberCode);
         jwtTokenManager.logOut(res);
