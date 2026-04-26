@@ -15,8 +15,6 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public class CreatedUpdatedAt extends CreatedAt {
-    @LastModifiedDate //insert, update 되었을 때 현재일시값을 넣는다.
-    @Column(nullable = false) //컬럼의 속성값을 줄 때 사용. 지금은 NOT NULL 속성을 추가함.
-    //타입, 이름으로 컬럼이 된다. LocalDateTime > DATETIME, updatedAt > updated_at
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 }
