@@ -15,8 +15,8 @@ public class MemberContextInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String memberCodeStr = request.getHeader("X-User-Id"); // Gateway에서 보낸 PK 헤더
-        String memberRole = request.getHeader("X-User-Role");
+        String memberCodeStr = request.getHeader("X-Member-Code"); // Gateway에서 보낸 PK 헤더
+        String memberRole = request.getHeader("X-Member-Role");
 
         if (memberCodeStr != null && memberRole != null) {
             try {

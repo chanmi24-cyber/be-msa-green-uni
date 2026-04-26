@@ -58,7 +58,7 @@ public class AuthController {
 
     // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
         if (memberDto != null) {
-            authService.logout(memberDto.memberCode());
+            authService.deleteRefreshToken(memberDto.memberCode());
         }
 
         // 유저 정보 유무와 상관없이 브라우저의 쿠키는 날려줌

@@ -5,7 +5,7 @@ constants:
     scan-package: com.green.auth
 
 server:
-  port: 8081
+  port: 8080
 
 spring:
   config:

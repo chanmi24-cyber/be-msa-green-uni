@@ -67,7 +67,7 @@ public class AuthService {
 
 
     @Transactional
-    public void logout(Integer memberCode) {
+    public void deleteRefreshToken(Integer memberCode) {
         if (memberCode != null) {
             // RT DB에서 삭제
             refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
