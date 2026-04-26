@@ -2,6 +2,8 @@ constants:
   exception:
     common-handler:
       enabled: true
+  file:
+    directory: ${FILE_DIRECTORY}
 
 spring:
   jpa:

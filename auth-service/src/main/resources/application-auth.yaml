@@ -1,6 +1,6 @@
 constants:
   jwt:
-    issuer: green.uni502@gmail.com # JWT 토큰 발행자 정보
+    issuer: ${MAIL_USERNAME} # JWT 토큰 발행자 정보
     bearer-format: JWT
     claim-key: loginMember
     secret-key: ${JWT_SECRET_KEY} # 비밀 레시피(절대 공개되어서는 안 된다)

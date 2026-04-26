@@ -13,11 +13,12 @@ spring:
       - optional:classpath:application-common.yaml
       - optional:classpath:application-jpa.yaml
       - optional:classpath:application-auth.yaml
+      - optional:file:.env[.properties]
   application:
     name: auth-service
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/gu_auth?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/eats_user?createDatabaseIfNotExist=true&characterEncoding=UTF-8
     #jdbc: — JAVA-DB 연결
     #log4jdbc: — log4jdbc 라이브러리. DB에 날아가는 SQL 쿼리문을 로그로 보기 좋게 출력
     #mysql: — MySQL DB를 쓴다는 선언입니다.

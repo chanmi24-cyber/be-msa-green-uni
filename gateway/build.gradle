@@ -4,8 +4,8 @@ dependencies {
 
     // JWT (로그인 토큰 검증: gateway에서 토큰 유효성 확인)
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.13.0'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
 
     // Gateway (모든 요청의 입구 역할, 각 서비스로 요청을 전달)
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc'
