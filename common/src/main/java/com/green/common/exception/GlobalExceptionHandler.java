@@ -98,4 +98,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return result;
         //return fieldErrors.stream().map(item -> ValidationError.of(item)).toList();
     }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ResultResponse<String>> handleBusinessException(BusinessException ex) {
+        log.error("BusinessException: {}", ex.getMessage());
+        return ResponseEntity.status(ex.getErrorCode().getHttpStatus())
+                .body(new ResultResponse<>(ex.getMessage(), null));
+    }
 }
