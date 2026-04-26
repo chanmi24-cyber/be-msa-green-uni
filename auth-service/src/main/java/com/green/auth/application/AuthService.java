@@ -8,6 +8,7 @@ import com.green.auth.exception.AuthErrorCode;
 import com.green.common.auth.MemberContext;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
+import com.green.common.model.JwtMember;
 import com.green.common.model.MemberDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +47,7 @@ public class AuthService {
         return loginMember;
     }
 
-    // RT 저장
+    // 로그인 시 RT DB에 저장
     @Transactional
     public void saveRefreshToken(AuthMember authMember, String refreshToken) {
         // 기존 RT 삭제 (재로그인 시 이전 RT 제거)
@@ -61,10 +62,21 @@ public class AuthService {
         refreshTokenRepository.save(rt);
     }
 
-
+    // 로그아웃 시 RT DB에서 삭제
     @Transactional
     public void deleteRefreshToken(Integer memberCode) {
-            // RT DB에서 삭제
             refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
+    }
+
+    @Transactional
+    public JwtMember reissue(String refreshToken) {
+        // DB에서 RT 존재 여부 확인
+        RefreshToken savedRt = refreshTokenRepository.findByTokenValue(refreshToken);
+        if (savedRt == null) {
+            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+        // RT 파싱해서 JwtMember 반환 (JwtTokenManager에서 처리)
+        return new JwtMember(savedRt.getAuthMember().getMemberCode(),
+                savedRt.getAuthMember().getRole());
     }
 }

@@ -72,22 +72,16 @@ public class AuthController {
                 .build();
     }
 
-    // AT 재발행
+    // 로그인 유지시 토큰 재발행
     @PostMapping("/reissue")
     public ResultResponse<?> reissue(HttpServletResponse res, HttpServletRequest req) {
-        jwtTokenManager.reissue(req, res);
+        String refreshToken = jwtTokenManager.getRefreshTokenFromCookie(req);
+        JwtMember jwtMember = authService.reissue(refreshToken);
+        jwtTokenManager.setAccessTokenInCookie(res, jwtMember);
 
         return ResultResponse.builder()
                 .message("Access Token 재발행")
                 .data(1)
                 .build();
-    }
-
-
-    @GetMapping("/test-password")
-    public String testPassword() {
-        String encoded = passwordEncoder.encode("1234");
-        boolean matches = passwordEncoder.matches("1234", encoded);
-        return "encoded: " + encoded + " / matches: " + matches;
     }
 }
