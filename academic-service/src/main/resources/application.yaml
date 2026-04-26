@@ -5,7 +5,7 @@ constants:
     scan-package: com.green.academic
 
 server:
-  port: 8084
+  port: 8083
 
 spring:
   config:
@@ -13,6 +13,7 @@ spring:
       - optional:classpath:application-common.yaml
       - optional:classpath:application-jpa.yaml
       - optional:classpath:application-auth.yaml
+      - optional:file:.env[.properties]
   application:
     name: academic-service
   datasource:

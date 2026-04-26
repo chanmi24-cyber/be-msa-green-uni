@@ -16,20 +16,21 @@ public class MemberContextInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String memberCode = request.getHeader("X-Member-Id");
-        String role = request.getHeader("X-Member-Role");
+        String memberCodeTK = request.getHeader("X-Member-Code");
+        String memberRoleTK = request.getHeader("X-Member-Role");
 
-        if (memberCode != null && role != null) {
-            MemberContext.set(new MemberDto(
-                    Integer.parseInt(memberCode),
-                    EnumMemberRole.valueOf(role)
-            ));
+        if (memberCodeTK != null && memberRoleTK != null) {
+            try {
+                Integer memberCode = Integer.parseInt(memberCodeTK);
+                EnumMemberRole memberRole = EnumMemberRole.valueOf(memberRoleTK);
+                MemberContext.set(new MemberDto(memberCode, memberRole));
+            } catch (NumberFormatException e) { // 파싱 실패 시 통과
+            }
         }
         return true;
     }
-
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        MemberContext.clear(); // 메모리 누수 방지를 위해 반드시 삭제
+        MemberContext.clear();
     }
 }

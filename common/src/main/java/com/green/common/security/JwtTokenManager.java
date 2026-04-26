@@ -36,7 +36,6 @@ public class JwtTokenManager { //인증처리 총괄
         setRefreshTokenInCookie(res, refreshToken); // 만들어진 RT를 쿠키에 담는 메소드 호출
     }
 
-    // RT 문자열 생성후 반환 (DB 저장용)
     public String generateRefreshToken(JwtMember jwtMember) {
         return jwtTokenProvider.generateRefreshToken(jwtMember);
     }

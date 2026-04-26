@@ -15,7 +15,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
-// @Configuration 애노테이션 아래에 있는 @Bean은 무조건 싱글톤
+// @Configuration 애노테이션 아래에 있는 @Bean은 무조건 싱글톤이다.
 @Configuration
 @RequiredArgsConstructor
 public class WebSecurityConfiguration {
@@ -31,10 +31,16 @@ public class WebSecurityConfiguration {
                 .csrf( csrf -> csrf.disable() ) //어차피 BE가 화면을 만들지 않으면 csrf 공격이 의미가 없기 때문에 비활성화하겠다.
                 .cors( cors -> cors.configurationSource(corsConfigurationSource()) )
                 //인가처리 (권한처리)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/order/**").authenticated()
-                        //.requestMatchers("/api/store/menu").hasRole(EnumUserRole.ADMIN.name())
-                        //.requestMatchers(HttpMethod.GET,"/api/store/menu").hasRole(EnumUserRole.ADMIN.name())
+                .authorizeHttpRequests(auth -> auth// 1. 인증이 아예 필요 없는 화이트리스트 (로그인, 재발급 등)
+                        .requestMatchers("/api/auth/login", "/api/auth/reissue").permitAll()
+
+                        // 2. 권한별 접근 제어 (예시: 관리자 전용 경로)
+                        .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
+
+                        // 3. 인증된 사용자만 접근 가능한 경로 (로그인이 필요한 일반 기능들)
+                        .requestMatchers("/api/member/**", "/api/core/**", "/api/academic/**").authenticated()
+
+                        // 4. 그 외 모든 요청은 허용 (필요에 따라 .authenticated()로 변경 가능)
                         .anyRequest().permitAll()
                 )
 
@@ -48,7 +54,7 @@ public class WebSecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins( List.of("http://localhost:5173") );
+        config.setAllowedOrigins( List.of("http://localhost:5173", "http://localhost:5174") );
         config.setAllowedMethods( List.of("GET", "POST", "PUT", "DELETE", "OPTIONS") );
         config.setAllowedHeaders( List.of("*") );
         config.setAllowCredentials(true);
