@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;
+    private final PasswordEncoder passwordEncoder;
 
     // 로그인
     @PostMapping("/login")
@@ -70,10 +72,12 @@ public class AuthController {
                 .build();
     }
 
-    // AT 재발행
+    // 로그인 유지시 토큰 재발행
     @PostMapping("/reissue")
     public ResultResponse<?> reissue(HttpServletResponse res, HttpServletRequest req) {
-        jwtTokenManager.reissue(req, res);
+        String refreshToken = jwtTokenManager.getRefreshTokenFromCookie(req);
+        JwtMember jwtMember = authService.reissue(refreshToken);
+        jwtTokenManager.setAccessTokenInCookie(res, jwtMember);
 
         return ResultResponse.builder()
                 .message("Access Token 재발행")

@@ -8,13 +8,13 @@ import com.green.auth.exception.AuthErrorCode;
 import com.green.common.auth.MemberContext;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
+import com.green.common.model.JwtMember;
 import com.green.common.model.MemberDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDateTime;
 
@@ -34,6 +34,10 @@ public class AuthService {
         AuthMember loginMember = authMemberRepository.findById(req.getMemberCode())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
 
+        // 2. 검증 (존재 여부 및 비밀번호 일치 확인)
+        if (loginMember == null || !passwordEncoder.matches(req.getPassword(), loginMember.getPassword())) {
+            throw new BusinessException(AuthErrorCode.LOGIN_FAIL);
+        }
 
         // 3. 계정 상태 검증
         if (loginMember.getAccountStatus() == EnumAccountStatus.TERMINATED) {
@@ -43,7 +47,7 @@ public class AuthService {
         return loginMember;
     }
 
-    // RT 저장
+    // 로그인 시 RT DB에 저장
     @Transactional
     public void saveRefreshToken(AuthMember authMember, String refreshToken) {
         // 기존 RT 삭제 (재로그인 시 이전 RT 제거)
@@ -58,18 +62,21 @@ public class AuthService {
         refreshTokenRepository.save(rt);
     }
 
-
+    // 로그아웃 시 RT DB에서 삭제
     @Transactional
     public void deleteRefreshToken(Integer memberCode) {
-
-            // RT DB에서 삭제
             refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
     }
 
-    @GetMapping("/test-password")
-    public String testPassword() {
-        String encoded = passwordEncoder.encode("1234");
-        boolean matches = passwordEncoder.matches("1234", encoded);
-        return "encoded: " + encoded + " / matches: " + matches;
+    @Transactional
+    public JwtMember reissue(String refreshToken) {
+        // DB에서 RT 존재 여부 확인
+        RefreshToken savedRt = refreshTokenRepository.findByTokenValue(refreshToken);
+        if (savedRt == null) {
+            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+        // RT 파싱해서 JwtMember 반환 (JwtTokenManager에서 처리)
+        return new JwtMember(savedRt.getAuthMember().getMemberCode(),
+                savedRt.getAuthMember().getRole());
     }
 }
