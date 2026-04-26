@@ -68,8 +68,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         @Override
                         public Enumeration<String> getHeaderNames() {
                             List<String> names = Collections.list(super.getHeaderNames());
-                            if (!names.contains("X-User-Id")) names.add("X-User-Id");
-                            if (!names.contains("X-User-Name")) names.add("X-User-Name");
+                            if (!names.contains("X-Member-Code")) names.add("X-Member-Code");
+                            if (!names.contains("X-Member-Role")) names.add("X-Member-Role");
                             return Collections.enumeration(names);
                         }
 

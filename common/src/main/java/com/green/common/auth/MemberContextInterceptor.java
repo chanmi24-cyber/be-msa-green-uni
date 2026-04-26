@@ -1,5 +1,6 @@
 package com.green.common.auth;
 
+import com.green.common.model.EnumMemberRole;
 import com.green.common.model.MemberDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,22 +16,21 @@ public class MemberContextInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String memberCodeStr = request.getHeader("X-Member-Code"); // Gateway에서 보낸 PK 헤더
-        String memberRole = request.getHeader("X-Member-Role");
+        String memberCodeTK = request.getHeader("X-Member-Code");
+        String memberRoleTK = request.getHeader("X-Member-Role");
 
-        if (memberCodeStr != null && memberRole != null) {
+        if (memberCodeTK != null && memberRoleTK != null) {
             try {
-                // Integer로 파싱하여 객체 생성
-                Integer memberCode = Integer.parseInt(memberCodeStr);
+                Integer memberCode = Integer.parseInt(memberCodeTK);
+                EnumMemberRole memberRole = EnumMemberRole.valueOf(memberRoleTK);
                 MemberContext.set(new MemberDto(memberCode, memberRole));
-            } catch (NumberFormatException e) {
-                // 파싱 실패 시 로그만 남기고 통과 (인증 실패 처리는 Gateway나 Security가 담당)
+            } catch (NumberFormatException e) { // 파싱 실패 시 통과
             }
         }
         return true;
     }
-        @Override
-        public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-            MemberContext.clear();
-        }
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        MemberContext.clear();
+    }
 }
