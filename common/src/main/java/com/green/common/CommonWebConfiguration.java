@@ -20,7 +20,7 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
     private final String apiPrefix;
 
     public CommonWebConfiguration(MemberContextInterceptor memberContextInterceptor
-            , @Value("${constants.api.prefix:/api}s") String apiPrefix) {
+            , @Value("${constants.api.prefix:/api}") String apiPrefix) {
         this.memberContextInterceptor = memberContextInterceptor;
         log.info("============= apiPrefix: {}", apiPrefix);
         this.apiPrefix = apiPrefix;
