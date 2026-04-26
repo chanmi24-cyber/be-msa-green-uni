@@ -2,6 +2,8 @@ package com.green.auth.application;
 
 import com.green.auth.application.model.LoginReq;
 import com.green.auth.application.model.LoginRes;
+import com.green.common.auth.MemberContext;
+import com.green.common.model.MemberDto;
 import com.green.common.security.JwtTokenManager;
 import com.green.auth.entity.AuthMember;
 import com.green.common.model.JwtMember;
@@ -48,17 +50,22 @@ public class AuthController {
                 .build();
     }
 
-
     // 로그아웃
     @PostMapping("/logout")
-    public ResultResponse<?> logout(HttpServletResponse res,
-                                    @RequestHeader("X-Member-Id") Integer memberCode) {
-//        Integer memberCode = MemberContext.get().getMemberCode();
-        authService.logout(memberCode);
+    public ResultResponse<?> logout(HttpServletResponse res) {
+        // 저장된 유저 정보 가져오기
+        MemberDto memberDto = MemberContext.get();
+
+    // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
+        if (memberDto != null) {
+            authService.logout(memberDto.memberCode());
+        }
+
+        // 유저 정보 유무와 상관없이 브라우저의 쿠키는 날려줌
         jwtTokenManager.logOut(res);
 
         return ResultResponse.builder()
-                .message("로그아웃")
+                .message("로그아웃 되었습니다.")
                 .data(1)
                 .build();
     }

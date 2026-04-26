@@ -5,8 +5,10 @@ import com.green.auth.entity.AuthMember;
 import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.auth.exception.AuthErrorCode;
+import com.green.common.auth.MemberContext;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
+import com.green.common.model.MemberDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -63,10 +65,12 @@ public class AuthService {
         refreshTokenRepository.save(rt);
     }
 
-    // 로그아웃
+
     @Transactional
     public void logout(Integer memberCode) {
-        // RT DB에서 삭제
-        refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
+        if (memberCode != null) {
+            // RT DB에서 삭제
+            refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
+        }
     }
 }

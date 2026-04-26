@@ -36,6 +36,7 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(memberContextInterceptor);
+        registry.addInterceptor(memberContextInterceptor)
+                .addPathPatterns("/**"); // 모든 경로에서 인터셉터 작동;
     }
 }
