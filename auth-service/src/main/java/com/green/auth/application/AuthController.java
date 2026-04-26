@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;
+    private final PasswordEncoder passwordEncoder;
 
     // 로그인
     @PostMapping("/login")
@@ -79,5 +81,13 @@ public class AuthController {
                 .message("Access Token 재발행")
                 .data(1)
                 .build();
+    }
+
+
+    @GetMapping("/test-password")
+    public String testPassword() {
+        String encoded = passwordEncoder.encode("1234");
+        boolean matches = passwordEncoder.matches("1234", encoded);
+        return "encoded: " + encoded + " / matches: " + matches;
     }
 }

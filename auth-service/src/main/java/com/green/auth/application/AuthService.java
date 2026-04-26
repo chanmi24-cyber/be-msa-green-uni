@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDateTime;
 
@@ -34,6 +33,10 @@ public class AuthService {
         AuthMember loginMember = authMemberRepository.findById(req.getMemberCode())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
 
+        // 2. 검증 (존재 여부 및 비밀번호 일치 확인)
+        if (loginMember == null || !passwordEncoder.matches(req.getPassword(), loginMember.getPassword())) {
+            throw new BusinessException(AuthErrorCode.LOGIN_FAIL);
+        }
 
         // 3. 계정 상태 검증
         if (loginMember.getAccountStatus() == EnumAccountStatus.TERMINATED) {
@@ -61,15 +64,7 @@ public class AuthService {
 
     @Transactional
     public void deleteRefreshToken(Integer memberCode) {
-
             // RT DB에서 삭제
             refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
-    }
-
-    @GetMapping("/test-password")
-    public String testPassword() {
-        String encoded = passwordEncoder.encode("1234");
-        boolean matches = passwordEncoder.matches("1234", encoded);
-        return "encoded: " + encoded + " / matches: " + matches;
     }
 }
