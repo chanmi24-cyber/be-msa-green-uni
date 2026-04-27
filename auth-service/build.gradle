@@ -29,6 +29,9 @@ dependencies {
     // 실제 런타임에 DB와 통신할 때 필요합니다.
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    // email
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // 테스트 도구
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
