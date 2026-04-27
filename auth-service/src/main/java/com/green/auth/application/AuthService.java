@@ -1,17 +1,20 @@
 package com.green.auth.application;
 
 import com.green.auth.application.model.LoginReq;
+import com.green.auth.application.model.MemberCreateReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.auth.exception.AuthErrorCode;
-import com.green.common.auth.MemberContext;
 import com.green.common.constants.ConstJwt;
+import com.green.common.constants.EventType;
 import com.green.common.exception.BusinessException;
+import com.green.common.model.EnumMemberRole;
 import com.green.common.model.JwtMember;
-import com.green.common.model.MemberDto;
+import com.green.common.model.MemberEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final ConstJwt constJwt;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // 로그인
     @Transactional
@@ -65,7 +69,7 @@ public class AuthService {
     // 로그아웃 시 RT DB에서 삭제
     @Transactional
     public void deleteRefreshToken(Integer memberCode) {
-            refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
+        refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
     }
 
     @Transactional
@@ -78,5 +82,38 @@ public class AuthService {
         // RT 파싱해서 JwtMember 반환 (JwtTokenManager에서 처리)
         return new JwtMember(savedRt.getAuthMember().getMemberCode(),
                 savedRt.getAuthMember().getRole());
+    }
+
+    public void test(MemberCreateReq req) {
+        String hashedPassword = passwordEncoder.encode(req.getPassword());
+
+        AuthMember newMember = new AuthMember();
+        newMember.setMemberCode(req.getMemberCode());
+        newMember.setEmail(req.getEmail());
+        newMember.setPassword(hashedPassword);
+
+        authMemberRepository.save(newMember);
+
+        MemberEvent userEvent = MemberEvent.builder()
+                .memberCode(newMember.getMemberCode())
+                .eventType( EventType.E_CREATED )
+                .build();
+
+        kafkaSend(userEvent);
+    }
+
+    private void kafkaSend(MemberEvent memberEvent) {
+        kafkaTemplate.send("kafka-test", String.valueOf(memberEvent.getMemberCode()), memberEvent)
+                .whenComplete((result, ex) -> {
+                    if (ex == null) {
+                        // 성공 시 로그
+                        log.info("✅ [Kafka Success] Topic: {}, Offset: {}",
+                                result.getRecordMetadata().topic(),
+                                result.getRecordMetadata().offset());
+                    } else {
+                        // 실패 시 로그
+                        log.error("❌ [Kafka Failure] 원인: {}", ex.getMessage());
+                    }
+                });
     }
 }
