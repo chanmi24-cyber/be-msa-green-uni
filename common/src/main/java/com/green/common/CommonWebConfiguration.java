@@ -20,7 +20,7 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
     private final String apiPrefix;
 
     public CommonWebConfiguration(MemberContextInterceptor memberContextInterceptor
-            , @Value("${constants.api.prefix:/api}s") String apiPrefix) {
+            , @Value("${constants.api.prefix:/api}") String apiPrefix) {
         this.memberContextInterceptor = memberContextInterceptor;
         log.info("============= apiPrefix: {}", apiPrefix);
         this.apiPrefix = apiPrefix;
@@ -36,6 +36,7 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(memberContextInterceptor);
+        registry.addInterceptor(memberContextInterceptor)
+                .addPathPatterns("/**"); // 모든 경로에서 인터셉터 작동;
     }
 }

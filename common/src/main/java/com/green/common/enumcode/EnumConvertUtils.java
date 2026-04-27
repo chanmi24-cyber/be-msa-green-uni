@@ -17,7 +17,7 @@ public class EnumConvertUtils {
                 .filter(item -> item.getCode().equals(code)) //스트림 아이템 중에 원하는 아이템만 다시 스트림 생성한다. (2)
                 .findFirst() //(2)스트림 아이템 중 첫번째 아이템을 리턴(Optional) (3)
                 .orElse(null); //(3)이 null이었다면 null리턴
-        }
+    }
 
     public static <E extends Enum<E> & EnumMapperType> String toCode(E enumItem) {
         if (enumItem == null) { return null; }

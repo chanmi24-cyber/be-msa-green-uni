@@ -12,7 +12,7 @@ public enum EnumMemberRole implements EnumMapperType {
     STUDENT("STUDENT", "학생"),
     PROFESSOR("PROFESSOR", "교수"),
     ADMIN("ADMIN", "관리자"),
-            ;
+    ;
     private final String code;
     private final String value;
 

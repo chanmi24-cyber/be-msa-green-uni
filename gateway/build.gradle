@@ -1,19 +1,26 @@
 dependencies {
-    // 공통 모듈 가져다 쓰기
+    // 공통 모듈 의존성 추가
     implementation project(':common')
 
-    // JWT (로그인 토큰 검증: gateway에서 토큰 유효성 확인)
-    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    //JWT(JSON Web Token) 라이브러리
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0' // JWT 관련 인터페이스/클래스 정의 (설계도)
+    implementation 'io.jsonwebtoken:jjwt-impl:0.13.0' //실제 JWT 생성/파싱 구현체 (실제 동작)
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.13.0' //JWT 내부 데이터를 JSON으로 변환할 때 Jackson 사용
 
-    // Gateway (모든 요청의 입구 역할, 각 서비스로 요청을 전달)
+    // 클라이언트 요청을 받아서 → 각 마이크로서비스로 라우팅(전달) 해주는 역할
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc'
 
-    // 보안 기능 (토큰 검증 등에 필요)
+    //Spring Security 라이브러리.
+    //인증(로그인 여부 확인), 인가(권한 확인) 기능
     implementation 'org.springframework.boot:spring-boot-starter-security'
+
 }
 
-// 실행 가능한 서버로 빌드
-bootJar { enabled = true }
-jar { enabled = false }
+// 서비스 모듈은 실행 가능한 jar 파일로 빌드되어야 합니다.
+bootJar {
+    enabled = true
+}
+
+jar {
+    enabled = false // 실행 jar가 우선이므로 일반 jar는 끕니다.
+}

@@ -1,7 +1,8 @@
-package com.green.auth.configuration.security;
+package com.green.common.security;
 
 import com.green.common.constants.ConstJwt;
 import com.green.common.model.JwtMember;
+import com.green.common.model.UserPrincipal;
 import com.green.common.utils.MyCookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,6 +35,10 @@ public class JwtTokenManager { //인증처리 총괄
     public void setRefreshTokenInCookie(HttpServletResponse res, JwtMember jwtMember){
         String refreshToken = jwtTokenProvider.generateRefreshToken(jwtMember);
         setRefreshTokenInCookie(res, refreshToken); // 만들어진 RT를 쿠키에 담는 메소드 호출
+    }
+
+    public String generateRefreshToken(JwtMember jwtMember) {
+        return jwtTokenProvider.generateRefreshToken(jwtMember);
     }
 
     // 만들어진 AT를 쿠키에 담기

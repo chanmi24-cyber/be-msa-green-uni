@@ -1,11 +1,11 @@
 constants:
   api:
-    prefix: /api/core
+    prefix: ""
   enum:
     scan-package: com.green.core
 
 server:
-  port: 8083
+  port: 8082
 
 spring:
   config:
@@ -13,6 +13,7 @@ spring:
       - optional:classpath:application-common.yaml
       - optional:classpath:application-jpa.yaml
       - optional:classpath:application-auth.yaml
+      - optional:file:.env[.properties]
   application:
     name: core-service
   datasource:
