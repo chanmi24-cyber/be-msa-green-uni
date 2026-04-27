@@ -2,6 +2,7 @@ package com.green.auth.application;
 
 import com.green.auth.application.model.LoginReq;
 import com.green.auth.application.model.LoginRes;
+import com.green.auth.application.model.MemberCreateReq;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.security.JwtTokenManager;
@@ -82,6 +83,16 @@ public class AuthController {
         return ResultResponse.builder()
                 .message("Access Token 재발행")
                 .data(1)
+                .build();
+    }
+
+    @PostMapping("/test")
+    public ResultResponse<?> signup( @RequestBody MemberCreateReq req ) {
+        log.info("req: {}", req);
+        authService.test( req );
+        return ResultResponse.builder()
+                .message( "회원가입 성공" )
+                .data( 1 )
                 .build();
     }
 }
