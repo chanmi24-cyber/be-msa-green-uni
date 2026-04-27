@@ -7,7 +7,6 @@ import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.auth.exception.AuthErrorCode;
 import com.green.common.constants.ConstJwt;
-import com.green.common.constants.EventType;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.JwtMember;
 import com.green.common.model.MemberEvent;
