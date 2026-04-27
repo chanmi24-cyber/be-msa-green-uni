@@ -25,7 +25,7 @@ public class AuthMember extends CreatedUpdatedAt {
 
     @Convert(converter = EnumMemberRole.CodeConverter.class)
     @Column(nullable = false, length = 20)
-    private EnumMemberRole role;
+    private EnumMemberRole role = EnumMemberRole.STUDENT;
 
     @Convert(converter = EnumAccountStatus.CodeConverter.class)
     @Column(nullable = false, length = 20)
