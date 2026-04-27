@@ -1,43 +1,42 @@
 dependencies {
-    // 공통 모듈 가져다 쓰기
+    // 공통 모듈 의존성 주입 (가장 중요)
     implementation project(':common')
 
-    // 웹 서버 기능 (Controller, REST API 등)
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-
-    // 보안 기능 (JWT 토큰 검증 등)
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // JPA (MyBatis 대신 DB를 객체로 다루는 기술)
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // 입력값 유효성 검사 (@Valid, @NotNull 등)
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-
-    // 이메일 발송 기능 (이메일 변경 알림 등)
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-
-    // 카프카 (서버 간 메시지 전달: 회원 상태 변경 시 auth-service에 알림 등)
-    implementation 'org.springframework.boot:spring-boot-starter-kafka'
-
-    // TSID (시간 기반 고유 ID 생성: status_request 등 테이블에서 사용)
-    implementation 'io.hypersistence:hypersistence-utils-hibernate-70:3.15.2'
-
-    // SQL 로그를 보기 좋게 출력해주는 도구
+    // SQL 쿼리를 가독성 좋게(파라미터 포함) 로그로 남겨줍니다.
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 
-    // MySQL 드라이버 (실행 시에만 필요)
+    // JSON 처리를 위한 Jackson
+    // jjwt-api: 인터페이스 및 핵심 API
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    // jjwt-impl: 실제 로직 구현체
+    implementation 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    // jjwt-jackson: 토큰 내부 데이터를 JSON으로 변환할 때 Jackson 라이브러리 사용
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+
+    // MSA 간 메시징을 위한 Apache Kafka
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
+
+    // TSID 사용을 위한 유틸리티
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-70:3.15.2'
+
+    // Spring Boot Starter 시리즈 (핵심 프레임워크 기능)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // MySQL DB 드라이버
+    // 실제 런타임에 DB와 통신할 때 필요합니다.
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // 테스트용 가짜 데이터 생성 도구
-    testImplementation 'net.datafaker:datafaker:2.5.4'
 }
 
-// JUnit 5 기반으로 테스트 실행
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform() // 이 설정이 없으면 JUnit 5 테스트를 인식하지 못합니다.
 }
 
-// 실행 가능한 서버 jar 파일로 빌드
-bootJar { enabled = true }
-jar { enabled = false }
+// 서비스 모듈은 실행 가능한 jar 파일로 빌드되어야 합니다.
+bootJar {  enabled = true}
+
+// 실행 jar가 우선이므로 일반 jar는 끕니다.
+jar {  enabled = false }

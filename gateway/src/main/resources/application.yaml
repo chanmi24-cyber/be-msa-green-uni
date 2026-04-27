@@ -30,22 +30,22 @@ spring:
           # 라우팅 설정
           routes:
             - id: auth-service
-              uri: http://localhost:8080
+              uri: http://${SERVICE_HOST}:${AUTH_PORT}
               predicates:
                 - Path=/api/auth/**
 
             - id: member-service
-              uri: http://localhost:8081
+              uri: http://${SERVICE_HOST}:${MEMBER_PORT}
               predicates:
                 - Path=/api/member/**, /api/admin/member/**
 
             - id: core-service
-              uri: http://localhost:8082
+              uri: http://${SERVICE_HOST}:${CORE_PORT}
               predicates:
                 - Path=/api/majors/**, /api/lectures/**, /api/courses/**, /api/admin/courses/**, /api/tuitions/**, /api/admin/tuitions/**, /api/scholarships/**, /api/facilities/**, /api/admin/facilities/**, /api/attendances/**, /api/grades/**
 
             - id: academic-service
-              uri: http://localhost:8083
+              uri: http://${SERVICE_HOST}:${ACADEMIC_PORT}
               predicates:
                 - Path=/api/announcements/**, /api/admin/announcements/**, /api/notifications/**, /api/schedules/**, /api/admin/schedules/**
 

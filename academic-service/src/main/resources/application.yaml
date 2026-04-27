@@ -5,7 +5,7 @@ constants:
     scan-package: com.green.academic
 
 server:
-  port: 8083
+  port: ${ACADEMIC_PORT}
 
 spring:
   config:
@@ -18,7 +18,7 @@ spring:
     name: academic-service
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/gu_academic?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/my_gu_academic?createDatabaseIfNotExist=true&characterEncoding=UTF-8
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
