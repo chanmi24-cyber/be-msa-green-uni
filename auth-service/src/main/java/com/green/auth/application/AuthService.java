@@ -93,12 +93,12 @@ public class AuthService {
 
         authMemberRepository.save(newMember);
 
-        MemberEvent userEvent = MemberEvent.builder()
-                .memberCode(newMember.getMemberCode())
-                .eventType( EventType.E_CREATED )
-                .build();
-
-        kafkaSend(userEvent);
+//        MemberEvent userEvent = MemberEvent.builder()
+//                .memberCode(newMember.getMemberCode())
+//                .eventType( EventType.E_CREATED )
+//                .build();
+//
+//        kafkaSend(userEvent);
     }
 
     private void kafkaSend(MemberEvent memberEvent) {

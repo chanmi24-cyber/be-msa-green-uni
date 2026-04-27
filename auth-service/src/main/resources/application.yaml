@@ -29,16 +29,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-  kafka:
-    # 도커로 띄운 카프카 주소
-    bootstrap-servers: ${DB_HOST}:${KAFKA_PORT}
-    producer: # 제공자
-      # 메시지의 키(Key)는 문자열로 보냅니다.
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      # 메시지의 값(Value)은 객체를 JSON으로 변환하여 보냅니다.
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all                  # 모든 replica 확인 후 ack
-      retries: 3
-      properties:
-        enable.idempotence: true  # 중복 발행 방지
-        max.in.flight.requests.per.connection: 5
+  mail:
+    host: smtp.gmail.com        # Gmail SMTP 서버 주소
+    port: 587                   # STARTTLS 방식의 표준 포트
+    username: ${MAIL_USERNAME}  # 발송에 사용할 Gmail 주소
+    password: ${MAIL_PASSWORD}  # Gmail 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true            # SMTP 인증 사용 (필수)
+          starttls:
+            enable: true        # 보안 연결(TLS) 사용 (필수)

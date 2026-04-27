@@ -18,6 +18,9 @@ dependencies {
 
     // TSID 사용을 위한 유틸리티
     implementation 'io.hypersistence:hypersistence-utils-hibernate-70:3.15.2'
+    
+    // email
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // Spring Boot Starter 시리즈 (핵심 프레임워크 기능)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

@@ -24,11 +24,3 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-  kafka:
-    # 도커로 띄운 카프카 주소
-    bootstrap-servers: ${DB_HOST}:${KAFKA_PORT}
-    consumer:
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-      group-id: kafka-test
