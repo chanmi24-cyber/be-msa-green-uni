@@ -1,6 +1,7 @@
 package com.green.member.kafka;
 
 import com.green.common.constants.EventType;
+import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.MajorEvent;
 import com.green.member.entity.MajorCache;
 import com.green.member.repository.MajorCacheRepository;
@@ -17,13 +18,13 @@ public class MajorEventConsumer {
     private final MajorCacheRepository majorCacheRepository;
 
     @Transactional
-    @KafkaListener(topics = "member-service-group")
+    @KafkaListener(topics = KafkaTopic.MAJOR, groupId = "member-service-group")
     public void consume(MajorEvent event) {
         log.info("Kafka 메시지 수신: {}", event);
 
         try {
             EventType type = event.getEventType();
-            if (type == EventType.E_CREATED || type == EventType.E_UPDATED) {
+            if (type == EventType.E_CREATED ) {
                 // 저장 또는 수정 (Idempotent: 동일 ID면 덮어쓰기 됨)
                 MajorCache cache = MajorCache.builder()
                         .majorId(event.getMajorId())
@@ -31,10 +32,16 @@ public class MajorEventConsumer {
                         .build();
                 majorCacheRepository.save(cache);
                 log.info("MajorCache 정보저장 완료: {}", event.getMajorId());
-            } else if (type == EventType.E_DELETED) {
+            } else if( type == EventType.E_UPDATED ){
+                majorCacheRepository.findById(event.getMajorId())
+                        .ifPresent(cache -> {
+                            cache.setName(event.getName());
+                            // save() 없어도 @Transactional이면 dirty checking으로 UPDATE
+                        });
+            }else if (type == EventType.E_DELETED) {
                 // 삭제
                 majorCacheRepository.deleteById(event.getMajorId());
-                log.info("🗑️ AuthMemberCache 삭제 완료: {}", event.getMajorId());
+                log.info("삭제 완료: {}", event.getMajorId());
             }
 
         } catch (Exception e) {

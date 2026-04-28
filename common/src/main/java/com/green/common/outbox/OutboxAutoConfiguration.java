@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * spring.kafka.producer.key-serializer 설정이 있는지 확인합니다.
  * 프로듀서라면 무조건 설정해야 하는 값이므로, 이 값이 있으면 '프로듀서 서비스'로 판단합니다.
  */
-@ConditionalOnProperty(prefix = "spring.kafka.producer", name = "key-serializer")
+@ConditionalOnProperty(name = "outbox.enabled", havingValue = "true")
 @EnableScheduling // Relay 스케줄러 활성화
 
 /* 핵심: @Import를 통해 Registrar를 실행합니다.

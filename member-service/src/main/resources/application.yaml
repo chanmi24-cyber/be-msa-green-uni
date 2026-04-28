@@ -37,4 +37,5 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.green.common.model"
-
+outbox:
+  enabled: false

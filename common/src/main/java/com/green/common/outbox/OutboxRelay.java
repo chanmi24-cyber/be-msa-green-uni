@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "spring.kafka.producer", name = "key-serializer")
+@ConditionalOnProperty(name = "outbox.enabled", havingValue = "true")
 public class OutboxRelay {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
@@ -26,17 +26,12 @@ public class OutboxRelay {
 
         for (Outbox outbox : waitingEvents) {
             try {
-                // 실제 카프카 전송 (JSON 문자열 그대로 전송)
-                kafkaTemplate.send(outbox.getTopic(), String.valueOf(outbox.getAggregateId()), outbox.getPayload())
-                        .whenComplete((result, ex) -> {
-                            log.info("result: {}, ex: {}", result, ex);
-                            if (ex == null) {
-                                // 성공 시 즉시 삭제
-                                outboxRepository.deleteById(outbox.getId());
-                            }
-                        });
+                kafkaTemplate.send(outbox.getTopic(),
+                        String.valueOf(outbox.getAggregateId()),
+                        outbox.getPayload()).get(); // 동기 대기
+                outboxRepository.deleteById(outbox.getId()); // 트랜잭션 내에서 삭제
             } catch (Exception e) {
-                log.error("카프카 클라이언트 오류: {}", e.getMessage());
+                log.error("카프카 전송 실패: {}", e.getMessage());
             }
         }
     }
