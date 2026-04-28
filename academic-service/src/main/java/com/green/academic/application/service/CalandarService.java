@@ -1,4 +1,4 @@
-package com.green.academic.service;
+package com.green.academic.application.service;
 
 import org.springframework.stereotype.Service;
 

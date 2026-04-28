@@ -1,11 +1,13 @@
-package com.green.auth.application;
+package com.green.auth.application.service;
 
-import com.green.auth.application.model.LoginReq;
-import com.green.auth.application.model.MemberCreateReq;
+import com.green.auth.application.model.auth.LoginReq;
+import com.green.auth.application.model.auth.MemberCreateReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.auth.exception.AuthErrorCode;
+import com.green.auth.repository.AuthMemberRepository;
+import com.green.auth.repository.RefreshTokenRepository;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.JwtMember;

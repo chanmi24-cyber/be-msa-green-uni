@@ -1,4 +1,4 @@
-package com.green.auth.application.model;
+package com.green.auth.application.model.auth;
 
 import lombok.Getter;
 

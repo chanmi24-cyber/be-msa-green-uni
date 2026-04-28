@@ -1,4 +1,4 @@
-package com.green.member.application;
+package com.green.member.application.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 

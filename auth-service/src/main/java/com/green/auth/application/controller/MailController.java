@@ -1,7 +1,8 @@
-package com.green.auth.application.email;
+package com.green.auth.application.controller;
 
-import com.green.auth.application.email.model.EmailSendReq;
-import com.green.auth.application.email.model.EmailVerifyReq;
+import com.green.auth.application.model.email.EmailSendReq;
+import com.green.auth.application.model.email.EmailVerifyReq;
+import com.green.auth.application.service.MailService;
 import com.green.common.model.ResultResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.green.member.application.entity;
+package com.green.member.entity;
 
 import com.green.common.enumcode.EnumMemberRole;
 import jakarta.persistence.Column;

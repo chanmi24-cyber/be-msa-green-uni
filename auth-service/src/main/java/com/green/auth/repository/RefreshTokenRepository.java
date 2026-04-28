@@ -1,4 +1,4 @@
-package com.green.auth.application;
+package com.green.auth.repository;
 
 import com.green.auth.entity.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
