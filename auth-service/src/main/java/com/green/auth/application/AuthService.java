@@ -12,12 +12,15 @@ import com.green.common.exception.BusinessException;
 import com.green.common.model.EnumMemberRole;
 import com.green.common.model.JwtMember;
 import com.green.common.model.MemberEvent;
+import com.green.common.outbox.Outbox;
+import com.green.common.outbox.OutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +33,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final ConstJwt constJwt;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     // 로그인
     @Transactional
@@ -100,21 +105,33 @@ public class AuthService {
                 .eventType( EventType.E_CREATED )
                 .build();
 
-        kafkaSend(userEvent);
+//        kafkaSend(userEvent);
+        saveToOutbox(userEvent);
     }
 
     private void kafkaSend(MemberEvent memberEvent) {
-        kafkaTemplate.send("kafka-test", String.valueOf(memberEvent.getMemberCode()), memberEvent)
-                .whenComplete((result, ex) -> {
-                    if (ex == null) {
-                        // 성공 시 로그
-                        log.info("✅ [Kafka Success] Topic: {}, Offset: {}",
-                                result.getRecordMetadata().topic(),
-                                result.getRecordMetadata().offset());
-                    } else {
-                        // 실패 시 로그
-                        log.error("❌ [Kafka Failure] 원인: {}", ex.getMessage());
-                    }
-                });
+//        kafkaTemplate.send("kafka-test", String.valueOf(memberEvent.getMemberCode()), memberEvent)
+//                .whenComplete((result, ex) -> {
+//                    if (ex == null) {
+//                        // 성공 시 로그
+//                        log.info("✅ [Kafka Success] Topic: {}, Offset: {}",
+//                                result.getRecordMetadata().topic(),
+//                                result.getRecordMetadata().offset());
+//                    } else {
+//                        // 실패 시 로그
+//                        log.error("❌ [Kafka Failure] 원인: {}", ex.getMessage());
+//                    }
+//                });
+    }
+    private void saveToOutbox(MemberEvent memberEvent) {
+        String payload = objectMapper.writeValueAsString(memberEvent);
+        Outbox outbox = Outbox.builder()
+                .topic("kafka-test")
+                .aggregateId( memberEvent.getMemberCode().longValue() ) // Integer -> Long 캐스팅
+                .eventType( memberEvent.getEventType().name() )
+                .payload( payload )
+                .build();
+
+        outboxRepository.save(outbox);
     }
 }

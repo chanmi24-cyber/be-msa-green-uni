@@ -24,3 +24,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:${KAFKA_PORT}
+    # [발행] Major, Collage 이벤트를 Outbox에 담아 보냄
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    # [수신] Student, Professor, Calendar 캐시를 업데이트
+    consumer:
+      group-id: core-service-group
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.green.common.model"
