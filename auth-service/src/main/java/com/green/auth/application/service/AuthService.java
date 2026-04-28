@@ -1,7 +1,6 @@
 package com.green.auth.application.service;
 
 import com.green.auth.application.model.auth.LoginReq;
-import com.green.auth.application.model.auth.MemberCreateReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
@@ -11,7 +10,6 @@ import com.green.auth.repository.RefreshTokenRepository;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.JwtMember;
-import com.green.common.kafka.MemberEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -84,36 +82,4 @@ public class AuthService {
                 savedRt.getAuthMember().getRole());
     }
 
-    public void test(MemberCreateReq req) {
-        String hashedPassword = passwordEncoder.encode(req.getPassword());
-
-        AuthMember newMember = new AuthMember();
-        newMember.setMemberCode(req.getMemberCode());
-        newMember.setEmail(req.getEmail());
-        newMember.setPassword(hashedPassword);
-
-        authMemberRepository.save(newMember);
-
-//        MemberEvent userEvent = MemberEvent.builder()
-//                .memberCode(newMember.getMemberCode())
-//                .eventType( EventType.E_CREATED )
-//                .build();
-//
-//        kafkaSend(userEvent);
-    }
-
-    private void kafkaSend(MemberEvent memberEvent) {
-        kafkaTemplate.send("kafka-test", String.valueOf(memberEvent.getMemberCode()), memberEvent)
-                .whenComplete((result, ex) -> {
-                    if (ex == null) {
-                        // 성공 시 로그
-                        log.info("✅ [Kafka Success] Topic: {}, Offset: {}",
-                                result.getRecordMetadata().topic(),
-                                result.getRecordMetadata().offset());
-                    } else {
-                        // 실패 시 로그
-                        log.error("❌ [Kafka Failure] 원인: {}", ex.getMessage());
-                    }
-                });
-    }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MajorController {
     private final MajorService majorService;
 
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
     public ResultResponse<?> test(@RequestBody MajorCreateReq req ) {
         log.info("req: {}", req);

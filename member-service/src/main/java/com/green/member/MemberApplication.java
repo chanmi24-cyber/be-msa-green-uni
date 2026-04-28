@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @EnableJpaAuditing
-@EntityScan(basePackages = {"com.green.common", "com.green.member"})
-@EnableJpaRepositories(basePackages = {"com.green.common", "com.green.member"})
 @SpringBootApplication(scanBasePackages = {"com.green.common", "com.green.member"})
 public class MemberApplication {
     public static void main(String[] args) {
