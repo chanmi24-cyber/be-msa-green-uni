@@ -1,14 +1,11 @@
 package com.green.common.auth;
 
-import com.green.common.model.EnumMemberRole;
+import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.model.MemberDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 //각 서비스에 로그인 정보를 전달하는 역할
 @Component

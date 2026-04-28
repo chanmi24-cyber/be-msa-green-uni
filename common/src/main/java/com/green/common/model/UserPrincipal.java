@@ -2,6 +2,7 @@ package com.green.common.model;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,6 +14,7 @@ import java.util.List;
 //Spring Security가 인증처리를 할 때 사용하는 객체
 @Getter
 @RequiredArgsConstructor
+@ToString
 public class UserPrincipal implements UserDetails {
     private final JwtMember jwtMember;
 

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnClass(Authentication.class) //클래스패스에 특정 클래스(예: Authentication)가 존재할 때만 빈으로 등록
 public class JwtTokenManager { //인증처리 총괄
     private final ConstJwt constJwt;
     private final MyCookieUtil myCookieUtil;
@@ -81,7 +83,7 @@ public class JwtTokenManager { //인증처리 총괄
         //쿠키에 AT가 있다면, JWT에 담았던 JwtMember객체(로그인 유저 정보)를 빼내어, 시큐리티를 위한 UserPrincipal로 변환
         JwtMember jwtMember = jwtTokenProvider.getJwtMemberFromToken(accessToken);
         UserPrincipal userPrincipal = new UserPrincipal(jwtMember);
-
+        log.info("userPrincipal: {}", userPrincipal);
         return new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
         // 시큐리티 인증된 로그인 유저 정보(로그인ID, role 담아 반환. @AuthenticationPrincipal로 활용)
     }
