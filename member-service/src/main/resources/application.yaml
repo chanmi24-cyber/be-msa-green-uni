@@ -25,9 +25,9 @@ spring:
     hibernate:
       ddl-auto: update
   kafka:
-    bootstrap-servers: ${DB_HOST}:${KAFKA_PORT}
+    bootstrap-servers: localhost:${KAFKA_PORT}
     consumer:
+      group-id: kafka-test
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-      group-id: kafka-test

@@ -96,6 +96,7 @@ public class AuthService {
 
         MemberEvent userEvent = MemberEvent.builder()
                 .memberCode(newMember.getMemberCode())
+                .role(newMember.getRole())
                 .eventType( EventType.E_CREATED )
                 .build();
 

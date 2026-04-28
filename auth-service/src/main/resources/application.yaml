@@ -30,7 +30,7 @@ spring:
     hibernate:
       ddl-auto: update
   kafka:
-    bootstrap-servers: ${DB_HOST}:${KAFKA_PORT}
+    bootstrap-servers: localhost:${KAFKA_PORT}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

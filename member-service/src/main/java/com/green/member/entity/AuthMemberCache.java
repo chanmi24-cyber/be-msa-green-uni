@@ -1,7 +1,8 @@
-package com.green.member.application.entity;
+package com.green.member.entity;
 
 import com.green.common.model.EnumMemberRole;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Builder;
@@ -18,6 +19,7 @@ public class AuthMemberCache {
     @Id
     private Integer memberCode;
 
+    @Convert(converter = EnumMemberRole.CodeConverter.class)
     @Column(nullable = false, length = 20)
     private EnumMemberRole role;
 
