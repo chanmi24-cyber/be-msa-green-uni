@@ -1,4 +1,4 @@
-package com.green.core.major.application;
+package com.green.core.service;
 
 import org.springframework.stereotype.Service;
 

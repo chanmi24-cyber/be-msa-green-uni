@@ -1,9 +1,9 @@
-package com.green.core.grade.application;
+package com.green.core.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/calendars")
-public class GradeController {
+@RequestMapping("/api/admin/lectures")
+public class AdminLectureController {
 }

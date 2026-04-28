@@ -1,9 +1,9 @@
-package com.green.academic.calendar.application;
+package com.green.core.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/grades")
-public class CalendarController {
+@RequestMapping("/api/majors")
+public class MajorController {
 }
