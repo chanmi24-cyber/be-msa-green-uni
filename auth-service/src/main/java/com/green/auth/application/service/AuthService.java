@@ -11,7 +11,7 @@ import com.green.auth.repository.RefreshTokenRepository;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.JwtMember;
-import com.green.common.model.MemberEvent;
+import com.green.common.kafka.MemberEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

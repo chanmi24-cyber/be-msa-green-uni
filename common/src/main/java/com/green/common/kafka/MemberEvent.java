@@ -1,7 +1,6 @@
-package com.green.common.model;
+package com.green.common.kafka;
 
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumMemberRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +19,6 @@ import java.io.Serializable;
 public class MemberEvent implements Serializable {
 
     private Integer memberCode;
-    private EnumMemberRole role;
 
     private EventType eventType;
 }
