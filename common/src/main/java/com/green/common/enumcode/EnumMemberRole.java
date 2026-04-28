@@ -1,7 +1,5 @@
-package com.green.common.model;
+package com.green.common.enumcode;
 
-import com.green.common.enumcode.AbstractEnumCodeConverter;
-import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

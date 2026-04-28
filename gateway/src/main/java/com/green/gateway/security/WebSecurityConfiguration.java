@@ -1,11 +1,10 @@
 package com.green.gateway.security;
 
-import com.green.common.model.EnumMemberRole;
+import com.green.common.enumcode.EnumMemberRole;
 import com.green.gateway.filter.TokenAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;

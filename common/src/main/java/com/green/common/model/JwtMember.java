@@ -1,5 +1,6 @@
 package com.green.common.model;
 
+import com.green.common.enumcode.EnumMemberRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

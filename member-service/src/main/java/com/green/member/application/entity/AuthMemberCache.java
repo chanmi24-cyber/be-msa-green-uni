@@ -1,6 +1,6 @@
 package com.green.member.application.entity;
 
-import com.green.common.model.EnumMemberRole;
+import com.green.common.enumcode.EnumMemberRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

@@ -1,6 +1,6 @@
 package com.green.auth.application.model;
 
-import com.green.common.model.EnumMemberRole;
+import com.green.common.enumcode.EnumMemberRole;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;

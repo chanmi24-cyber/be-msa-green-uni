@@ -2,7 +2,7 @@ package com.green.auth.entity;
 
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.entity.CreatedUpdatedAt;
-import com.green.common.model.EnumMemberRole;
+import com.green.common.enumcode.EnumMemberRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
