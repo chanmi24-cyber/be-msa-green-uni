@@ -40,7 +40,7 @@ spring:
                 - Path=/api/member/**, /api/admin/member/**
 
             - id: core-service
-              uri: http://${SERVICE_HOST}:${CORE_PORT}
+              uri: http://localhost:8082
               predicates:
                 - Path=/api/majors/**, /api/lectures/**, /api/courses/**, /api/admin/courses/**, /api/tuitions/**, /api/admin/tuitions/**, /api/scholarships/**, /api/facilities/**, /api/admin/facilities/**, /api/attendances/**, /api/grades/**
 

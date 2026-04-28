@@ -22,8 +22,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        # 하이버네이트 7의 메타데이터 조회 버그 방지
+        temp:
+          use_jdbc_metadata_defaults: false
   kafka:
     bootstrap-servers: localhost:${KAFKA_PORT}
     # [발행] Major, Collage 이벤트를 Outbox에 담아 보냄

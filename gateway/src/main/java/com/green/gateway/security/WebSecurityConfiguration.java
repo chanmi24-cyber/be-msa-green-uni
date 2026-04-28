@@ -31,8 +31,6 @@ public class WebSecurityConfiguration {
                 .cors( cors -> cors.configurationSource(corsConfigurationSource()) )
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 인증이 아예 필요 없는 화이트리스트 (로그인 및 인증)
-                        .requestMatchers("/api/auth").permitAll()
 
                         // 2. 권한별 접근 제어
                         .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
