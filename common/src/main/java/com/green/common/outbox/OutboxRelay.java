@@ -19,7 +19,7 @@ public class OutboxRelay {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     // 10초마다 실행 (간격은 조절 가능)
-    @Scheduled(fixedDelay = 10_000)
+    @Scheduled(fixedDelay = 10_000, initialDelay = 20_000)
     @Transactional
     public void publishEvents() {
         List<Outbox> waitingEvents = outboxRepository.findAll();

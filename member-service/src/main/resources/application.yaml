@@ -24,6 +24,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
   kafka:
     bootstrap-servers: localhost:${KAFKA_PORT}
     # [발행] student, professor 이벤트를 Outbox에 담아 보냄
