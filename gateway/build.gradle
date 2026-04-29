@@ -2,6 +2,7 @@ dependencies {
     // 공통 모듈 의존성 추가
     implementation project(':common')
 
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     //JWT(JSON Web Token) 라이브러리
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0' // JWT 관련 인터페이스/클래스 정의 (설계도)
     implementation 'io.jsonwebtoken:jjwt-impl:0.13.0' //실제 JWT 생성/파싱 구현체 (실제 동작)

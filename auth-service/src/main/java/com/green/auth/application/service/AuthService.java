@@ -2,32 +2,24 @@ package com.green.auth.application.service;
 
 import com.green.auth.application.model.auth.LoginReq;
 import com.green.auth.entity.AuthMember;
-import com.green.auth.entity.RefreshToken;
 import com.green.auth.enumcode.EnumAccountStatus;
-import com.green.auth.exception.AuthErrorCode;
+import com.green.common.auth.AuthErrorCode;
 import com.green.auth.repository.AuthMemberRepository;
-import com.green.auth.repository.RefreshTokenRepository;
-import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
-import com.green.common.model.JwtMember;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final AuthMemberRepository authMemberRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+//    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ConstJwt constJwt;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+//    private final ConstJwt constJwt;
 
     // 로그인
     @Transactional
@@ -50,36 +42,36 @@ public class AuthService {
     }
 
     // 로그인 시 RT DB에 저장
-    @Transactional
-    public void saveRefreshToken(AuthMember authMember, String refreshToken) {
-        // 기존 RT 삭제 (재로그인 시 이전 RT 제거)
-        refreshTokenRepository.deleteByAuthMember_MemberCode(authMember.getMemberCode());
+//    @Transactional
+//    public void saveRefreshToken(AuthMember authMember, String refreshToken) {
+//        // 기존 RT 삭제 (재로그인 시 이전 RT 제거)
+//        refreshTokenRepository.deleteByAuthMember_MemberCode(authMember.getMemberCode());
+//
+//        RefreshToken rt = RefreshToken.builder()
+//                .authMember(authMember)
+//                .tokenValue(refreshToken)
+//                .expiresAt(LocalDateTime.now().plusSeconds(constJwt.refreshTokenCookieValiditySeconds()))
+//                .build();
+//
+//        refreshTokenRepository.save(rt);
+//    }
 
-        RefreshToken rt = RefreshToken.builder()
-                .authMember(authMember)
-                .tokenValue(refreshToken)
-                .expiresAt(LocalDateTime.now().plusSeconds(constJwt.refreshTokenCookieValiditySeconds()))
-                .build();
+//    // 로그아웃 시 RT DB에서 삭제
+//    @Transactional
+//    public void deleteRefreshToken(Integer memberCode) {
+//            refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
+//    }
 
-        refreshTokenRepository.save(rt);
-    }
-
-    // 로그아웃 시 RT DB에서 삭제
-    @Transactional
-    public void deleteRefreshToken(Integer memberCode) {
-            refreshTokenRepository.deleteByAuthMember_MemberCode(memberCode);
-    }
-
-    @Transactional
-    public JwtMember reissue(String refreshToken) {
-        // DB에서 RT 존재 여부 확인
-        RefreshToken savedRt = refreshTokenRepository.findByTokenValue(refreshToken);
-        if (savedRt == null) {
-            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
-        }
-        // RT 파싱해서 JwtMember 반환 (JwtTokenManager에서 처리)
-        return new JwtMember(savedRt.getAuthMember().getMemberCode(),
-                savedRt.getAuthMember().getRole());
-    }
+//    @Transactional
+//    public JwtMember reissue(String refreshToken) {
+//        // DB에서 RT 존재 여부 확인
+//        RefreshToken savedRt = refreshTokenRepository.findByTokenValue(refreshToken);
+//        if (savedRt == null) {
+//            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+//        }
+//        // RT 파싱해서 JwtMember 반환 (JwtTokenManager에서 처리)
+//        return new JwtMember(savedRt.getAuthMember().getMemberCode(),
+//                savedRt.getAuthMember().getRole());
+//    }
 
 }

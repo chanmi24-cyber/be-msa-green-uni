@@ -27,16 +27,17 @@ public class AuthController {
 
     // 로그인
     @PostMapping("/login")
-    public ResultResponse<?> login(HttpServletResponse res, @RequestBody LoginReq req ) {
+    public ResultResponse<?> login(HttpServletResponse res, @RequestBody LoginReq req,
+                                   @RequestHeader(value = "X-Device-Id", defaultValue = "pc") String deviceId) {
         log.info("req: {}", req);
 
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
-        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole());
+        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole(), deviceId );
 
-        // DB에 RT 저장
-        String refreshToken = jwtTokenManager.generateRefreshToken(jwtMember);
-        authService.saveRefreshToken(loginMember, refreshToken);
+//        // DB에 RT 저장 X(redis 사용시)
+//        String refreshToken = jwtTokenManager.generateRefreshToken(jwtMember);
+//        authService.saveRefreshToken(loginMember, refreshToken);
 
         // 쿠키에 토큰과 유저 정보 저장
         jwtTokenManager.issue(res, jwtMember);
@@ -55,17 +56,17 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResultResponse<?> logout(HttpServletResponse res) {
-        // 저장된 유저 정보 가져오기
-        MemberDto memberDto = MemberContext.get();
+    public ResultResponse<?> logout(HttpServletRequest req, HttpServletResponse res) {
+//        // 저장된 유저 정보 가져오기
+//        MemberDto memberDto = MemberContext.get();
 
         // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
-        if (memberDto != null) {
-            authService.deleteRefreshToken(memberDto.memberCode());
-        }
+//        if (memberDto != null) {
+//            authService.deleteRefreshToken(memberDto.memberCode());
+//        }
 
         // 유저 정보 유무와 상관없이 브라우저의 쿠키는 날려줌
-        jwtTokenManager.logOut(res);
+        jwtTokenManager.logOut(req, res);
 
         return ResultResponse.builder()
                 .message("로그아웃 되었습니다.")
@@ -77,8 +78,9 @@ public class AuthController {
     @PostMapping("/reissue")
     public ResultResponse<?> reissue(HttpServletResponse res, HttpServletRequest req) {
         String refreshToken = jwtTokenManager.getRefreshTokenFromCookie(req);
-        JwtMember jwtMember = authService.reissue(refreshToken);
-        jwtTokenManager.setAccessTokenInCookie(res, jwtMember);
+        jwtTokenManager.reissue(req, res);
+//        JwtMember jwtMember = authService.reissue(refreshToken);
+//        jwtTokenManager.setAccessTokenInCookie(res, jwtMember);
 
         return ResultResponse.builder()
                 .message("Access Token 재발행")
