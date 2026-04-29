@@ -43,8 +43,7 @@ public class EnumMapperScanner {
     }
 
     private static String convertToCamelCase(String name) {
-        // "EnumMenuCategory" -> "menuCategory" 또는 "MenuCategory" -> "menuCategory"
-        // "Enum" 프리픽스 제거 로직 포함 (선택사항)
+        // "EnumMemberRole" -> "memberRole" 또는 "MemberRole" -> "memberRole"
         String target = name.startsWith("Enum") ? name.substring(4) : name;
         return Character.toLowerCase(target.charAt(0)) + target.substring(1);
     }

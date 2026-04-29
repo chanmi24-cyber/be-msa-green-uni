@@ -1,8 +1,8 @@
 constants:
   api:
-    prefix: ""
+      prefix: /api
   enum:
-    scan-package: com.green.member
+    scan-package: com.green.common
 
 server:
   port: ${MEMBER_PORT}
