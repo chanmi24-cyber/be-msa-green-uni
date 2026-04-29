@@ -32,27 +32,28 @@ public class WebSecurityConfiguration {
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
 
-                        // 2. 권한별 접근 제어
-                        .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
+                        // 권한별 접근 제어
+                        .requestMatchers("/api/admin/**", "").hasRole(EnumMemberRole.ADMIN.name())
+                        .requestMatchers("/api/student/**").hasRole(EnumMemberRole.STUDENT.name())
+                        .requestMatchers("/api/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
 
-                        // 3. 인증된 사용자만 접근 가능한 경로
+                        // 인증된 사용자만 접근 가능한 경로
                         .requestMatchers("/api/members/**", "/api/lectures/**", "/api/courses/**"
                                 ,"/api/scholarships/**","/api/schedules/**","/api/notifications/**"
                                 ,"/api/tuitions/**","/api/majors/**","/api/facilities/**"
                                 ,"/api/announcements/**","/api/attendances/**","/api/grades/**"
                         ).authenticated()
 
-                        // 4. 그 외 모든 요청은 허용 (필요에 따라 .authenticated()로 변경 가능)
+                        // 그 외 모든 요청은 허용 (필요에 따라 .authenticated()로 변경 가능)
                         .anyRequest().permitAll()
                 )
 
-                //아래 내용은 (POST) /api/board 로 요청이 올 때는 반드시 로그인이 되어있어야 한다.
                 .exceptionHandling(e -> e.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
-    // 3. CORS 상세 설정 Bean
+    // CORS 상세 설정 Bean
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
