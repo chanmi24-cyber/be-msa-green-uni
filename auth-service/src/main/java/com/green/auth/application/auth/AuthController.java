@@ -1,10 +1,7 @@
-package com.green.auth.application.controller;
+package com.green.auth.application.auth;
 
-import com.green.auth.application.model.auth.LoginReq;
-import com.green.auth.application.model.auth.LoginRes;
-import com.green.auth.application.service.AuthService;
-import com.green.common.auth.MemberContext;
-import com.green.common.model.MemberDto;
+import com.green.auth.application.auth.model.LoginReq;
+import com.green.auth.application.auth.model.LoginRes;
 import com.green.common.security.JwtTokenManager;
 import com.green.auth.entity.AuthMember;
 import com.green.common.model.JwtMember;

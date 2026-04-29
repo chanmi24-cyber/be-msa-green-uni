@@ -1,6 +1,6 @@
-package com.green.auth.application.service;
+package com.green.auth.application.auth;
 
-import com.green.auth.application.model.auth.LoginReq;
+import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.auth.AuthErrorCode;

@@ -1,6 +1,6 @@
 constants:
   api:
-      prefix: /api
+      prefix: /api/member
   enum:
     scan-package: com.green.common
 
@@ -22,9 +22,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        temp:
+          use_jdbc_metadata_defaults: false
   kafka:
     bootstrap-servers: localhost:${KAFKA_PORT}
     # [발행] student, professor 이벤트를 Outbox에 담아 보냄
@@ -38,4 +43,4 @@ spring:
       properties:
         spring.json.trusted.packages: "com.green.common.model"
 outbox:
-  enabled: false
+  enabled: true
