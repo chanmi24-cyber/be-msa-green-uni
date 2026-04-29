@@ -1,4 +1,4 @@
-package com.green.core.application.controller;
+package com.green.core.application.admin;
 
 import com.green.common.model.ResultResponse;
 import com.green.core.application.model.major.MajorCreateReq;
@@ -13,17 +13,17 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/majors")
-public class MajorController {
+@RequestMapping("/api/admin/majors")
+public class AdminMajorController {
     private final MajorService majorService;
-//
-//    @PostMapping
-//    public ResultResponse<?> test(@RequestBody MajorCreateReq req ) {
-//        log.info("req: {}", req);
-//        majorService.test( req );
-//        return ResultResponse.builder()
-//                .message( "테스트 성공" )
-//                .data( 1 )
-//                .build();
-//    }
+
+    @PostMapping
+    public ResultResponse<?> test(@RequestBody MajorCreateReq req ) {
+        log.info("req: {}", req);
+        majorService.test( req );
+        return ResultResponse.builder()
+                .message( "테스트 성공" )
+                .data( 1 )
+                .build();
+    }
 }

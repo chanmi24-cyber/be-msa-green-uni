@@ -10,10 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-/* 시큐리티 필터에서 발생되는 예외는 GlobalException이 잡지 못 한다.
-JwtAuthenticationEntryPoint가 시큐리티쪽에서 발생하는 예외를
-GlobalException에 전달하는 역할
-
+/* 시큐리티 필터에서 발생되는 예외는 GlobalException이 잡지 못함
+JwtAuthenticationEntryPoint가 시큐리티쪽에서 발생하는 예외를 GlobalException에 전달하는 역할
 TokenAuthenticationFilter에서 authorization
  */
 
