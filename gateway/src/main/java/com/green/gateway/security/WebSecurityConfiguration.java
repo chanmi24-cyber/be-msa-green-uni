@@ -33,7 +33,7 @@ public class WebSecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
 
                         // 권한별 접근 제어
-                        .requestMatchers("/api/admin/**", "").hasRole(EnumMemberRole.ADMIN.name())
+                        .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
                         .requestMatchers("/api/student/**").hasRole(EnumMemberRole.STUDENT.name())
                         .requestMatchers("/api/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
 
