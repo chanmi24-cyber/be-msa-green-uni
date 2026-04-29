@@ -33,20 +33,18 @@ public class WebSecurityConfiguration {
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
 
-                        // 권한별 접근 제어
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll() // 비로그인 가능
+
+                        // 권한별 접근 제어
                         .requestMatchers("/api/admin/**").hasRole(EnumMemberRole.ADMIN.name())
                         .requestMatchers("/api/student/**").hasRole(EnumMemberRole.STUDENT.name())
                         .requestMatchers("/api/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
 
-                        // 인증된 사용자만 접근 가능한 경로
-                        .requestMatchers("/api/lectures/**", "/api/courses/**"
-                                ,"/api/scholarships/**","/api/schedules/**","/api/notifications/**"
-                                ,"/api/tuitions/**","/api/majors/**","/api/facilities/**"
-                                ,"/api/announcements/**","/api/attendances/**","/api/grades/**"
-                        ).authenticated()
+                        // 인증된 사용자만 접근 가능
+                        .requestMatchers("/api/**").authenticated()
 
-                        // 그 외 모든 요청은 허용 (필요에 따라 .authenticated()로 변경 가능)
+                        // 그 외 모든 요청은 허용
                         .anyRequest().permitAll()
                 )
 

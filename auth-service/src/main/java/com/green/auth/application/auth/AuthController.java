@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;
@@ -44,6 +45,8 @@ public class AuthController {
                 .role(loginMember.getRole())
                 .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();
+
+        log.info("loginRes: {}", resultData);
 
         return ResultResponse.builder()
                 .message("로그인 성공")
@@ -85,14 +88,4 @@ public class AuthController {
                 .build();
     }
 
-
-    @PostMapping("/accounts")
-    public ResultResponse<?> signup( @RequestBody AuthMemberCreateReq req ) {
-        log.info("req: {}", req);
-        authService.create( req );
-        return ResultResponse.builder()
-                .message( "계정 생성 성공" )
-                .data( 1 )
-                .build();
-    }
 }

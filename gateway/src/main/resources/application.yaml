@@ -40,14 +40,14 @@ spring:
                 - Path=/api/member/**, /api/admin/member/**, /api/code
 
             - id: core-service
-              uri: http://localhost:${CORE_PORT}
+              uri: http://${SERVICE_HOST}:${CORE_PORT}
               predicates:
-                - Path=/api/core/**
+                - Path=/api/majors/**, /api/lectures/**, /api/courses/**, /api/admin/courses/**, /api/tuitions/**, /api/admin/tuitions/**, /api/scholarships/**, /api/facilities/**, /api/admin/facilities/**, /api/attendances/**, /api/grades/**
 
             - id: academic-service
               uri: http://${SERVICE_HOST}:${ACADEMIC_PORT}
               predicates:
-                - Path=/api/academic/**
+                - Path=/api/announcements/**, /api/admin/announcements/**, /api/notifications/**, /api/schedules/**, /api/admin/schedules/**
 
 server:
   port: ${GATEWAY_PORT}
