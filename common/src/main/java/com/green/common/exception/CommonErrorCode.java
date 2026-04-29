@@ -14,6 +14,7 @@ public enum CommonErrorCode  implements ErrorCode {
     , GATEWAY_INTERNAL_ERROR("C005", "게이트웨이 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR)
     , NO_EXISTED_USER("C006", "사용자 정보가 없습니다.", HttpStatus.BAD_REQUEST)
     , NOT_FOUND_PATH("C007", "존재하지 않는 경로입니다.", HttpStatus.NOT_FOUND)
+    , DUPLICATE_ENTRY("C008", "이미 존재하는 데이터입니다.", HttpStatus.CONFLICT)
     ;
 
     private final String code;

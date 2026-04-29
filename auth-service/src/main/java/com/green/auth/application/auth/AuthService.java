@@ -1,5 +1,6 @@
 package com.green.auth.application.auth;
 
+import com.green.auth.application.auth.model.AuthMemberCreateReq;
 import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.enumcode.EnumAccountStatus;
@@ -74,4 +75,18 @@ public class AuthService {
 //                savedRt.getAuthMember().getRole());
 //    }
 
+
+
+    public void create(AuthMemberCreateReq req) {
+        String hashedPassword = passwordEncoder.encode(req.getPassword());
+
+        AuthMember newMember = new AuthMember();
+        newMember.setMemberCode(req.getMemberCode());
+        newMember.setRole( req.getRole() );
+        newMember.setEmail(req.getEmail());
+        newMember.setPassword(hashedPassword);
+
+        authMemberRepository.save(newMember);
+
+    }
 }

@@ -1,5 +1,6 @@
 package com.green.auth.enumcode;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
@@ -15,6 +16,16 @@ public enum EnumAccountStatus implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumAccountStatus from(String code) {
+        for (EnumAccountStatus status : values()) {
+            if (status.getCode().equals(code)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("잘못된 role 값: " + code);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumAccountStatus> {

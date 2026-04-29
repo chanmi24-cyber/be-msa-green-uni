@@ -1,5 +1,6 @@
 package com.green.auth.application.auth;
 
+import com.green.auth.application.auth.model.AuthMemberCreateReq;
 import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.application.auth.model.LoginRes;
 import com.green.common.security.JwtTokenManager;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;
@@ -82,6 +82,17 @@ public class AuthController {
         return ResultResponse.builder()
                 .message("Access Token 재발행")
                 .data(1)
+                .build();
+    }
+
+
+    @PostMapping("/accounts")
+    public ResultResponse<?> signup( @RequestBody AuthMemberCreateReq req ) {
+        log.info("req: {}", req);
+        authService.create( req );
+        return ResultResponse.builder()
+                .message( "계정 생성 성공" )
+                .data( 1 )
                 .build();
     }
 }
