@@ -10,8 +10,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-//@ConditionalOnClass(JavaMailSender.class)
-@ConditionalOnProperty(prefix = "spring.email", name = "host")
+@ConditionalOnProperty(prefix = "spring.mail", name = "host")
 public class EmailSender {
 
     private final JavaMailSender mailSender;
