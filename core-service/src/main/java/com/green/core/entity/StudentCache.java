@@ -1,6 +1,5 @@
-package com.green.member.entity;
+package com.green.core.entity;
 
-import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -15,17 +14,17 @@ import org.springframework.data.domain.Persistable;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MajorCache {
-
+public class StudentCache {
     @Id
-    private Long majorId;
+    private Long memberCode;
 
-    @Column(nullable = false)
+    @Column
     private String name;
 
     @Builder
-    public MajorCache(Long majorId, String name) {
-        this.majorId = majorId;
+    public StudentCache(Long memberCode, String name) {
+        this.memberCode = memberCode;
         this.name = name;
     }
+
 }

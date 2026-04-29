@@ -1,8 +1,8 @@
 constants:
   api:
-    prefix: ""
+    prefix: /api/academic
   enum:
-    scan-package: com.green.academic
+    scan-package: com.green.common
 
 server:
   port: ${ACADEMIC_PORT}
@@ -24,3 +24,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:${KAFKA_PORT}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+outbox:
+  enabled: true

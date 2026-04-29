@@ -1,7 +1,6 @@
-package com.green.common.email;
+package com.green.auth.application.email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnClass(name = "org.springframework.mail.javamail.JavaMailSender")
 public class EmailSender {
 
     private final JavaMailSender mailSender;

@@ -1,8 +1,8 @@
 constants:
   api:
-    prefix: ""
+    prefix: /api/auth
   enum:
-    scan-package: com.green.auth
+    scan-package: com.green.common
 
 server:
   port: ${AUTH_PORT}

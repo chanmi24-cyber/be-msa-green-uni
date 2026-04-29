@@ -11,4 +11,5 @@ import lombok.ToString;
 public class JwtMember {
     private Integer loginMemberCode;
     private EnumMemberRole loginMemberRole;
+    private String deviceId;
 }

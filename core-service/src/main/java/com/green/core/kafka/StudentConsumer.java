@@ -1,10 +1,10 @@
-package com.green.member.kafka;
+package com.green.core.kafka;
 
 import com.green.common.constants.EventType;
 import com.green.common.kafka.KafkaTopic;
-import com.green.common.kafka.MajorEvent;
-import com.green.member.entity.MajorCache;
-import com.green.member.repository.MajorCacheRepository;
+import com.green.common.kafka.StudentEvent;
+import com.green.core.entity.StudentCache;
+import com.green.core.repository.StudentCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,28 +14,28 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MajorEventConsumer {
-    private final MajorCacheRepository majorCacheRepository;
+public class StudentConsumer {
+    private final StudentCacheRepository studentCacheRepository;
 
     @Transactional
-    @KafkaListener(topics = KafkaTopic.MAJOR, groupId = "member-service-group")
-    public void consume(MajorEvent event) {
+    @KafkaListener(topics = KafkaTopic.STUDENT, groupId = "core-service-group")
+    public void consume(StudentEvent event) {
         log.info("Kafka 메시지 수신: {}", event);
 
         try {
             EventType type = event.getEventType();
             if (type == EventType.E_CREATED || type == EventType.E_UPDATED ) {
                 // 저장 또는 수정 (Idempotent: 동일 ID면 덮어쓰기 됨)
-                MajorCache cache = MajorCache.builder()
-                        .majorId(event.getMajorId())
+                StudentCache cache = StudentCache.builder()
+                        .memberCode(event.getMemberCode())
                         .name(event.getName())
                         .build();
-                majorCacheRepository.save(cache);
-                log.info("MajorCache 정보저장 완료: {}", event.getMajorId());
-            } else if (type == EventType.E_DELETED) {
+                studentCacheRepository.save(cache);
+                log.info("studentCache 정보저장 완료: {}", event.getMemberCode());
+            }else if (type == EventType.E_DELETED) {
                 // 삭제
-                majorCacheRepository.deleteById(event.getMajorId());
-                log.info("삭제 완료: {}", event.getMajorId());
+                studentCacheRepository.deleteById(event.getMemberCode());
+                log.info("삭제 완료: {}", event.getMemberCode());
             }
 
         } catch (Exception e) {

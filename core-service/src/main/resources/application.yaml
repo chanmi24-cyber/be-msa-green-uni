@@ -1,8 +1,8 @@
 constants:
   api:
-    prefix: ""
+    prefix: /api/core
   enum:
-    scan-package: com.green.core
+    scan-package: com.green.common
 
 server:
   port: ${CORE_PORT}

@@ -40,7 +40,7 @@ public class WebSecurityConfiguration {
                         .requestMatchers("/api/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
 
                         // 인증된 사용자만 접근 가능한 경로
-                        .requestMatchers("/api/members/**", "/api/lectures/**", "/api/courses/**"
+                        .requestMatchers("/api/lectures/**", "/api/courses/**"
                                 ,"/api/scholarships/**","/api/schedules/**","/api/notifications/**"
                                 ,"/api/tuitions/**","/api/majors/**","/api/facilities/**"
                                 ,"/api/announcements/**","/api/attendances/**","/api/grades/**"
