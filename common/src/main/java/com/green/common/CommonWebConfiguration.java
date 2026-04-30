@@ -25,14 +25,14 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
         log.info("============= apiPrefix: {}", apiPrefix);
         this.apiPrefix = apiPrefix;
     }
-//
-//    @Override
-//    public void configurePathMatch(PathMatchConfigurer configurer) {
-//        if (StringUtils.hasText(apiPrefix)) {
-//            // 모든 RestController에 프로퍼티로 받은 prefix를 강제 적용
-//            configurer.addPathPrefix(apiPrefix, HandlerTypePredicate.forAnnotation(RestController.class));
-//        }
-//    }
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        if (StringUtils.hasText(apiPrefix)) {
+            // 모든 RestController에 프로퍼티로 받은 prefix를 강제 적용
+            configurer.addPathPrefix(apiPrefix, HandlerTypePredicate.forAnnotation(RestController.class));
+        }
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

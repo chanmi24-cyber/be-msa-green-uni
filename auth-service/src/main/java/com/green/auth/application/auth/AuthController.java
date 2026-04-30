@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;

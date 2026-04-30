@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/majors")
+@RequestMapping("/admin/majors")
 public class AdminMajorController {
     private final MajorService majorService;
 
