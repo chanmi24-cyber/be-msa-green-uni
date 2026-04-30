@@ -1,8 +1,7 @@
 constants:
   api:
     prefix: /api/academic
-  enum:
-    scan-package: com.green.common
+
 
 server:
   port: ${ACADEMIC_PORT}

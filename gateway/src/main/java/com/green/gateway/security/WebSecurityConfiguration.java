@@ -33,23 +33,12 @@ public class WebSecurityConfiguration {
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/academic/public/**").permitAll() // 비로그인 가능
-                        .requestMatchers("/api/code/**").permitAll() // 비로그인 가능
 
                         // 권한별 접근 제어
-                        .requestMatchers("/api/core/admin/**").hasRole(EnumMemberRole.ADMIN.name())
-                        .requestMatchers("/api/member/admin/**").hasRole(EnumMemberRole.ADMIN.name())
-                        .requestMatchers("/api/academic/admin/**").hasRole(EnumMemberRole.ADMIN.name())
-                        .requestMatchers("/api/auth/admin/**").hasRole(EnumMemberRole.ADMIN.name())
-
-                        .requestMatchers("/api/core/student/**").hasRole(EnumMemberRole.STUDENT.name())
-                        .requestMatchers("/api/member/student/**").hasRole(EnumMemberRole.STUDENT.name())
-                        .requestMatchers("/api/academic/student/**").hasRole(EnumMemberRole.STUDENT.name())
-
-                        .requestMatchers("/api/core/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
-                        .requestMatchers("/api/member/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
-                        .requestMatchers("/api/academic/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
+                        .requestMatchers("/api/*/admin/**").hasRole(EnumMemberRole.ADMIN.name())
+                        .requestMatchers("/api/*/student/**").hasRole(EnumMemberRole.STUDENT.name())
+                        .requestMatchers("/api/*/professor/**").hasRole(EnumMemberRole.PROFESSOR.name())
 
                         // 인증된 사용자만 접근 가능
                         .requestMatchers("/api/core/**", "/api/academic/**", "/api/member/**").authenticated()
