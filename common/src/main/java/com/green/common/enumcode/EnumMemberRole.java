@@ -13,7 +13,7 @@ public enum EnumMemberRole implements EnumMapperType {
     PROFESSOR("PROFESSOR", "교수"),
     ADMIN("ADMIN", "관리자"),
     ;
-    private final String code;
+    private final String code;  // <-DB에 저장될 값
     private final String value;
 
     @Converter(autoApply = true)
