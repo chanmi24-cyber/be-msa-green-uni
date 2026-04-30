@@ -1,6 +1,6 @@
 package com.green.auth.application.email;
 
-import com.green.auth.repository.AuthMemberRepository;
+import com.green.auth.application.auth.AuthMemberRepository;
 import com.green.auth.application.email.model.EmailSendReq;
 import com.green.auth.application.email.model.EmailVerifyReq;
 import lombok.RequiredArgsConstructor;

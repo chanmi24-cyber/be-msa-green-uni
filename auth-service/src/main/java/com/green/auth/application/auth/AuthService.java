@@ -5,7 +5,6 @@ import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.entity.AuthMember;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.auth.AuthErrorCode;
-import com.green.auth.repository.AuthMemberRepository;
 import com.green.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
