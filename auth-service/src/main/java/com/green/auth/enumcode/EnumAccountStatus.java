@@ -16,16 +16,6 @@ public enum EnumAccountStatus implements EnumMapperType {
     private final String code; // <-DB에 저장될 값
     private final String value; // <- 프론트에 보이는 값
 
-//    @JsonCreator
-//    public static EnumAccountStatus from(String code) {
-//        for (EnumAccountStatus status : values()) {
-//            if (status.getCode().equals(code)) {
-//                return status;
-//            }
-//        }
-//        throw new IllegalArgumentException("잘못된 role 값: " + code);
-//    }
-
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumAccountStatus> {
         public CodeConverter() {

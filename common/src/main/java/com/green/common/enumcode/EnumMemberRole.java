@@ -1,7 +1,5 @@
 package com.green.common.enumcode;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +11,7 @@ public enum EnumMemberRole implements EnumMapperType {
     PROFESSOR("PROFESSOR", "교수"),
     ADMIN("ADMIN", "관리자"),
     ;
-    private final String code;  // <-DB에 저장될 값
+    private final String code;
     private final String value;
 
     @Converter(autoApply = true)

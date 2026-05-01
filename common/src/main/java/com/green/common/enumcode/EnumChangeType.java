@@ -13,7 +13,7 @@ public enum EnumChangeType implements EnumMapperType {
     private final String code;
     private final String value;
 
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumChangeType> {
         public CodeConverter() { super(EnumChangeType.class, false); }
     }

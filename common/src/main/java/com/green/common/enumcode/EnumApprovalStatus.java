@@ -13,7 +13,7 @@ public enum EnumApprovalStatus implements EnumMapperType {
     private final String code;
     private final String value;
 
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumApprovalStatus> {
         public CodeConverter() { super(EnumApprovalStatus.class, false); }
     }

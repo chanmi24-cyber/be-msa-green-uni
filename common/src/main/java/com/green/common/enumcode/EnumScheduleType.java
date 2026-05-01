@@ -19,7 +19,7 @@ public enum EnumScheduleType implements EnumMapperType {
     private final String code;
     private final String value;
 
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumScheduleType> {
         public CodeConverter() { super(EnumScheduleType.class, false); }
     }
