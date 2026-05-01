@@ -1,6 +1,5 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.AuthMemberCreateReq;
 import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.application.auth.model.LoginRes;
 import com.green.common.security.JwtTokenManager;
@@ -11,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final JwtTokenManager jwtTokenManager;
-    private final PasswordEncoder passwordEncoder;
 
     // 로그인
     @PostMapping("/login")
@@ -30,13 +27,10 @@ public class AuthController {
 
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
+        // 토큰에 담을 유저 정보 세팅
         JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole(), deviceId );
 
-//        // DB에 RT 저장 X(redis 사용시)
-//        String refreshToken = jwtTokenManager.generateRefreshToken(jwtMember);
-//        authService.saveRefreshToken(loginMember, refreshToken);
-
-        // 쿠키에 토큰과 유저 정보 저장
+        // AT/RT 생성 후 쿠키와 Redis에 저장
         jwtTokenManager.issue(res, jwtMember);
 
         LoginRes resultData = LoginRes.builder()
@@ -56,31 +50,19 @@ public class AuthController {
     // 로그아웃
     @PostMapping("/logout")
     public ResultResponse<?> logout(HttpServletRequest req, HttpServletResponse res) {
-//        // 저장된 유저 정보 가져오기
-//        MemberDto memberDto = MemberContext.get();
-
-        // memberDto가 null이 아닐 때만 DB 삭제 로직 수행
-//        if (memberDto != null) {
-//            authService.deleteRefreshToken(memberDto.memberCode());
-//        }
-
-        // 유저 정보 유무와 상관없이 브라우저의 쿠키는 날려줌
+        // 쿠키의 RT에서 memberCode/deviceId 꺼내 Redis 삭제 후 AT/RT 쿠키도 삭제
         jwtTokenManager.logOut(req, res);
-
         return ResultResponse.builder()
                 .message("로그아웃 되었습니다.")
                 .data(1)
                 .build();
     }
 
-    // 로그인 유지시 토큰 재발행
+    // 로그인 유지 AT 만료 시 RT로 재발급
     @PostMapping("/reissue")
     public ResultResponse<?> reissue(HttpServletResponse res, HttpServletRequest req) {
-        String refreshToken = jwtTokenManager.getRefreshTokenFromCookie(req);
+        // 쿠키의 RT를 Redis에 저장된 RT와 비교 검증 후 새 AT 발급
         jwtTokenManager.reissue(req, res);
-//        JwtMember jwtMember = authService.reissue(refreshToken);
-//        jwtTokenManager.setAccessTokenInCookie(res, jwtMember);
-
         return ResultResponse.builder()
                 .message("Access Token 재발행")
                 .data(1)

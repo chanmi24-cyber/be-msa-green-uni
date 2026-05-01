@@ -130,7 +130,8 @@ public class JwtTokenManager { //인증처리 총괄
 
         // Redis 키 조합 후 저장된 RT 조회
         String redisKey = String.format("RT-%d:%s", jwtMember.getLoginMemberCode(), jwtMember.getDeviceId());
-        String savedToken = (String) redisService.get(redisKey);
+        String savedToken = redisService.get(redisKey, String.class);
+
         // Redis에 저장된 RT와 쿠키의 RT가 다르면 위변조된 토큰으로 판단해 예외 발생
         if (savedToken == null || !savedToken.equals(refreshToken)) {
             throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
