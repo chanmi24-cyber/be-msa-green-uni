@@ -9,7 +9,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class JwtMember {
-    private Integer loginMemberCode;
+    private Long loginMemberCode;
     private EnumMemberRole loginMemberRole;
     private String deviceId;
 }

@@ -10,6 +10,6 @@ constants:
     access-token-cookie-validity-seconds: 3595 # 1시간 - 5초
     access-token-validity-milliseconds: 3600000 # 1시간
     refresh-token-cookie-name: refresh-token
-    refresh-token-cookie-path: /api/auth/reissue
+    refresh-token-cookie-path: /
     refresh-token-cookie-validity-seconds: 1295995 # 15일 - 5초
     refresh-token-validity-milliseconds: 1296000000 # 15일

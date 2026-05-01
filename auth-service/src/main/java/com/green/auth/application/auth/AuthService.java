@@ -76,14 +76,15 @@ public class AuthService {
 
 
 
-    public void create(AuthMemberCreateReq req) {
+    public void createAuthMember(AuthMemberCreateReq req) {
         String hashedPassword = passwordEncoder.encode(req.getPassword());
 
-        AuthMember newMember = new AuthMember();
-        newMember.setMemberCode(req.getMemberCode());
-        newMember.setRole( req.getRole() );
-        newMember.setEmail(req.getEmail());
-        newMember.setPassword(hashedPassword);
+        AuthMember newMember = AuthMember.builder()
+                .memberCode( req.getMemberCode() )
+                .role( req.getRole() )
+                .email( req.getEmail() )
+                .password( hashedPassword )
+                .build();
 
         authMemberRepository.save(newMember);
 

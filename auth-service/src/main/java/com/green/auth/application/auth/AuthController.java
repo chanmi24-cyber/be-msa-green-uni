@@ -40,7 +40,7 @@ public class AuthController {
         jwtTokenManager.issue(res, jwtMember);
 
         LoginRes resultData = LoginRes.builder()
-                .memberCode(loginMember.getMemberCode())
+                .memberCode( loginMember.getMemberCode( ))
                 .role(loginMember.getRole())
                 .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();

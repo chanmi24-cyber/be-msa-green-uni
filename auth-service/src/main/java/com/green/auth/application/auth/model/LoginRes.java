@@ -9,7 +9,7 @@ import lombok.ToString;
 @Builder
 @ToString
 public class LoginRes {
-    private Integer memberCode;
+    private Long memberCode;
     private String name;
     private EnumMemberRole role;
     private Boolean isFirstLogin;

@@ -21,9 +21,9 @@ public class AdminAuthController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/accounts")
-    public ResultResponse<?> signup(@RequestBody AuthMemberCreateReq req ) {
+    public ResultResponse<?> createAccount(@RequestBody AuthMemberCreateReq req ) {
         log.info("req: {}", req);
-        authService.create( req );
+        authService.createAuthMember( req );
         return ResultResponse.builder()
                 .message( "계정 생성 성공" )
                 .data( 1 )
