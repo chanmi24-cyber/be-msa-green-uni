@@ -1,6 +1,10 @@
 package com.green.common.enumcode;
 import jakarta.persistence.Converter;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@Getter
+@RequiredArgsConstructor
 public enum EnumScheduleType implements EnumMapperType {
     COURSE_REGISTRATION("COURSE_REGISTRATION", "수강신청"),
     COURSE_MODIFICATION("COURSE_MODIFICATION", "수강정정"),
@@ -15,15 +19,7 @@ public enum EnumScheduleType implements EnumMapperType {
     private final String code;
     private final String value;
 
-    EnumScheduleType(String code, String value) {
-        this.code = code;
-        this.value = value;
-    }
-
-    @Override public String getCode() { return code; }
-    @Override public String getValue() { return value; }
-
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumScheduleType> {
         public CodeConverter() { super(EnumScheduleType.class, false); }
     }
