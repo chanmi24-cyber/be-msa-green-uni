@@ -30,7 +30,7 @@ public class AuthController {
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
         // 토큰에 담을 유저 정보 세팅
-        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole(), deviceId );
+        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceId );
 
         // AT/RT 생성 후 쿠키와 Redis에 저장
         jwtTokenManager.issue(res, jwtMember);

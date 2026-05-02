@@ -21,7 +21,7 @@ public class UserPrincipal implements UserDetails {
     //인가(권한) 체크. 권한을 ROLE_%%로 변환하여 시큐리티에 전달
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String roleName = String.format("ROLE_%s", jwtMember.getLoginMemberRole().name());
+        String roleName = String.format("ROLE_%s", jwtMember.getLoginMemberRole());
         return List.of(new SimpleGrantedAuthority(roleName));
     }
 
