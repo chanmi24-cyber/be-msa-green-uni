@@ -2,17 +2,15 @@ package com.green.auth.application.auth;
 
 import com.green.auth.application.auth.model.*;
 import com.green.auth.entity.AuthMember;
-import com.green.common.auth.AuthErrorCode;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.EmailErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.redis.RedisService;
-import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -102,7 +100,7 @@ public class AuthService {
     @Transactional
     public void resetPassword(PasswordResetReq req){
         if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail() ) ){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증되지 않았습니다.");
+            throw new BusinessException(EmailErrorCode.NOT_VERIFIED_EMAIL);
         }
         AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
@@ -120,10 +118,6 @@ public class AuthService {
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        // 이메일 검증 (중복 여부)
-        if ( authMemberRepository.existsByEmail( req.getEmail() ) ) {
-            throw new BusinessException(AuthErrorCode.DUBLE_EMAIL);
-        }
         authMember.updateEmail( req.getEmail() );
     }
 

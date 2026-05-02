@@ -79,14 +79,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({MalformedJwtException.class, SignatureException.class})
     public ResponseEntity<Object> handleMalformedJwtException() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ResultResponse<>("토큰을 확인해 주세요.", null));
+                .body(new ResultResponse<>(AuthErrorCode.INVALID_REFRESH_TOKEN.getMessage(), null));
+
     }
     // JWT 토큰이 만료가 되었을 때
     // 유효 기간이 지난 토큰으로 요청 시 401 Unauthorized를 반환
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<Object> handleExpiredJwtException() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ResultResponse<>("토큰을 확인해 주세요.", null));
+                .body(new ResultResponse<>(AuthErrorCode.EXPIRED_TOKEN.getMessage(), null));
+
     }
 
     // BindException에서 필드 에러 리스트를 ValidationError 객체 리스트로 변환

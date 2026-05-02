@@ -3,15 +3,13 @@ package com.green.auth.application.email;
 import com.green.auth.application.auth.AuthMemberRepository;
 import com.green.auth.application.email.model.EmailSendReq;
 import com.green.auth.application.email.model.EmailVerifyReq;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.EmailErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.common.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -24,7 +22,7 @@ public class MailService {
     public void sendVerifyCode(EmailSendReq req) {
         boolean exists = authMemberRepository.existsByMemberCodeAndEmail(req.getMemberCode(), req.getEmail());
         if (!exists) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 회원입니다");
+            throw new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND);
         }
         String verifyCode = String.format("%05d", (int)(Math.random() * 90000) + 10000);
         redisService.save("EMAIL-VERIFY:" + req.getEmail(), verifyCode, 300);
@@ -36,10 +34,10 @@ public class MailService {
         String savedCode = redisService.get("EMAIL-VERIFY:" + req.getEmail(), String.class);
 
         if (savedCode == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증코드가 만료되었습니다.");
+            throw new BusinessException(EmailErrorCode.EXPIRED_VERIFY_CODE);
         }
         if (!savedCode.equals(req.getVerifyCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증코드가 일치하지 않습니다.");
+            throw new BusinessException(EmailErrorCode.INVALID_VERIFY_CODE);
         }
         redisService.save("EMAIL-VERIFIED:" + req.getEmail(), "true", 600);
     }
