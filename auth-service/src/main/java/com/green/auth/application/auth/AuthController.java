@@ -81,13 +81,24 @@ public class AuthController {
                 .build();
     }
 
-    // 회원 비밀번호 변경
+    // 최초 회원 비밀번호 변경
     @PatchMapping("/passwords/first")
     public ResultResponse<?> updateFirstPassword(@RequestBody PasswordUpdateReq req){
         MemberDto loginMember = MemberContext.get();
         authService.updateFirstPassword( loginMember.memberCode(), req );
         return ResultResponse.builder()
                 .message("최초 로그인 회원 비밀번호 변경")
+                .data(1)
+                .build();
+    }
+
+    // 회원 이메일 변경
+    @PatchMapping("/my/emails")
+    public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updateEmail( loginMember.memberCode(), req );
+        return ResultResponse.builder()
+                .message("회원 이메일 변경")
                 .data(1)
                 .build();
     }

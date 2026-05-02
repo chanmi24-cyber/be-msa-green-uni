@@ -5,6 +5,7 @@ import com.green.auth.entity.AuthMember;
 import com.green.common.auth.AuthErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.redis.RedisService;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -93,6 +94,19 @@ public class AuthService {
     public void updateFirstPassword(long memberCode, PasswordUpdateReq req){
         AuthMember authMember = updatePassword(memberCode, req);
         authMember.updateFirstLogin();
+    }
+
+    // 회원 이메일 변경
+    @Transactional
+    public void updateEmail(long memberCode, EmailUpdateReq req){
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 이메일 검증 (중복 여부)
+        if ( authMemberRepository.existsByEmail( req.getEmail() ) ) {
+            throw new BusinessException(AuthErrorCode.DUBLE_EMAIL);
+        }
+        authMember.updateEmail( req.getEmail() );
     }
 
 }
