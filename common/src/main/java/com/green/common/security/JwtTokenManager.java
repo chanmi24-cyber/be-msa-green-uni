@@ -1,6 +1,6 @@
 package com.green.common.security;
 
-import com.green.common.auth.AuthErrorCode;
+import com.green.common.exception.AuthErrorCode;
 import com.green.common.constants.ConstJwt;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.JwtMember;

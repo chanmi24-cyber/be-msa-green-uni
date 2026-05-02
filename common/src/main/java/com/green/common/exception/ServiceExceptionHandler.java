@@ -1,6 +1,5 @@
 package com.green.common.exception;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,23 +18,18 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+// Gateway 전용 예외 처리기
 @RestControllerAdvice
 @ConditionalOnProperty(name = "constants.exception.common-handler.enabled", havingValue = "true")
 public class ServiceExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /**
-     * 주소는 맞지만 컨트롤러 매핑이 안 된 경우 (404)
-     * ResponseEntityExceptionHandler의 handleNoHandlerFoundException를 오버라이드
-     */
+    // 주소는 맞지만 컨트롤러 매핑이 안 된 경우 (404)
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return handleExceptionInternal(CommonErrorCode.NOT_FOUND_PATH);
     }
 
-    /**
-     * 정적 리소스나 잘못된 경로 요청 시 (404)
-     * ResponseEntityExceptionHandler의 handleNoResourceFoundException를 오버라이드
-     */
+    //정적 리소스나 잘못된 경로 요청 시 (404)
     @Override
     protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return handleExceptionInternal(CommonErrorCode.NOT_FOUND_PATH);
