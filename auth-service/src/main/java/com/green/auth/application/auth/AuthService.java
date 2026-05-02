@@ -8,9 +8,11 @@ import com.green.common.redis.RedisService;
 import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -94,6 +96,22 @@ public class AuthService {
     public void updateFirstPassword(long memberCode, PasswordUpdateReq req){
         AuthMember authMember = updatePassword(memberCode, req);
         authMember.updateFirstLogin();
+    }
+
+    // 이메일 인증 비밀번호 변경
+    @Transactional
+    public void resetPassword(PasswordResetReq req){
+        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail() ) ){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증되지 않았습니다.");
+        }
+        AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 변경할 비밀번호 암호화
+        String hashedPw = passwordEncoder.encode(req.getNewPassword());
+        authMember.updatePassword( hashedPw );
+
+        redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
     }
 
     // 회원 이메일 변경

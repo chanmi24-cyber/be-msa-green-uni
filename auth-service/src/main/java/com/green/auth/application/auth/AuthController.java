@@ -92,6 +92,16 @@ public class AuthController {
                 .build();
     }
 
+    // 이메일 인증 비밀번호 변경
+    @PatchMapping("/passwords/reset")
+    public ResultResponse<?> resetPassword(@RequestBody PasswordResetReq req){
+        authService.resetPassword( req );
+        return ResultResponse.builder()
+                .message("비밀번호 초기화")
+                .data(1)
+                .build();
+    }
+
     // 회원 이메일 변경
     @PatchMapping("/my/emails")
     public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){

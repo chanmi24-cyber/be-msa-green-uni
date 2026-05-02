@@ -3,6 +3,7 @@ package com.green.auth.application.email;
 import com.green.auth.application.auth.AuthMemberRepository;
 import com.green.auth.application.email.model.EmailSendReq;
 import com.green.auth.application.email.model.EmailVerifyReq;
+import com.green.common.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,23 +19,21 @@ import java.util.Map;
 public class MailService {
     private final AuthMemberRepository authMemberRepository;
     private final EmailSender emailSender;
-
-    private final Map<String, String> codeStore = new HashMap<>();
+    private final RedisService redisService;
 
     public void sendVerifyCode(EmailSendReq req) {
         boolean exists = authMemberRepository.existsByMemberCodeAndEmail(req.getMemberCode(), req.getEmail());
         if (!exists) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 회원입니다");
         }
-
         String verifyCode = String.format("%05d", (int)(Math.random() * 90000) + 10000);
-        codeStore.put(req.getEmail(), verifyCode);
+        redisService.save("EMAIL-VERIFY:" + req.getEmail(), verifyCode, 300);
 
         emailSender.sendMail(req.getEmail(), "[그린대학교] 비밀번호 재설정 인증코드", "인증코드: " + verifyCode);
     }
 
     public void checkVerifyCode(EmailVerifyReq req) {
-        String savedCode = codeStore.get(req.getEmail());
+        String savedCode = redisService.get("EMAIL-VERIFY:" + req.getEmail(), String.class);
 
         if (savedCode == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증코드가 만료되었습니다.");
@@ -42,7 +41,6 @@ public class MailService {
         if (!savedCode.equals(req.getVerifyCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증코드가 일치하지 않습니다.");
         }
-
-        codeStore.remove(req.getEmail());
+        redisService.save("EMAIL-VERIFIED:" + req.getEmail(), "true", 600);
     }
 }
