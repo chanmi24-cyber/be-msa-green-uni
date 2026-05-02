@@ -2,15 +2,15 @@ package com.green.auth.application.auth;
 
 import com.green.auth.application.auth.model.AuthMemberCreateReq;
 import com.green.auth.application.auth.model.AuthMemberCreateRes;
+import com.green.auth.application.auth.model.AuthMemberDeleteRes;
+import com.green.common.auth.MemberContext;
+import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.common.security.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -25,6 +25,15 @@ public class AdminAuthController {
         AuthMemberCreateRes res = authService.createAuthMember( req );
         return ResultResponse.builder()
                 .message( "계정 생성 성공" )
+                .data( res )
+                .build();
+    }
+
+    @DeleteMapping("/accounts/{memberCode}")
+    public ResultResponse<?> deleteAccount(@PathVariable Long memberCode){
+        AuthMemberDeleteRes res = authService.deleteAuthMember(memberCode);
+        return ResultResponse.builder()
+                .message( "계정 비활성화" )
                 .data( res )
                 .build();
     }

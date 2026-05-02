@@ -1,13 +1,10 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.AuthMemberCreateReq;
-import com.green.auth.application.auth.model.AuthMemberCreateRes;
-import com.green.auth.application.auth.model.LoginReq;
-import com.green.auth.application.auth.model.LoginRes;
+import com.green.auth.application.auth.model.*;
 import com.green.auth.entity.AuthMember;
-import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.auth.AuthErrorCode;
 import com.green.common.exception.BusinessException;
+import com.green.common.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final AuthMemberRepository authMemberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RedisService redisService;
 
     // 로그인
     @Transactional
@@ -34,7 +32,7 @@ public class AuthService {
         }
 
         // 계정 상태 검증
-        if (loginMember.getAccountStatus() == EnumAccountStatus.TERMINATED) {
+        if (!loginMember.getIsActive()) {
             throw new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED);
         }
         return loginMember;
@@ -55,6 +53,19 @@ public class AuthService {
 
         return AuthMemberCreateRes.builder()
                 .memberCode( saved.getMemberCode( ))
+                .build();
+    }
+
+    // 계정 비활성화
+    public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED));
+
+        authMember.deactivate(); // isActive -> false
+        redisService.deleteAllByMemberCode(memberCode);
+
+        return AuthMemberDeleteRes.builder()
+                .memberCode(memberCode)
                 .build();
     }
 }
