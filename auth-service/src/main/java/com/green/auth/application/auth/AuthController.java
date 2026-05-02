@@ -1,7 +1,8 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.LoginReq;
-import com.green.auth.application.auth.model.LoginRes;
+import com.green.auth.application.auth.model.*;
+import com.green.common.auth.MemberContext;
+import com.green.common.model.MemberDto;
 import com.green.common.security.JwtTokenManager;
 import com.green.auth.entity.AuthMember;
 import com.green.common.model.JwtMember;
@@ -27,9 +28,9 @@ public class AuthController {
 
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
-        // 토큰에 담을 유저 정보 세팅
-        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole(), deviceId );
 
+        // 토큰에 담을 유저 정보 세팅
+        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceId );
         // AT/RT 생성 후 쿠키와 Redis에 저장
         jwtTokenManager.issue(res, jwtMember);
 
@@ -69,4 +70,46 @@ public class AuthController {
                 .build();
     }
 
+    // 회원 비밀번호 변경
+    @PatchMapping("/passwords")
+    public ResultResponse<?> updatePassword(@RequestBody PasswordUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updatePassword( loginMember.memberCode(), req );
+        return ResultResponse.builder()
+                .message("회원 비밀번호 변경")
+                .data(1)
+                .build();
+    }
+
+    // 최초 회원 비밀번호 변경
+    @PatchMapping("/passwords/first")
+    public ResultResponse<?> updateFirstPassword(@RequestBody PasswordUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updateFirstPassword( loginMember.memberCode(), req );
+        return ResultResponse.builder()
+                .message("최초 로그인 회원 비밀번호 변경")
+                .data(1)
+                .build();
+    }
+
+    // 이메일 인증 비밀번호 변경
+    @PatchMapping("/passwords/reset")
+    public ResultResponse<?> resetPassword(@RequestBody PasswordResetReq req){
+        authService.resetPassword( req );
+        return ResultResponse.builder()
+                .message("비밀번호 초기화")
+                .data(1)
+                .build();
+    }
+
+    // 회원 이메일 변경
+    @PatchMapping("/my/emails")
+    public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updateEmail( loginMember.memberCode(), req );
+        return ResultResponse.builder()
+                .message("회원 이메일 변경")
+                .data(1)
+                .build();
+    }
 }

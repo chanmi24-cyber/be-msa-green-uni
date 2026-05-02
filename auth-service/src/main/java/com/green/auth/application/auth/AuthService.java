@@ -1,16 +1,18 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.AuthMemberCreateReq;
-import com.green.auth.application.auth.model.LoginReq;
+import com.green.auth.application.auth.model.*;
 import com.green.auth.entity.AuthMember;
-import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.auth.AuthErrorCode;
 import com.green.common.exception.BusinessException;
+import com.green.common.redis.RedisService;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private final AuthMemberRepository authMemberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RedisService redisService;
 
     // 로그인
     @Transactional
@@ -32,13 +35,14 @@ public class AuthService {
         }
 
         // 계정 상태 검증
-        if (loginMember.getAccountStatus() == EnumAccountStatus.TERMINATED) {
+        if (!loginMember.getIsActive()) {
             throw new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED);
         }
         return loginMember;
     }
 
-    public void createAuthMember(AuthMemberCreateReq req) {
+    // 계정 생성
+    public AuthMemberCreateRes createAuthMember(AuthMemberCreateReq req) {
         String hashedPassword = passwordEncoder.encode(req.getPassword());
 
         AuthMember newMember = AuthMember.builder()
@@ -48,7 +52,79 @@ public class AuthService {
                 .password( hashedPassword )
                 .build();
 
-        authMemberRepository.save(newMember);
+        AuthMember saved = authMemberRepository.save(newMember);
 
+        return AuthMemberCreateRes.builder()
+                .memberCode( saved.getMemberCode( ))
+                .build();
     }
+
+    // 계정 비활성화
+    @Transactional
+    public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        authMember.deactivate(); // isActive -> false
+        redisService.deleteAllByMemberCode(memberCode);
+
+        return AuthMemberDeleteRes.builder()
+                .memberCode(memberCode)
+                .build();
+    }
+
+    // 회원 비밀번호 변경
+    @Transactional
+    public AuthMember updatePassword(long memberCode, PasswordUpdateReq req){
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 비밀번호 검증
+        if(!passwordEncoder.matches( req.getOldPassword(), authMember.getPassword() ) ){
+            throw new BusinessException(AuthErrorCode.WRONG_PASSWORD);
+        }
+
+        // 변경할 비밀번호 암호화
+        String hashedPw = passwordEncoder.encode(req.getNewPassword());
+        authMember.updatePassword( hashedPw );
+
+        return authMember;
+    }
+
+    // 최초 로그인 회원 비밀번호 변경
+    @Transactional
+    public void updateFirstPassword(long memberCode, PasswordUpdateReq req){
+        AuthMember authMember = updatePassword(memberCode, req);
+        authMember.updateFirstLogin();
+    }
+
+    // 이메일 인증 비밀번호 변경
+    @Transactional
+    public void resetPassword(PasswordResetReq req){
+        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail() ) ){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인증되지 않았습니다.");
+        }
+        AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 변경할 비밀번호 암호화
+        String hashedPw = passwordEncoder.encode(req.getNewPassword());
+        authMember.updatePassword( hashedPw );
+
+        redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
+    }
+
+    // 회원 이메일 변경
+    @Transactional
+    public void updateEmail(long memberCode, EmailUpdateReq req){
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 이메일 검증 (중복 여부)
+        if ( authMemberRepository.existsByEmail( req.getEmail() ) ) {
+            throw new BusinessException(AuthErrorCode.DUBLE_EMAIL);
+        }
+        authMember.updateEmail( req.getEmail() );
+    }
+
 }

@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,13 @@ public class RedisService {
     // 삭제 (삭제 성공 시 true, 키가 없으면 false 반환)
     public boolean delete(String key) {
         return Boolean.TRUE.equals(redisTemplate.delete(key));
+    }
+
+    public void deleteAllByMemberCode(Long memberCode){
+        Set<String> keys = redisTemplate.keys("RT-" + memberCode + ":*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
     }
 
     // 키 존재 여부 확인

@@ -4,6 +4,6 @@ import lombok.Getter;
 
 @Getter
 public class EmailSendReq {
-    private Integer memberCode;
+    private Long memberCode;
     private String email;
 }

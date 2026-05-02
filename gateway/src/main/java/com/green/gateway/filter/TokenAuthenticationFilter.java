@@ -47,7 +47,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
                     JwtMember jwtMember = userPrincipal.getJwtMember();
                     log.info("================== jwtMember: {}", jwtMember);
-                    String memberRole = jwtMember.getLoginMemberRole().getCode();
+                    String memberRole = jwtMember.getLoginMemberRole();
 
                     // 원본 요청을 감싸서 새 요청 생성
                     // 각 서비스가 토큰을 직접 파싱할 필요 없이 헤더에서 유저 정보를 꺼낼 수 있도록 설정

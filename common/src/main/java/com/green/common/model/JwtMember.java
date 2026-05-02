@@ -10,6 +10,6 @@ import lombok.ToString;
 @ToString
 public class JwtMember {
     private Long loginMemberCode;
-    private EnumMemberRole loginMemberRole;
+    private String loginMemberRole;
     private String deviceId;
 }

@@ -7,6 +7,6 @@ import lombok.Data;
 public class AuthMemberCreateReq {
     private Long memberCode;
     private String password;
-    private EnumMemberRole role;
     private String email;
+    private EnumMemberRole role;
 }
