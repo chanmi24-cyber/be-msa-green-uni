@@ -72,7 +72,7 @@ public class AuthService {
 
     // 회원 비밀번호 변경
     @Transactional
-    public void updatePassword(long memberCode, PasswordUpdateReq req){
+    public AuthMember updatePassword(long memberCode, PasswordUpdateReq req){
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
@@ -84,6 +84,15 @@ public class AuthService {
         // 변경할 비밀번호 암호화
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
+
+        return authMember;
+    }
+
+    // 최초 로그인 회원 비밀번호 변경
+    @Transactional
+    public void updateFirstPassword(long memberCode, PasswordUpdateReq req){
+        AuthMember authMember = updatePassword(memberCode, req);
+        authMember.updateFirstLogin();
     }
 
 }

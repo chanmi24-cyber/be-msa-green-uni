@@ -74,12 +74,20 @@ public class AuthController {
     @PatchMapping("/passwords")
     public ResultResponse<?> updatePassword(@RequestBody PasswordUpdateReq req){
         MemberDto loginMember = MemberContext.get();
-        log.info("loginMember: {}", loginMember);
-
         authService.updatePassword( loginMember.memberCode(), req );
-
         return ResultResponse.builder()
                 .message("회원 비밀번호 변경")
+                .data(1)
+                .build();
+    }
+
+    // 회원 비밀번호 변경
+    @PatchMapping("/passwords/first")
+    public ResultResponse<?> updateFirstPassword(@RequestBody PasswordUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updateFirstPassword( loginMember.memberCode(), req );
+        return ResultResponse.builder()
+                .message("최초 로그인 회원 비밀번호 변경")
                 .data(1)
                 .build();
     }

@@ -39,4 +39,5 @@ public class AuthMember extends CreatedUpdatedAt {
         this.isActive = false;
     }
     public void updatePassword(String hashedPw) { this.password = hashedPw;  }
+    public void updateFirstLogin() { this.isFirstLogin = false; }
 }
