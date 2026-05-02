@@ -4,10 +4,12 @@ import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.model.MemberDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 // 게이트웨이가 심어준 헤더에서 로그인 정보를 꺼내 각 서비스에 전달하는 역할
+@Slf4j
 @Component
 public class MemberContextInterceptor implements HandlerInterceptor {
 
@@ -17,6 +19,7 @@ public class MemberContextInterceptor implements HandlerInterceptor {
         String memberCodeTK = request.getHeader("X-Member-Code");
         String memberRoleTK = request.getHeader("X-Member-Role");
         String deviceIdTK = request.getHeader("X-Device-Id");
+        log.info("memberCodeTK: {}, memberRoleTK: {}", memberCodeTK, memberRoleTK);
 
         if (memberCodeTK != null && memberRoleTK != null) {
             try {

@@ -1,9 +1,8 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.AuthMemberCreateReq;
-import com.green.auth.application.auth.model.AuthMemberCreateRes;
-import com.green.auth.application.auth.model.LoginReq;
-import com.green.auth.application.auth.model.LoginRes;
+import com.green.auth.application.auth.model.*;
+import com.green.common.auth.MemberContext;
+import com.green.common.model.MemberDto;
 import com.green.common.security.JwtTokenManager;
 import com.green.auth.entity.AuthMember;
 import com.green.common.model.JwtMember;
@@ -29,9 +28,9 @@ public class AuthController {
 
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
+
         // 토큰에 담을 유저 정보 세팅
         JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceId );
-
         // AT/RT 생성 후 쿠키와 Redis에 저장
         jwtTokenManager.issue(res, jwtMember);
 
@@ -67,6 +66,20 @@ public class AuthController {
         jwtTokenManager.reissue(req, res);
         return ResultResponse.builder()
                 .message("Access Token 재발행")
+                .data(1)
+                .build();
+    }
+
+    // 회원 비밀번호 변경
+    @PatchMapping("/passwords")
+    public ResultResponse<?> updatePassword(@RequestBody PasswordUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        log.info("loginMember: {}", loginMember);
+
+        authService.updatePassword( loginMember.memberCode(), req );
+
+        return ResultResponse.builder()
+                .message("회원 비밀번호 변경")
                 .data(1)
                 .build();
     }

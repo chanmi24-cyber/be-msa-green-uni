@@ -31,11 +31,12 @@ public class AuthMember extends CreatedUpdatedAt {
     @Builder.Default
     private Boolean isActive = true;
 
-    public void deactivate() {
-        this.isActive = false;
-    }
-
     @Column(name = "is_first_login", nullable = false)
     @Builder.Default
     private Boolean isFirstLogin = true;
+
+    public void deactivate() {
+        this.isActive = false;
+    }
+    public void updatePassword(String hashedPw) { this.password = hashedPw;  }
 }

@@ -60,7 +60,7 @@ public class AuthService {
     @Transactional
     public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
         AuthMember authMember = authMemberRepository.findById(memberCode)
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
         authMember.deactivate(); // isActive -> false
         redisService.deleteAllByMemberCode(memberCode);
@@ -69,4 +69,21 @@ public class AuthService {
                 .memberCode(memberCode)
                 .build();
     }
+
+    // 회원 비밀번호 변경
+    @Transactional
+    public void updatePassword(long memberCode, PasswordUpdateReq req){
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 비밀번호 검증
+        if(!passwordEncoder.matches( req.getOldPassword(), authMember.getPassword() ) ){
+            throw new BusinessException(AuthErrorCode.WRONG_PASSWORD);
+        }
+
+        // 변경할 비밀번호 암호화
+        String hashedPw = passwordEncoder.encode(req.getNewPassword());
+        authMember.updatePassword( hashedPw );
+    }
+
 }
