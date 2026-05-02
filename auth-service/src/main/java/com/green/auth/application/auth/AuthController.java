@@ -1,5 +1,7 @@
 package com.green.auth.application.auth;
 
+import com.green.auth.application.auth.model.AuthMemberCreateReq;
+import com.green.auth.application.auth.model.AuthMemberCreateRes;
 import com.green.auth.application.auth.model.LoginReq;
 import com.green.auth.application.auth.model.LoginRes;
 import com.green.common.security.JwtTokenManager;
@@ -68,5 +70,4 @@ public class AuthController {
                 .data(1)
                 .build();
     }
-
 }

@@ -1,6 +1,7 @@
 package com.green.auth.application.auth;
 
 import com.green.auth.application.auth.model.AuthMemberCreateReq;
+import com.green.auth.application.auth.model.AuthMemberCreateRes;
 import com.green.common.model.ResultResponse;
 import com.green.common.security.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
@@ -17,16 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin")
 public class AdminAuthController {
     private final AuthService authService;
-    private final JwtTokenManager jwtTokenManager;
-    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/accounts")
     public ResultResponse<?> createAccount(@RequestBody AuthMemberCreateReq req ) {
         log.info("req: {}", req);
-        authService.createAuthMember( req );
+        AuthMemberCreateRes res = authService.createAuthMember( req );
         return ResultResponse.builder()
                 .message( "계정 생성 성공" )
-                .data( 1 )
+                .data( res )
                 .build();
     }
 }
