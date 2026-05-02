@@ -57,6 +57,7 @@ public class AuthService {
     }
 
     // 계정 비활성화
+    @Transactional
     public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED));
