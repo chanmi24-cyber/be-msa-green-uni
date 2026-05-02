@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -55,7 +56,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ResultResponse<String>> handleException(Exception ex) {
         log.error("Exception: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ResultResponse<>("서버 오류가 발생했습니다.", ex.getMessage()));
+                .body(new ResultResponse<>(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
+                        null  // — 클라이언트에 노출 금지
+                ));
     }
 
     // ResponseStatusException 예외 처리
@@ -104,5 +108,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("BusinessException: {}", ex.getMessage());
         return ResponseEntity.status(ex.getErrorCode().getHttpStatus())
                 .body(new ResultResponse<>(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ResultResponse<String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.error("DataIntegrityViolationException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ResultResponse<>(CommonErrorCode.DUPLICATE_ENTRY.getMessage(), null));
     }
 }

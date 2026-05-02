@@ -1,8 +1,7 @@
 constants:
   api:
-    prefix: ""
-  enum:
-    scan-package: com.green.member
+      prefix: /api/member
+
 
 server:
   port: ${MEMBER_PORT}
@@ -22,11 +21,16 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        temp:
+          use_jdbc_metadata_defaults: false
   kafka:
-    bootstrap-servers: localhost:${KAFKA_PORT}
+    bootstrap-servers: localhost:9092
     # [발행] student, professor 이벤트를 Outbox에 담아 보냄
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -38,4 +42,4 @@ spring:
       properties:
         spring.json.trusted.packages: "com.green.common.model"
 outbox:
-  enabled: false
+  enabled: true

@@ -3,38 +3,37 @@ package com.green.auth.entity;
 import com.green.auth.enumcode.EnumAccountStatus;
 import com.green.common.entity.CreatedUpdatedAt;
 import com.green.common.enumcode.EnumMemberRole;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
+@Table(name = "auth_member")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class AuthMember extends CreatedUpdatedAt {
 
     @Id
-    private Integer memberCode;
+    @Column(name = "member_code", nullable = false)
+    private Long memberCode;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
     @Convert(converter = EnumMemberRole.CodeConverter.class)
-    @Column(nullable = false, length = 20)
-    private EnumMemberRole role = EnumMemberRole.STUDENT;
+    @Column(name = "role", nullable = false, length = 20)
+    private EnumMemberRole role;
 
     @Convert(converter = EnumAccountStatus.CodeConverter.class)
-    @Column(nullable = false, length = 20)
+    @Column(name = "account_status", nullable = false, length = 20)
+    @Builder.Default
     private EnumAccountStatus accountStatus = EnumAccountStatus.ACTIVE;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "email", nullable = false, length = 50)
     private String email;
 
-    @Column(nullable = false)
-    private Boolean isFirstLogin = Boolean.TRUE;
-
+    @Column(name = "is_first_login", nullable = false)
+    @Builder.Default
+    private Boolean isFirstLogin = true;
 }

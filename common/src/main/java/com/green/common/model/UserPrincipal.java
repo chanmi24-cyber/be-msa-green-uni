@@ -18,11 +18,7 @@ import java.util.List;
 public class UserPrincipal implements UserDetails {
     private final JwtMember jwtMember;
 
-    public long getLoginMemberCode() {
-        return jwtMember.getLoginMemberCode();
-    }
-
-    //인가 체크
+    //인가(권한) 체크. 권한을 ROLE_%%로 변환하여 시큐리티에 전달
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         String roleName = String.format("ROLE_%s", jwtMember.getLoginMemberRole().name());
@@ -33,7 +29,7 @@ public class UserPrincipal implements UserDetails {
     public @Nullable String getPassword() {
         return "";
     }
-    @Override
+    @Override // 유저를 식별
     public String getUsername() {
         return String.valueOf(jwtMember.getLoginMemberCode());
     }

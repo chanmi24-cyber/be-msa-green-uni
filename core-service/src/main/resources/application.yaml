@@ -1,12 +1,8 @@
 constants:
   api:
-    prefix: ""
-  enum:
-    scan-package: com.green.core
-
+    prefix: /api/core
 server:
   port: ${CORE_PORT}
-
 spring:
   config:
     import:
@@ -31,7 +27,7 @@ spring:
         temp:
           use_jdbc_metadata_defaults: false
   kafka:
-    bootstrap-servers: localhost:${KAFKA_PORT}
+    bootstrap-servers: localhost:9092
     # [발행] Major, Collage 이벤트를 Outbox에 담아 보냄
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

@@ -1,5 +1,6 @@
 package com.green.auth.enumcode;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
@@ -12,9 +13,8 @@ public enum EnumAccountStatus implements EnumMapperType {
     ACTIVE("ACTIVE", "정상")
     , TERMINATED("TERMINATED", "종료")
     ;
-
-    private final String code;
-    private final String value;
+    private final String code; // <-DB에 저장될 값
+    private final String value; // <- 프론트에 보이는 값
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumAccountStatus> {

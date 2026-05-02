@@ -24,7 +24,7 @@ public class MajorEventConsumer {
 
         try {
             EventType type = event.getEventType();
-            if (type == EventType.E_CREATED ) {
+            if (type == EventType.E_CREATED || type == EventType.E_UPDATED ) {
                 // 저장 또는 수정 (Idempotent: 동일 ID면 덮어쓰기 됨)
                 MajorCache cache = MajorCache.builder()
                         .majorId(event.getMajorId())
@@ -32,13 +32,7 @@ public class MajorEventConsumer {
                         .build();
                 majorCacheRepository.save(cache);
                 log.info("MajorCache 정보저장 완료: {}", event.getMajorId());
-            } else if( type == EventType.E_UPDATED ){
-                majorCacheRepository.findById(event.getMajorId())
-                        .ifPresent(cache -> {
-                            cache.setName(event.getName());
-                            // save() 없어도 @Transactional이면 dirty checking으로 UPDATE
-                        });
-            }else if (type == EventType.E_DELETED) {
+            } else if (type == EventType.E_DELETED) {
                 // 삭제
                 majorCacheRepository.deleteById(event.getMajorId());
                 log.info("삭제 완료: {}", event.getMajorId());

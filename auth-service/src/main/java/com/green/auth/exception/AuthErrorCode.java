@@ -1,5 +1,4 @@
 package com.green.auth.exception;
-
 import com.green.common.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

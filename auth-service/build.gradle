@@ -2,6 +2,9 @@ dependencies {
     // 공통 모듈 의존성 주입 (가장 중요)
     implementation project(':common')
 
+    // Spring Data Redis 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // SQL 쿼리를 가독성 좋게(파라미터 포함) 로그로 남겨줍니다.
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 
@@ -26,7 +29,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // MySQL DB 드라이버
-    // 실제 런타임에 DB와 통신할 때 필요합니다.
+    // 실제 런타임에 DB와 통신할 때 필요
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     // email

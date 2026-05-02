@@ -19,10 +19,11 @@ public class CommonController {
 
     @GetMapping("code")
     public ResultResponse getCodeList(@RequestParam("code_type") String codeType) {
+        log.info("codeType={}", codeType);
         List<EnumMapperValue> enumCodeList = enumMapper.get(codeType);
         return ResultResponse.builder()
                 .message( String.format("%d rows", enumCodeList.size()) )
-                .data( enumCodeList )
+                .data(enumCodeList)
                 .build();
     }
 }

@@ -1,8 +1,7 @@
 constants:
   api:
-    prefix: ""
-  enum:
-    scan-package: com.green.academic
+    prefix: /api/academic
+
 
 server:
   port: ${ACADEMIC_PORT}
@@ -22,5 +21,18 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        # 하이버네이트 7의 메타데이터 조회 버그 방지
+        temp:
+          use_jdbc_metadata_defaults: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+outbox:
+  enabled: true

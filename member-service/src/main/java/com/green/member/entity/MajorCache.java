@@ -15,7 +15,7 @@ import org.springframework.data.domain.Persistable;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MajorCache implements Persistable<Long> {
+public class MajorCache {
 
     @Id
     private Long majorId;
@@ -23,23 +23,9 @@ public class MajorCache implements Persistable<Long> {
     @Column(nullable = false)
     private String name;
 
-    @Transient  // DB 컬럼 아님
-    private boolean isNew = false;
-
     @Builder
     public MajorCache(Long majorId, String name) {
         this.majorId = majorId;
         this.name = name;
-        this.isNew = true;
-    }
-
-    @Override
-    public Long getId() {
-        return majorId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return isNew;
     }
 }
