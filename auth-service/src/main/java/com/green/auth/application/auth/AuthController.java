@@ -36,7 +36,7 @@ public class AuthController {
 
         LoginRes resultData = LoginRes.builder()
                 .memberCode( loginMember.getMemberCode( ))
-                .role(loginMember.getRole())
+                .role(loginMember.getRole().getCode())
                 .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();
 

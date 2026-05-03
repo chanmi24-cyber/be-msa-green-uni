@@ -11,6 +11,6 @@ import lombok.ToString;
 public class LoginRes {
     private Long memberCode;
     private String name;
-    private EnumMemberRole role;
+    private String role;
     private Boolean isFirstLogin;
 }
