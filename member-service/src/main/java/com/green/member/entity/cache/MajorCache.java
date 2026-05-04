@@ -1,4 +1,4 @@
-package com.green.member.entity;
+package com.green.member.entity.cache;
 
 import jakarta.persistence.*;
 import lombok.*;

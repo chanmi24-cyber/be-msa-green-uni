@@ -1,4 +1,4 @@
-package com.green.member.entity;
+package com.green.member.entity.member;
 
 import com.green.common.entity.CreatedUpdatedAt;
 import jakarta.persistence.*;

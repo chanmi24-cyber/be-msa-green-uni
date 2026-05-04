@@ -1,4 +1,4 @@
-package com.green.member.application;
+package com.green.member.application.member;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,6 +1,7 @@
-package com.green.member.entity;
+package com.green.member.entity.professor;
 
 import com.green.common.entity.UpdatedAt;
+import com.green.member.entity.member.Member;
 import com.green.member.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;

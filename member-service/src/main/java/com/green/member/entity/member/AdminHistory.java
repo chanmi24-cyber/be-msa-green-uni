@@ -1,7 +1,7 @@
-package com.green.member.entity;
+package com.green.member.entity.member;
 
 import com.green.common.entity.CreatedAt;
-import com.green.common.enumcode.EnumStudentStatus;
+import com.green.member.enumcode.EnumAdminStatus;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,29 +9,29 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "student_history")
+@Table(name = "admin_history")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class StudentHistory extends CreatedAt {
+public class AdminHistory extends CreatedAt {
 
     @Id @Tsid
     @Column(name = "history_id", nullable = false)
     private Long historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_code", nullable = false)
-    private Student student;
+    @JoinColumn(name = "admin_code", nullable = false)
+    private Admin admin;
 
     @Column(name = "change_type", nullable = false, length = 20)
-    private String changeType; // 신입학, 휴학, 복학, 자퇴
+    private String changeType; //휴직, 복직
 
     @Column(name = "old_status", nullable = false, length = 20)
-    private EnumStudentStatus oldStatus;
+    private EnumAdminStatus oldStatus;
 
     @Column(name = "new_status", nullable = false, length = 20)
-    private EnumStudentStatus newStatus;
+    private EnumAdminStatus newStatus;
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -39,17 +39,9 @@ public class StudentHistory extends CreatedAt {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    // 휴학 시에만
-    @Column(name = "return_year")
-    private Integer returnYear;
-
-    // 휴학 시에만
-    @Column(name = "return_semester")
-    private Integer returnSemester;
-
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "updator_code", nullable = false)
+    @Column(name = "updator_code")
     private Long updatorCode;
 }

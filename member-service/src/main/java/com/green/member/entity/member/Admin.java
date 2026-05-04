@@ -1,4 +1,4 @@
-package com.green.member.entity;
+package com.green.member.entity.member;
 
 import com.green.common.entity.UpdatedAt;
 import com.green.member.enumcode.EnumAdminStatus;

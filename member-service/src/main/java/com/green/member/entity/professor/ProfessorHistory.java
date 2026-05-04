@@ -1,4 +1,4 @@
-package com.green.member.entity;
+package com.green.member.entity.professor;
 import com.green.common.entity.CreatedAt;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;

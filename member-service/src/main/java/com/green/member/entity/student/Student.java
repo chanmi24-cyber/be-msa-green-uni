@@ -1,7 +1,8 @@
-package com.green.member.entity;
+package com.green.member.entity.student;
 
 import com.green.common.entity.UpdatedAt;
 import com.green.common.enumcode.EnumStudentStatus;
+import com.green.member.entity.member.Member;
 import jakarta.persistence.*;
 import lombok.*;
 @Entity

@@ -1,24 +1,21 @@
-package com.green.member.entity;
+package com.green.member.entity.student;
 
 import com.green.common.entity.CreatedUpdatedAt;
 import com.green.common.enumcode.EnumApprovalStatus;
-import com.green.member.enumcode.EnumMajorRequestType;
+import com.green.member.enumcode.EnumStatusRequestType;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Digits;
 import lombok.*;
-
-import java.math.BigDecimal;
-
 @Entity
-@Table(name = "major_request")
+@Table(name = "status_request")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class MajorRequest extends CreatedUpdatedAt {
+public class StatusRequest extends CreatedUpdatedAt {
 
-    @Id @Tsid
+    @Id
+    @Tsid
     @Column(name = "request_id", nullable = false)
     private Long requestId;
 
@@ -27,20 +24,13 @@ public class MajorRequest extends CreatedUpdatedAt {
     private Student student;
 
     @Column(name = "type", nullable = false, length = 20)
-    private EnumMajorRequestType type;
+    private EnumStatusRequestType type;
 
-    @Column(name = "target_major_id", nullable = false)
-    private Long targetMajorId;
-
-    @Column(name = "reason")
+    @Column(name = "reason", nullable = false)
     private String reason;
 
     @Column(name = "file")
     private String file;
-
-    @Column(name = "gpa", nullable = false)
-    @Digits(integer = 1, fraction = 2)
-    private BigDecimal gpa;
 
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default

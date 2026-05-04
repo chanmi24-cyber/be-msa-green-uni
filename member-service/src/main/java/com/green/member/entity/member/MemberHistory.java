@@ -1,4 +1,4 @@
-package com.green.member.entity;
+package com.green.member.entity.member;
 
 import com.green.common.entity.CreatedAt;
 import com.green.common.enumcode.EnumChangeType;
