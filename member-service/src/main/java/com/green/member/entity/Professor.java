@@ -3,7 +3,7 @@ package com.green.member.entity;
 import com.green.common.entity.UpdatedAt;
 import com.green.member.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
-import com.green.member.enumcode.EnumProfessorStatus;
+import com.green.common.enumcode.EnumProfessorStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

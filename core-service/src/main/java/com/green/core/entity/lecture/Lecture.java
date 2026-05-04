@@ -1,12 +1,14 @@
-package com.green.core.entity;
+package com.green.core.entity.lecture;
 
 import com.green.common.entity.CreatedUpdatedAt;
+import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.core.entity.major.Major;
+import com.green.core.enumcode.EnumLectureType;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.*;
-
 @Entity
 @Table(name = "lecture")
 @Getter
@@ -17,10 +19,10 @@ public class Lecture extends CreatedUpdatedAt {
 
     @Id @Tsid
     @Column(name = "lecture_id")
-    private Long lectureId; // TSID
+    private Long lectureId;
 
     @Column(name = "member_code", nullable = false)
-    private Long memberCode; // 교번, 토큰값가져오는것도 있음 생각해보기
+    private Long memberCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id", nullable = false)
@@ -72,7 +74,6 @@ public class Lecture extends CreatedUpdatedAt {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
 
     @PrePersist
     public void prePersist() {

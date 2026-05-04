@@ -1,7 +1,7 @@
 package com.green.member.entity;
 import com.green.common.entity.CreatedAt;
 import com.green.member.enumcode.EnumProfessorPosition;
-import com.green.member.enumcode.EnumProfessorStatus;
+import com.green.common.enumcode.EnumProfessorStatus;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;

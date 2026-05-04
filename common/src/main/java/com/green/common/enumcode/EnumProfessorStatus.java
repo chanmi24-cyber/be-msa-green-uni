@@ -1,6 +1,4 @@
-package com.green.member.enumcode;
-import com.green.common.enumcode.AbstractEnumCodeConverter;
-import com.green.common.enumcode.EnumMapperType;
+package com.green.common.enumcode;
 import jakarta.persistence.Converter;
 import lombok.*;
 @Getter

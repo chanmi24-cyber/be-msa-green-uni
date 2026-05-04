@@ -1,7 +1,7 @@
 package com.green.member.entity;
 
 import com.green.common.entity.CreatedUpdatedAt;
-import com.green.member.enumcode.EnumMajorType;
+import com.green.common.enumcode.EnumMajorType;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;

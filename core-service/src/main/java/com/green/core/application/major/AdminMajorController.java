@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminMajorController {
     private final MajorService majorService;
 
-    @PostMapping
-    public ResultResponse<?> test(@RequestBody MajorCreateReq req ) {
-        log.info("req: {}", req);
-        majorService.test( req );
-        return ResultResponse.builder()
-                .message( "학과 생성 테스트 성공" )
-                .data( 1 )
-                .build();
-    }
+//    @PostMapping
+//    public ResultResponse<?> test(@RequestBody MajorCreateReq req ) {
+//        log.info("req: {}", req);
+//        majorService.test( req );
+//        return ResultResponse.builder()
+//                .message( "학과 생성 테스트 성공" )
+//                .data( 1 )
+//                .build();
+//    }
 }

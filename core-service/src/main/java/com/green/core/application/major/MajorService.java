@@ -2,12 +2,9 @@ package com.green.core.application.major;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.green.common.constants.EventType;
 import com.green.common.kafka.MajorEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
-import com.green.core.application.major.model.MajorCreateReq;
-import com.green.core.entity.Major;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,21 +17,21 @@ public class MajorService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
-    public void test(MajorCreateReq req) {
-
-        Major newMajor = new Major();
-        newMajor.setName( req.getName() );
-
-        majorRepository.save( newMajor );
-
-        MajorEvent majorEvent = MajorEvent.builder()
-                .majorId(newMajor.getMajorId() )
-                .name( newMajor.getName() )
-                .eventType( EventType.E_CREATED )
-                .build();
-
-        saveToOutbox(majorEvent);
-    }
+//    public void test(MajorCreateReq req) {
+//
+//        Major newMajor = new Major();
+//        newMajor.setName( req.getName() );
+//
+//        majorRepository.save( newMajor );
+//
+//        MajorEvent majorEvent = MajorEvent.builder()
+//                .majorId(newMajor.getMajorId() )
+//                .name( newMajor.getName() )
+//                .eventType( EventType.E_CREATED )
+//                .build();
+//
+//        saveToOutbox(majorEvent);
+//    }
 
     private void saveToOutbox(MajorEvent majorEvent) {
         try {
