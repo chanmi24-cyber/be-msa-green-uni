@@ -19,7 +19,7 @@ public class StudentMajor extends CreatedUpdatedAt {
     private Long studentMajorId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_code", nullable = false)
+    @JoinColumn(name = "student_code", nullable = false)
     private Student student;
 
     @Column(name = "major_id", nullable = false)

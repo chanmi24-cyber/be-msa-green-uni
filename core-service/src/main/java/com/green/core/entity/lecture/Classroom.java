@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Classroom extends CreatedUpdatedAt {
+public class Classroom{
 
     @Id @Tsid
     @Column(name = "room_id")

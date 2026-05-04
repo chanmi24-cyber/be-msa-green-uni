@@ -22,7 +22,7 @@ public class Admin extends UpdatedAt {
     @JoinColumn(name = "member_code", nullable = false)
     private Member member;
 
-    @Column(name = "status", nullable = false, length = 10)
+    @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumAdminStatus status = EnumAdminStatus.EMPLOYMENT;
 

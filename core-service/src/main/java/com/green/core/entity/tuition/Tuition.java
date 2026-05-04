@@ -48,7 +48,7 @@ public class Tuition extends CreatedAt {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    @Column(name = "updator_code", nullable = false)
+    @Column(name = "updator_code")
     private Long updatorCode;
 
     @Column(name = "deadline", nullable = false)

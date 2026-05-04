@@ -15,8 +15,8 @@ public class StudentMajorCache {
     @Column(name = "student_major_id")
     private Long studentMajorId;
 
-    @Column(name = "member_code", nullable = false)
-    private Long memberCode;
+    @Column(name = "student_code", nullable = false)
+    private Long studentCode;
 
     @Column(name = "major_id", nullable = false)
     private Long majorId;
