@@ -3,7 +3,7 @@ package com.green.member.kafka;
 import com.green.common.constants.EventType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.MajorEvent;
-import com.green.member.entity.MajorCache;
+import com.green.member.entity.cache.MajorCache;
 import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
