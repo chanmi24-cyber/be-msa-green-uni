@@ -1,13 +1,11 @@
-package com.green.member.application;
+package com.green.member.application.member;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.green.common.constants.EventType;
 import com.green.common.kafka.StudentEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
-import com.green.member.application.model.StudentCreateReq;
-import com.green.member.entity.Student;
+import com.green.member.application.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,22 +18,22 @@ public class MemberService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
-
-    public void test(StudentCreateReq req) {
-
-        Student newStudent = new Student();
-        newStudent.setName( req.getName() );
-
-        studentRepository.save( newStudent );
-
-        StudentEvent studentEvent = StudentEvent.builder()
-                .memberCode(newStudent.getMemberCode() )
-                .name( newStudent.getName() )
-                .eventType( EventType.E_CREATED )
-                .build();
-
-        saveToOutbox(studentEvent);
-    }
+//
+//    public void test(StudentCreateReq req) {
+//
+//        Student newStudent = new Student();
+//        newStudent.setName( req.getName() );
+//
+//        studentRepository.save( newStudent );
+//
+//        StudentEvent studentEvent = StudentEvent.builder()
+//                .memberCode(newStudent.getMemberCode() )
+//                .name( newStudent.getName() )
+//                .eventType( EventType.E_CREATED )
+//                .build();
+//
+//        saveToOutbox(studentEvent);
+//    }
 
     private void saveToOutbox(StudentEvent studentEvent) {
         try {

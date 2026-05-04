@@ -3,7 +3,7 @@ package com.green.core.kafka;
 import com.green.common.constants.EventType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.StudentEvent;
-import com.green.core.entity.StudentCache;
+import com.green.core.entity.cache.StudentCache;
 import com.green.core.repository.StudentCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

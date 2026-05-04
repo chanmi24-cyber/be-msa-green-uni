@@ -1,4 +1,4 @@
-package com.green.member.application;
+package com.green.member.application.member;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
