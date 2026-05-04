@@ -1,4 +1,4 @@
-package com.green.member.application.model;
+package com.green.member.application.student.model;
 
 import lombok.Data;
 

@@ -3,8 +3,7 @@ package com.green.member.enumcode;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 @Getter
 @RequiredArgsConstructor
@@ -16,7 +15,7 @@ public enum EnumStatusRequestType implements EnumMapperType {
     private final String code;
     private final String value;
 
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumStatusRequestType> {
         public CodeConverter() { super(EnumStatusRequestType.class, false); }
     }
