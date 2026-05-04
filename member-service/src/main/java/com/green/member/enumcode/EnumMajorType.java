@@ -7,16 +7,17 @@ import lombok.*;
 
 @Getter
 @RequiredArgsConstructor
-public enum EnumStatusRequestType implements EnumMapperType {
-    ABSENCE("ABSENCE", "휴학"),
-    QUIT("QUIT", "자퇴"),
-    RETURN("RETURN", "복학");
+public enum EnumMajorType implements EnumMapperType {
+
+    PRIMARY("PRIMARY", "주전공"),
+    DOUBLE("DOUBLE", "복수전공"),
+    MINOR("MINOR", "부전공");
 
     private final String code;
     private final String value;
 
     @Converter(autoApply = true)
-    public static class CodeConverter extends AbstractEnumCodeConverter<EnumStatusRequestType> {
-        public CodeConverter() { super(EnumStatusRequestType.class, false); }
+    public static class CodeConverter extends AbstractEnumCodeConverter<EnumMajorType> {
+        public CodeConverter() { super(EnumMajorType.class, false); }
     }
 }

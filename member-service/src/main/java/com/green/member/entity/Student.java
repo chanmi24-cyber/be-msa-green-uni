@@ -1,24 +1,45 @@
 package com.green.member.entity;
 
-import com.green.common.entity.CreatedUpdatedAt;
-import io.hypersistence.utils.hibernate.id.Tsid;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import com.green.common.entity.UpdatedAt;
+import com.green.member.enumcode.EnumStudentStatus;
+import jakarta.persistence.*;
+import lombok.*;
 @Entity
+@Table(name = "student")
 @Getter
-@Setter
-@NoArgsConstructor
-public class Student extends CreatedUpdatedAt {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Student extends UpdatedAt {
 
-    @Id @Tsid
+    @Id
+    @Column(name = "member_code")
     private Long memberCode;
 
-    @Column(nullable = false)
-    private String name;
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_code", nullable = false)
+    private Member member;
 
+    @Column(name = "academic_year")
+    private Integer academicYear;
+
+    @Column(name = "semester")
+    private Integer semester;
+
+    @Column(name = "status", nullable = false, length = 10)
+    @Builder.Default
+    private EnumStudentStatus status = EnumStudentStatus.UNREGISTERED;
+
+    @Column(name = "is_transfer", nullable = false)
+    @Builder.Default
+    private Boolean isTransfer = false;
+
+    @Column(name = "is_multi_child", nullable = false)
+    @Builder.Default
+    private Boolean isMultiChild = false;
+
+    @Column(name = "is_veteran", nullable = false)
+    @Builder.Default
+    private Boolean isVeteran = false;
 }

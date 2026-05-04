@@ -1,4 +1,4 @@
-package com.green.member.application;
+package com.green.member.application.student;
 
 import com.green.member.entity.Student;
 import org.springframework.data.jpa.repository.JpaRepository;

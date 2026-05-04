@@ -3,7 +3,11 @@ import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 
 import jakarta.persistence.Converter;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@Getter
+@RequiredArgsConstructor
 public enum EnumStudentStatus implements EnumMapperType {
     ENROLLED("ENROLLED", "재학"),
     ABSENCE("ABSENCE", "휴학"),
@@ -15,15 +19,7 @@ public enum EnumStudentStatus implements EnumMapperType {
     private final String code;
     private final String value;
 
-    EnumStudentStatus(String code, String value) {
-        this.code = code;
-        this.value = value;
-    }
-
-    @Override public String getCode() { return code; }
-    @Override public String getValue() { return value; }
-
-    @Converter
+    @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumStudentStatus> {
         public CodeConverter() { super(EnumStudentStatus.class, false); }
     }

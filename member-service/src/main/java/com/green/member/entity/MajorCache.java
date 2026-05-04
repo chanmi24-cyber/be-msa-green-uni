@@ -1,31 +1,23 @@
 package com.green.member.entity;
 
-import io.hypersistence.utils.hibernate.id.Tsid;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Transient;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.data.domain.Persistable;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
+@Table(name = "major_cache")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class MajorCache {
 
     @Id
+    @Column(name = "major_id", nullable = false)
     private Long majorId;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false, length = 20)
     private String name;
 
-    @Builder
-    public MajorCache(Long majorId, String name) {
-        this.majorId = majorId;
-        this.name = name;
-    }
+    @Column(name = "college_name", nullable = false, length = 50)
+    private String collegeName;
 }
