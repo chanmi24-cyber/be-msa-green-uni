@@ -36,6 +36,9 @@ public class AuthController {
 
         LoginRes resultData = LoginRes.builder()
                 .memberCode( loginMember.getMemberCode( ))
+                .name( null )
+                .major( null )
+                .deviceId( jwtMember.getDeviceId() )
                 .role(loginMember.getRole().getCode())
                 .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();
