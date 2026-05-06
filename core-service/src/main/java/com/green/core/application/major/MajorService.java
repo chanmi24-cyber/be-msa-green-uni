@@ -32,11 +32,15 @@ public class MajorService {
     // API-DEPT-01: 학과 개설
     @Transactional
     public Long createMajor(MajorCreateUpdateReq req) {
+        log.info("1. createMajor 시작");
+
         College college = collegeRepository.findById(req.getCollegeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
+        log.info("2. college 조회 완료: {}", college.getName());
 
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), null);
+        log.info("3. 중복 검증 완료");
 
         Major major = Major.builder()
                 .name(req.getName())
@@ -51,6 +55,7 @@ public class MajorService {
                 .build();
 
         majorRepository.save(major);
+        log.info("4. major 저장 완료: {}", major.getMajorId());
 
         MajorEvent event = MajorEvent.builder()
                 .majorId(major.getMajorId())
@@ -58,7 +63,9 @@ public class MajorService {
                 .collegeName(college.getName())
                 .eventType(EventType.E_CREATED)
                 .build();
+
         saveToOutbox(event);
+        log.info("5. outbox 저장 완료");
 
         return major.getMajorId();
     }
