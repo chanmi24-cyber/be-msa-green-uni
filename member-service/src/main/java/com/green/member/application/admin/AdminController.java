@@ -1,25 +1,26 @@
 package com.green.member.application.admin;
 
-import com.green.member.application.member.MemberService;
+import com.green.common.model.ResultResponse;
+import com.green.member.application.member.model.MemberCreateRes;
+import com.green.member.application.student.model.StudentCreateReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
-    private final MemberService memberService;
+    private final AdminService adminService;
 
-//    @PostMapping
-//    public ResultResponse<?> test(@RequestBody StudentCreateReq req ) {
-//        log.info("req: {}", req);
-//        memberService.test( req );
-//        return ResultResponse.builder()
-//                .message( "학생 생성 테스트 성공" )
-//                .data( 1 )
-//                .build();
-//    }
+    @PostMapping("/students")
+    public ResultResponse<?> createStudent(@RequestBody StudentCreateReq req) {
+        MemberCreateRes res = adminService.createStudent(req, null);
+        return ResultResponse.builder()
+                .message("학생 정보 등록 성공")
+                .data(res)
+                .build();
+    }
 }

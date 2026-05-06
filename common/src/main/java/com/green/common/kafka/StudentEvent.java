@@ -1,6 +1,7 @@
 package com.green.common.kafka;
 
 import com.green.common.constants.EventType;
+import com.green.common.enumcode.EnumStudentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,12 @@ public class StudentEvent implements Serializable {
     private String memberType;
     private Long memberCode;
     private String name;
+    private String email;
+    private Integer academicYear;
+    private Integer semester;
+    private EnumStudentStatus status;
+    private Boolean isTransfer;
+    private Boolean isMultiChild;
+    private Boolean isVeteran;
     private EventType eventType;
 }
