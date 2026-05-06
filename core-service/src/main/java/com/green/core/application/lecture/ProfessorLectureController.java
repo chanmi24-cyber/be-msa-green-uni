@@ -20,7 +20,7 @@ public class ProfessorLectureController {
     private final LectureService lectureService;
 
     @PostMapping
-    public ResultResponse<?> createLecture(@Valid @RequestBody LectureCreateReq req){
+    public ResultResponse<?> createLecture( @RequestBody LectureCreateReq req){
         MemberDto memberDto = MemberContext.get();
         lectureService.createLecture(memberDto, req);
         return ResultResponse.builder()
