@@ -19,6 +19,14 @@ public enum EnumLectureType implements EnumMapperType {
     private final String code;
     private final String value;
 
+    @JsonCreator
+    public static EnumLectureType from(String value) {
+        return Arrays.stream(values())
+                .filter(e -> e.getCode().equals(value))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid: " + value));
+    }
+
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumLectureType> {
         public CodeConverter() { super(EnumLectureType.class, false); }
