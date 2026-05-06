@@ -1,4 +1,4 @@
-package com.green.common.kafka;
+package com.green.common.kafka.auth;
 
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMemberRole;
@@ -17,6 +17,6 @@ public class AuthMemberEvent implements Serializable {
     private Long memberCode;
     private String email;
     private String password;
-    private EnumMemberRole role;
+    private String role;
     private EventType eventType;
 }

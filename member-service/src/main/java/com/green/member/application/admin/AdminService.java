@@ -6,10 +6,10 @@ import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumStudentStatus;
-import com.green.common.kafka.AuthMemberEvent;
-import com.green.common.kafka.KafkaTopic;
-import com.green.common.kafka.StudentEvent;
-import com.green.common.kafka.StudentMajorEvent;
+import com.green.common.kafka.auth.AuthMemberEvent;
+import com.green.common.kafka.member.StudentEvent;
+import com.green.common.kafka.member.StudentMajorEvent;
+import com.green.common.kafka.member.memberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.member.MemberRepository;
@@ -107,10 +107,10 @@ public class AdminService {
                 .memberCode(member.getMemberCode())
                 .email(member.getEmail())
                 .password(rawPassword)
-                .role(role)
+                .role(role.getCode())
                 .build();
 
-        saveToOutbox(KafkaTopic.MEMBER, member.getMemberCode(), EventType.E_CREATED.name());
+        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
         return newMember;
     }
@@ -149,26 +149,26 @@ public class AdminService {
                 .email(member.getEmail())
                 .academicYear(savedStudent.getAcademicYear())
                 .semester(savedStudent.getSemester())
-                .status(savedStudent.getStatus())
+                .status(savedStudent.getStatus().getCode())
                 .isTransfer(savedStudent.getIsTransfer())
                 .isMultiChild(savedStudent.getIsMultiChild())
                 .isVeteran(savedStudent.getIsVeteran())
                 .eventType(EventType.E_CREATED)
                 .build();
 
-        saveToOutbox(KafkaTopic.STUDENT, member.getMemberCode(), studentEvent);
+        saveToOutbox(memberTopic.STUDENT, member.getMemberCode(), studentEvent);
 
         // StudentMajorEvent Outbox 저장
         StudentMajorEvent studentMajorEvent = StudentMajorEvent.builder()
                 .studentMajorId(savedStudentMajor.getStudentMajorId())
                 .studentCode(member.getMemberCode())
                 .majorId(savedStudentMajor.getMajorId())
-                .type(savedStudentMajor.getType())
+                .type(savedStudentMajor.getType().getCode())
                 .isActive(savedStudentMajor.getIsActive())
                 .eventType(EventType.E_CREATED)
                 .build();
 
-        saveToOutbox(KafkaTopic.STUDENT_MAJOR, savedStudentMajor.getStudentMajorId(), studentMajorEvent);
+        saveToOutbox(memberTopic.STUDENT_MAJOR, savedStudentMajor.getStudentMajorId(), studentMajorEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())

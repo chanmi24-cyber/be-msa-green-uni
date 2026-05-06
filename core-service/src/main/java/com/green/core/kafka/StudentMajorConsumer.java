@@ -1,8 +1,10 @@
 package com.green.core.kafka;
 
 import com.green.common.constants.EventType;
+import com.green.common.enumcode.EnumMajorType;
 import com.green.common.kafka.KafkaTopic;
-import com.green.common.kafka.StudentMajorEvent;
+import com.green.common.kafka.member.StudentMajorEvent;
+import com.green.common.kafka.member.memberTopic;
 import com.green.core.entity.cache.StudentMajorCache;
 import com.green.core.repository.StudentMajorCacheRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ public class StudentMajorConsumer {
     private final StudentMajorCacheRepository studentMajorCacheRepository;
 
     @Transactional
-    @KafkaListener(topics = KafkaTopic.STUDENT_MAJOR, groupId = "core-service-group")
+    @KafkaListener(topics = memberTopic.STUDENT_MAJOR, groupId = "core-service-group")
     public void consume(StudentMajorEvent event) {
         log.info("Kafka 메시지 수신: {}", event);
 
@@ -29,7 +31,7 @@ public class StudentMajorConsumer {
                         .studentMajorId(event.getStudentMajorId())
                         .studentCode(event.getStudentCode())
                         .majorId(event.getMajorId())
-                        .type(event.getType())
+                        .type(EnumMajorType.from(event.getType()))
                         .isActive(event.getIsActive())
                         .build();
                 studentMajorCacheRepository.save(cache);
