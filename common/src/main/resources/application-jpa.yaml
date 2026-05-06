@@ -4,6 +4,13 @@ constants:
       enabled: true
 
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5 # 기본값 10에서 줄임 (서비스 규모에 따라 조절)
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
   jpa:
     database: mysql
     properties:
