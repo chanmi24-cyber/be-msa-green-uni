@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/majors")
 public class MajorController {
-    private final MajorService majorService;
+    private final MajorService majorService; //테스트 주석
 
 }
