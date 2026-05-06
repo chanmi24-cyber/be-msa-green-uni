@@ -9,6 +9,7 @@ import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.kafka.AuthMemberEvent;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.StudentEvent;
+import com.green.common.kafka.StudentMajorEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.admin.AdminRepository;
@@ -109,18 +110,7 @@ public class MemberService {
                 .role(role)
                 .build();
 
-        try {
-            String payload = objectMapper.writeValueAsString(authEvent);
-            Outbox outbox = Outbox.builder()
-                    .topic(KafkaTopic.MEMBER)
-                    .aggregateId(member.getMemberCode())
-                    .eventType(EventType.E_CREATED.name())
-                    .payload(payload)
-                    .build();
-            outboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Outbox 직렬화 실패", e);
-        }
+        saveToOutbox(KafkaTopic.MEMBER, member.getMemberCode(), EventType.E_CREATED.name());
 
         return newMember;
     }
@@ -131,7 +121,7 @@ public class MemberService {
         Member member = createMember(req, pic, EnumMemberRole.STUDENT);
 
         // 학생 테이블 저장
-        Student student = Student.builder()
+        Student newStudent = Student.builder()
                 .member(member)
                 .academicYear(req.getAcademicYear())
                 .semester(req.getSemester())
@@ -141,7 +131,7 @@ public class MemberService {
                 .status(req.getStatus() != null ? req.getStatus() : EnumStudentStatus.UNREGISTERED)
                 .build();
 
-        Student savedStudent = studentRepository.save(student);
+        Student savedStudent = studentRepository.save(newStudent);
 
         // 학생 주전공 테이블 저장
         StudentMajor studentMajor = StudentMajor.builder()
@@ -150,43 +140,53 @@ public class MemberService {
                 .type(EnumMajorType.PRIMARY)
                 .build();
 
-        studentMajorRepository.save(studentMajor);
+        StudentMajor savedStudentMajor = studentMajorRepository.save(studentMajor);
+
+        // StudentEvent Outbox 저장
+        StudentEvent studentEvent = StudentEvent.builder()
+                .memberCode(member.getMemberCode())
+                .name(member.getName())
+                .email(member.getEmail())
+                .academicYear(savedStudent.getAcademicYear())
+                .semester(savedStudent.getSemester())
+                .status(savedStudent.getStatus())
+                .isTransfer(savedStudent.getIsTransfer())
+                .isMultiChild(savedStudent.getIsMultiChild())
+                .isVeteran(savedStudent.getIsVeteran())
+                .eventType(EventType.E_CREATED)
+                .build();
+
+        saveToOutbox(KafkaTopic.STUDENT, member.getMemberCode(), studentEvent);
+
+        // StudentMajorEvent Outbox 저장
+        StudentMajorEvent studentMajorEvent = StudentMajorEvent.builder()
+                .studentMajorId(savedStudentMajor.getStudentMajorId())
+                .studentCode(member.getMemberCode())
+                .majorId(savedStudentMajor.getMajorId())
+                .type(savedStudentMajor.getType())
+                .isActive(savedStudentMajor.getIsActive())
+                .eventType(EventType.E_CREATED)
+                .build();
+
+        saveToOutbox(KafkaTopic.STUDENT_MAJOR, savedStudentMajor.getStudentMajorId(), studentMajorEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
                 .build();
     }
 
-//
-//    public void test(StudentCreateReq req) {
-//
-//        Student newStudent = new Student();
-//        newStudent.setName( req.getName() );
-//
-//        studentRepository.save( newStudent );
-//
-//        StudentEvent studentEvent = StudentEvent.builder()
-//                .memberCode(newStudent.getMemberCode() )
-//                .name( newStudent.getName() )
-//                .eventType( EventType.E_CREATED )
-//                .build();
-//
-//        saveToOutbox(studentEvent);
-//    }
-
-    private void saveToOutbox(StudentEvent studentEvent) {
+    private void saveToOutbox(String topic, Long aggregateId, Object event) {
         try {
-            String payload = objectMapper.writeValueAsString(studentEvent);
+            String payload = objectMapper.writeValueAsString(event);
             Outbox outbox = Outbox.builder()
-                    .topic("student-events")
-                    .aggregateId( studentEvent.getMemberCode() )
-                    .eventType( studentEvent.getEventType().name() )
-                    .payload( payload )
+                    .topic(topic)
+                    .aggregateId(aggregateId)
+                    .eventType(EventType.E_CREATED.name())
+                    .payload(payload)
                     .build();
             outboxRepository.save(outbox);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Outbox 직렬화 실패", e);
         }
-
     }
 }
