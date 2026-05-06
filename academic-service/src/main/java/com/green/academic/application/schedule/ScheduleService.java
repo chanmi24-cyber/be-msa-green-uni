@@ -1,17 +1,21 @@
 package com.green.academic.application.schedule;
 
+import com.green.academic.application.schedule.model.ScheduleActiveRes;
 import com.green.academic.application.schedule.model.ScheduleCreateReq;
 import com.green.academic.application.schedule.model.ScheduleListReq;
 import com.green.academic.application.schedule.model.ScheduleListRes;
 import com.green.academic.entity.Schedule;
 import com.green.academic.exception.ScheduleErrorCode;
 import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -54,4 +58,17 @@ public class ScheduleService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Map<EnumScheduleType, Boolean> getActiveSchedules() {
+        List<Schedule> activeSchedules = scheduleRepository.findByIsActiveTrue();
+
+        Map<EnumScheduleType, Boolean> data = new LinkedHashMap<>();
+        for (EnumScheduleType type : EnumScheduleType.values()) {
+            data.put(type, false);
+        }
+        for (Schedule schedule : activeSchedules) {
+            data.put(schedule.getType(), true);
+        }
+        return data;
+    }
 }
