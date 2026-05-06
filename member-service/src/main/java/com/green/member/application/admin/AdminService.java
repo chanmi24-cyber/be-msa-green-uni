@@ -1,4 +1,4 @@
-package com.green.member.application.member;
+package com.green.member.application.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +12,7 @@ import com.green.common.kafka.StudentEvent;
 import com.green.common.kafka.StudentMajorEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
-import com.green.member.application.admin.AdminRepository;
+import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.professor.ProfessorRepository;
@@ -34,7 +34,7 @@ import java.io.IOException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MemberService {
+public class AdminService {
     private final MemberRepository memberRepository;
     private final StudentRepository studentRepository;
     private final StudentMajorRepository studentMajorRepository;

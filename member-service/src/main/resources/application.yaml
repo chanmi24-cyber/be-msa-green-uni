@@ -1,7 +1,8 @@
 constants:
   api:
       prefix: /api/member
-
+  file:
+    directory: ${FILE_DIRECTORY}
 
 server:
   port: ${MEMBER_PORT}
