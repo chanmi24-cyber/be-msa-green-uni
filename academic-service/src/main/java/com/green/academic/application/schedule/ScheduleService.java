@@ -1,6 +1,8 @@
 package com.green.academic.application.schedule;
 
 import com.green.academic.application.schedule.model.ScheduleCreateReq;
+import com.green.academic.application.schedule.model.ScheduleListReq;
+import com.green.academic.application.schedule.model.ScheduleListRes;
 import com.green.academic.entity.Schedule;
 import com.green.academic.exception.ScheduleErrorCode;
 import com.green.common.auth.MemberContext;
@@ -8,6 +10,8 @@ import com.green.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,4 +38,20 @@ public class ScheduleService {
 
         scheduleRepository.save(schedule);
     }
+
+    @Transactional(readOnly = true)
+    public List<ScheduleListRes> getSchedules(ScheduleListReq req) {
+        return scheduleRepository.findAll(ScheduleSpec.filter(req))
+                .stream()
+                .map(s -> new ScheduleListRes(
+                        s.getScheduleId(),
+                        s.getTitle(),
+                        s.getStartDate().toLocalDate(),
+                        s.getEndDate().toLocalDate(),
+                        s.getType(),
+                        s.getIsActive()
+                ))
+                .toList();
+    }
+
 }
