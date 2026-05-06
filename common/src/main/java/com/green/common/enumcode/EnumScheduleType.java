@@ -1,4 +1,5 @@
 package com.green.common.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,16 @@ public enum EnumScheduleType implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumScheduleType from(String value) {
+        for (EnumScheduleType type : EnumScheduleType.values()) {
+            if (type.getCode().equalsIgnoreCase(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 type: " + value);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumScheduleType> {
