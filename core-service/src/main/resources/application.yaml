@@ -1,8 +1,10 @@
 constants:
   api:
     prefix: /api/core
+
 server:
   port: ${CORE_PORT}
+
 spring:
   config:
     import:

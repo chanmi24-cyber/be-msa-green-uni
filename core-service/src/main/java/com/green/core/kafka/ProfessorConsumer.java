@@ -1,7 +1,7 @@
 package com.green.core.kafka;
 
 import com.green.common.kafka.KafkaTopic;
-import com.green.common.kafka.ProfessorEvent;
+import com.green.common.kafka.member.ProfessorEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
