@@ -17,8 +17,10 @@ public class ScheduleActivator {
 
     private final ScheduleRepository scheduleRepository;
 
-    // 매일 자정 실행
-    @Scheduled(cron = "0 0 0 * * *")
+//    // 매일 자정 실행
+//    @Scheduled(cron = "0 0 0 * * *")
+    //테스트용
+    @Scheduled(fixedDelay = 5_000) // 5초마다
     @Transactional
     public void updateActiveStatus() {
         LocalDateTime now = LocalDateTime.now();
