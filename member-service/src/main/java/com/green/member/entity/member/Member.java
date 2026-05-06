@@ -50,6 +50,10 @@ public class Member extends CreatedUpdatedAt {
 
     @Column(name = "pic", length = 500)
     private String pic;
+
+    public void setPic(String pic) {
+        this.pic = pic;
+    }
 }
 
 

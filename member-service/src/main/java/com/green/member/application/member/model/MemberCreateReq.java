@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public class MemberCreateReq {
     private String email;
     private String name;
-    private String birth;
+    private LocalDate birth;
     private String tel;
     private String emergencyTel;
     private String postcode;
@@ -16,4 +16,5 @@ public class MemberCreateReq {
     private String detailAddress;
     private LocalDate entryDate;
     private LocalDate exitDate;
+    private String pic;
 }
