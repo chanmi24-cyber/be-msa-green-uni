@@ -13,13 +13,5 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
     private final MemberService memberService;
 
-//    @PostMapping
-//    public ResultResponse<?> test(@RequestBody StudentCreateReq req ) {
-//        log.info("req: {}", req);
-//        memberService.test( req );
-//        return ResultResponse.builder()
-//                .message( "학생 생성 테스트 성공" )
-//                .data( 1 )
-//                .build();
-//    }
+
 }
