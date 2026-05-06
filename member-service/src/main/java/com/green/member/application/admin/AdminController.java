@@ -1,6 +1,7 @@
 package com.green.member.application.admin;
 
 import com.green.common.model.ResultResponse;
+import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.model.StudentCreateReq;
@@ -30,6 +31,15 @@ public class AdminController {
         MemberCreateRes res = adminService.createProfessor(req, null);
         return ResultResponse.builder()
                 .message("교수 정보 등록 성공")
+                .data(res)
+                .build();
+    }
+
+    @PostMapping("/admins")
+    public ResultResponse<?> createAdmin(@RequestBody AdminCreateReq req) {
+        MemberCreateRes res = adminService.createAdmin(req, null);
+        return ResultResponse.builder()
+                .message("관리자 정보 등록 성공")
                 .data(res)
                 .build();
     }

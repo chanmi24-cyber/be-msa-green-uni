@@ -14,6 +14,7 @@ import com.green.common.kafka.member.StudentMajorEvent;
 import com.green.common.kafka.member.memberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
+import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
@@ -23,10 +24,12 @@ import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
+import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
+import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -180,6 +183,7 @@ public class AdminService {
                 .build();
     }
 
+    // 교수 정보 추가
     @Transactional
     public MemberCreateRes createProfessor(ProfessorCreateReq req, MultipartFile pic) {
         Member member = createMember(req, pic, EnumMemberRole.PROFESSOR);
@@ -213,6 +217,22 @@ public class AdminService {
                 .build();
     }
 
+    // 관리자 정보 추가
+    @Transactional
+    public MemberCreateRes createAdmin(AdminCreateReq req, MultipartFile pic) {
+        Member member = createMember(req, pic, EnumMemberRole.ADMIN);
+
+        Admin newAdmin = Admin.builder()
+                .member(member)
+                .status(req.getStatus() != null ? req.getStatus() : EnumAdminStatus.EMPLOYMENT)
+                .build();
+
+        adminRepository.save(newAdmin);
+
+        return MemberCreateRes.builder()
+                .memberCode(member.getMemberCode())
+                .build();
+    }
 
     private void saveToOutbox(String topic, Long aggregateId, Object event) {
         try {
