@@ -29,6 +29,13 @@ public class StudentConsumer {
                 StudentCache cache = StudentCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
+                        .email(event.getEmail())
+                        .academicYear(event.getAcademicYear())
+                        .semester(event.getSemester())
+                        .status(event.getStatus())
+                        .isTransfer(event.getIsTransfer())
+                        .isMultiChild(event.getIsMultiChild())
+                        .isVeteran(event.getIsVeteran())
                         .build();
                 studentCacheRepository.save(cache);
                 log.info("studentCache 정보저장 완료: {}", event.getMemberCode());
