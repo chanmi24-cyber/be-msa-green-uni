@@ -3,13 +3,13 @@ package com.green.core.application.major;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
+import com.green.common.enumcode.EnumBuilding;
 import com.green.common.kafka.MajorEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
-import com.green.core.enumcode.EnumBuilding;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,18 +30,18 @@ public class MajorService {
 
     // API-DEPT-01: 학과 개설
     @Transactional
-    public Long createMajor(MajorCreateReq req) {
+    public Long createMajor(MajorCreateUpdateReq req) {
         College college = collegeRepository.findById(req.getCollegeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
 
-        validateDuplicate(req.getMajorName(), req.getBuilding(), req.getRoom(),
+        validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), null);
 
         Major major = Major.builder()
-                .name(req.getMajorName())
+                .name(req.getName())
                 .active(req.getActive())
                 .college(college)
-                .majorBuilding(req.getBuilding())
+                .majorBuilding(req.getMajorBuilding())
                 .room(req.getRoom())
                 .tel(req.getTel())
                 .capacity(req.getCapacity())
@@ -63,18 +63,18 @@ public class MajorService {
 
     // API-DEPT-01: 학과 수정
     @Transactional
-    public void modifyMajor(Long majorId, MajorCreateReq req) {
+    public void modifyMajor(Long majorId, MajorCreateUpdateReq req) {
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 학과입니다."));
 
-        validateDuplicate(req.getMajorName(), req.getBuilding(), req.getRoom(),
+        validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
 
         College college = collegeRepository.findById(req.getCollegeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
 
-        major.update(req.getMajorName(), req.getActive(), college,
-                req.getBuilding(), req.getRoom(), req.getTel(),
+        major.update(req.getName(), req.getActive(), college,
+                req.getMajorBuilding(), req.getRoom(), req.getTel(),
                 req.getCapacity(), req.getChairProfessorCode(), req.getInfo());
     }
 
@@ -89,8 +89,8 @@ public class MajorService {
                         .tel(m.getTel())
                         .professorCode(m.getProfessorCode())
                         .capacity(m.getCapacity())
-                        .college(m.getCollege().getName())
-                        .active(m.getActive().name())
+                        .collegeId(m.getCollege().getCollegeId())
+                        .active(m.getActive())
                         .build())
                 .toList();
     }
@@ -113,7 +113,7 @@ public class MajorService {
         return MajorDetailRes.builder()
                 .majorId(major.getMajorId())
                 .name(major.getName())
-                .active(major.getActive().name())
+                .active(major.getActive())
                 .college(major.getCollege().getName())
                 .majorBuilding(major.getMajorBuilding())
                 .room(major.getRoom())
@@ -163,5 +163,14 @@ public class MajorService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Outbox 직렬화 실패", e);
         }
+    }
+
+    public List<CollegeListRes> getCollegeList() {
+        return collegeRepository.findAll().stream()
+                .map(c -> CollegeListRes.builder()
+                        .collegeId(c.getCollegeId())
+                        .name(c.getName())
+                        .build())
+                .toList();
     }
 }

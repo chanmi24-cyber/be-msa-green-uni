@@ -1,22 +1,20 @@
 package com.green.core.application.major.model;
 
+import com.green.common.enumcode.EnumBuilding;
 import com.green.core.enumcode.EnumMajorStatus;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDate;
 
 @Getter
 @Setter
-public class MajorCreateReq {
-    private String majorName;
-    private String building;
+public class MajorCreateUpdateReq {
+    private String name;
+    private EnumBuilding majorBuilding;
     private String room;
     private String tel;
     private Long chairProfessorCode;
-    private String chairProfessorName;
     private Integer capacity;
     private EnumMajorStatus active;
     private Long collegeId;
-    private LocalDate startDate;
     private String info;
 }

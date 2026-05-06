@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ProfessorListRes {
-    private Long memberCode;
+public class CollegeListRes {
+    private Long collegeId;
     private String name;
 }
