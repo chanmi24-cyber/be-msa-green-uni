@@ -16,9 +16,8 @@ public class AdminController {
     private final AdminService adminService;
 
     @PostMapping("/students")
-    public ResultResponse<?> createStudent(@RequestPart StudentCreateReq req,
-                                           @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createStudent(req, pic);
+    public ResultResponse<?> createStudent(@RequestBody StudentCreateReq req) {
+        MemberCreateRes res = adminService.createStudent(req, null);
         return ResultResponse.builder()
                 .message("학생 정보 등록 성공")
                 .data(res)

@@ -3,8 +3,10 @@ package com.green.member.application.student.model;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.member.model.MemberCreateReq;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class StudentCreateReq extends MemberCreateReq {
     private Long majorId;
     private Integer academicYear;

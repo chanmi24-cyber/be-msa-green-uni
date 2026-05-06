@@ -1,10 +1,12 @@
 package com.green.member.application.member.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
+@NoArgsConstructor
 public class MemberCreateReq {
     private String email;
     private String name;
