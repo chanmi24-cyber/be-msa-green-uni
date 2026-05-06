@@ -18,8 +18,9 @@ public class AdminController {
     private final AdminService adminService;
 
     @PostMapping("/students")
-    public ResultResponse<?> createStudent(@RequestBody StudentCreateReq req) {
-        MemberCreateRes res = adminService.createStudent(req, null);
+    public ResultResponse<?> createStudent(@RequestPart StudentCreateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createStudent(req, pic);
         return ResultResponse.builder()
                 .message("학생 정보 등록 성공")
                 .data(res)
@@ -27,8 +28,9 @@ public class AdminController {
     }
 
     @PostMapping("/professors")
-    public ResultResponse<?> createProfessor(@RequestBody ProfessorCreateReq req) {
-        MemberCreateRes res = adminService.createProfessor(req, null);
+    public ResultResponse<?> createProfessor(@RequestPart ProfessorCreateReq req,
+                                             @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createProfessor(req, pic);
         return ResultResponse.builder()
                 .message("교수 정보 등록 성공")
                 .data(res)
@@ -36,8 +38,9 @@ public class AdminController {
     }
 
     @PostMapping("/admins")
-    public ResultResponse<?> createAdmin(@RequestBody AdminCreateReq req) {
-        MemberCreateRes res = adminService.createAdmin(req, null);
+    public ResultResponse<?> createAdmin(@RequestPart AdminCreateReq req,
+                                         @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createAdmin(req, pic);
         return ResultResponse.builder()
                 .message("관리자 정보 등록 성공")
                 .data(res)
