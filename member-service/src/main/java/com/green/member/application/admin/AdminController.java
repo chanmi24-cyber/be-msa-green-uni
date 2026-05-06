@@ -1,7 +1,9 @@
 package com.green.member.application.admin;
 
 import com.green.common.model.ResultResponse;
+import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
+import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,10 +18,31 @@ public class AdminController {
     private final AdminService adminService;
 
     @PostMapping("/students")
-    public ResultResponse<?> createStudent(@RequestBody StudentCreateReq req) {
-        MemberCreateRes res = adminService.createStudent(req, null);
+    public ResultResponse<?> createStudent(@RequestPart StudentCreateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createStudent(req, pic);
         return ResultResponse.builder()
                 .message("학생 정보 등록 성공")
+                .data(res)
+                .build();
+    }
+
+    @PostMapping("/professors")
+    public ResultResponse<?> createProfessor(@RequestPart ProfessorCreateReq req,
+                                             @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createProfessor(req, pic);
+        return ResultResponse.builder()
+                .message("교수 정보 등록 성공")
+                .data(res)
+                .build();
+    }
+
+    @PostMapping("/admins")
+    public ResultResponse<?> createAdmin(@RequestPart AdminCreateReq req,
+                                         @RequestPart(required = false) MultipartFile pic) {
+        MemberCreateRes res = adminService.createAdmin(req, pic);
+        return ResultResponse.builder()
+                .message("관리자 정보 등록 성공")
                 .data(res)
                 .build();
     }
