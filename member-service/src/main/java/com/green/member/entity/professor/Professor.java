@@ -1,6 +1,7 @@
 package com.green.member.entity.professor;
 
 import com.green.common.entity.UpdatedAt;
+import com.green.common.enumcode.EnumBuilding;
 import com.green.member.entity.member.Member;
 import com.green.member.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
@@ -34,6 +35,9 @@ public class Professor extends UpdatedAt {
     @Column(name = "position", nullable = false, length = 20)
     @Builder.Default
     private EnumProfessorPosition position = EnumProfessorPosition.PROFESSOR;
+
+    @Column(name = "lab_building", nullable = false, length = 30)
+    private EnumBuilding labBuilding;
 
     @Column(name = "lab_room", length = 20)
     private String labRoom;
