@@ -1,13 +1,17 @@
 package com.green.core.application.lecture.model;
 
+import com.green.common.enumcode.EnumBuilding;
 import com.green.core.enumcode.EnumLectureType;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 
 
 @Getter
+@NoArgsConstructor
 public class LectureCreateReq {
     private Long majorId;
     private String majorName;
@@ -31,6 +35,6 @@ public class LectureCreateReq {
         private String dayOfWeek;
         private Integer startPeriod;
         private Integer endPeriod;
-        private String building;
+
     }
 }

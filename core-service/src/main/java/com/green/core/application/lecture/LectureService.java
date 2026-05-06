@@ -1,15 +1,21 @@
 package com.green.core.application.lecture;
 
+import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
+import com.green.core.application.lecture.model.LectureApprovalReq;
 import com.green.core.application.lecture.model.LectureCreateReq;
 import com.green.core.application.lecture.repository.ClassroomRepository;
 import com.green.core.application.lecture.repository.LectureRepository;
 import com.green.core.application.lecture.repository.LectureScheduleRepository;
+import com.green.core.application.lecture.repository.LectureRejectionRepository;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.lecture.Classroom;
 import com.green.core.entity.lecture.Lecture;
+import com.green.core.entity.lecture.LectureRejection;
 import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.entity.major.Major;
+import com.green.core.exception.LectureErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +30,7 @@ public class LectureService {
     private final ClassroomRepository classroomRepository;
     private final LectureScheduleRepository lectureScheduleRepository;
     private final MajorRepository majorRepository;
+    private final LectureRejectionRepository lectureRejectionRepository;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -62,4 +69,27 @@ public class LectureService {
             lectureScheduleRepository.save(schedule);
         }
     }
+
+
+    @Transactional
+    public void updateLectureStatus(MemberDto memberDto, Long lectureId, LectureApprovalReq req) {
+
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
+
+        // APPROVED면 승인, REJECTED면 반려
+        if (req.getStatus() == EnumApprovalStatus.REJECTED) {
+            // 반려 사유 저장
+            LectureRejection rejection = LectureRejection.builder()
+                    .lecture(lecture)
+                    .reason(req.getReason())
+                    .updatorCode(memberDto.memberCode())
+                    .build();
+            lectureRejectionRepository.save(rejection);
+        }
+
+        // 상태 변경 → Lecture에 메서드 있음.
+        lecture.updateStatus(req.getStatus());
+    }
+
 }
