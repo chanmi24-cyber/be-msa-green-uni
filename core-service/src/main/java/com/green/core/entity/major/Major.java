@@ -1,6 +1,7 @@
 package com.green.core.entity.major;
 
 import com.green.common.entity.CreatedUpdatedAt;
+import com.green.common.enumcode.EnumBuilding;
 import com.green.core.enumcode.EnumMajorStatus;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
@@ -29,6 +30,9 @@ public class Major extends CreatedUpdatedAt {
     @JoinColumn(name = "college_id", nullable = false)
     private College college;
 
+    @Column(name = "major_building", nullable = false, length = 30)
+    private EnumBuilding majorBuilding;
+
     @Column(name = "room", length = 20)
     private String room;
 
@@ -41,4 +45,6 @@ public class Major extends CreatedUpdatedAt {
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
 
+    @Column(name = "info", length = 255)
+    private String info;
 }

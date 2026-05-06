@@ -1,9 +1,12 @@
 package com.green.core.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
 
 @Getter
 @RequiredArgsConstructor
