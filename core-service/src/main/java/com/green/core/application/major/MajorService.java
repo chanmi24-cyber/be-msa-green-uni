@@ -10,6 +10,7 @@ import com.green.common.outbox.OutboxRepository;
 import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
+import com.green.core.enumcode.EnumMajorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,7 @@ public class MajorService {
         MajorEvent event = MajorEvent.builder()
                 .majorId(major.getMajorId())
                 .name(major.getName())
+                .collegeName(college.getName())
                 .eventType(EventType.E_CREATED)
                 .build();
         saveToOutbox(event);
@@ -63,7 +65,7 @@ public class MajorService {
 
     // API-DEPT-01: 학과 수정
     @Transactional
-    public void modifyMajor(Long majorId, MajorCreateUpdateReq req) {
+    public void editMajor(Long majorId, MajorCreateUpdateReq req) {
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 학과입니다."));
 
@@ -76,6 +78,15 @@ public class MajorService {
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
                 req.getCapacity(), req.getChairProfessorCode(), req.getInfo());
+
+        // 이벤트 발행 추가
+        MajorEvent event = MajorEvent.builder()
+                .majorId(major.getMajorId())
+                .name(req.getName())
+                .collegeName(college.getName())
+                .eventType(EventType.E_UPDATED)
+                .build();
+        saveToOutbox(event);
     }
 
     // API-DEPT-03: 관리자 전체 목록 조회
@@ -97,7 +108,7 @@ public class MajorService {
 
     // API-DEPT-04: 일반 학과 목록 조회
     public List<MajorListRes> getMajorSimpleList() {
-        return majorRepository.findAll().stream()
+        return majorRepository.findByActiveNot(EnumMajorStatus.CLOSED).stream()
                 .map(m -> MajorListRes.builder()
                         .majorId(m.getMajorId())
                         .majorName(m.getName())
@@ -170,6 +181,18 @@ public class MajorService {
                 .map(c -> CollegeListRes.builder()
                         .collegeId(c.getCollegeId())
                         .name(c.getName())
+                        .build())
+                .toList();
+    }
+
+    private final ProfessorCacheRepository professorCacheRepository;
+
+    // API-DEPT-02: 교수 목록 조회
+    public List<ProfessorListRes> getProfessorList() {
+        return professorCacheRepository.findAll().stream()
+                .map(p -> ProfessorListRes.builder()
+                        .memberCode(p.getMemberCode())
+                        .name(p.getName())
                         .build())
                 .toList();
     }

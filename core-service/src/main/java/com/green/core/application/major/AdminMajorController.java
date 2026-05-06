@@ -5,7 +5,6 @@ import com.green.core.application.major.model.CollegeListRes;
 import com.green.core.application.major.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,17 +49,14 @@ public class AdminMajorController {
     }
 
     // API-DEPT-06: 학과 수정
-    @PutMapping("/{majorId}")
-    public ResultResponse<Void> modifyMajor(@PathVariable Long majorId,
+    @PatchMapping("/{majorId}")
+    public ResultResponse<Void> editMajor(@PathVariable Long majorId,
                                             @RequestBody MajorCreateUpdateReq req) {
-        majorService.modifyMajor(majorId, req);
+        majorService.editMajor(majorId, req);
         return ResultResponse.<Void>builder()
                 .message("학과 수정 완료")
                 .build();
     }
-
-    @Autowired
-    private final CollegeRepository collegeRepository;
 
     @GetMapping("/colleges") // API 명세 경로는 /admin/colleges 이지만 major 관련이니 여기서 처리해도 무방
     public ResultResponse<List<CollegeListRes>> getCollegeList() {
@@ -70,6 +66,12 @@ public class AdminMajorController {
                 .build();
     }
 
-    // API-DEPT-02: 교수 목록 조회 (캐시 테이블 - 추후 구현)
-    // @GetMapping("/professors")
+     //API-DEPT-02: 교수 목록 조회 (캐시 테이블)
+     @GetMapping("/professors")
+     public ResultResponse<List<ProfessorListRes>> getProfessorList() {
+         return ResultResponse.<List<ProfessorListRes>>builder()
+                 .message("교수 목록 조회")
+                 .data(majorService.getProfessorList())
+                 .build();
+     }
 }
