@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.kafka.auth.AuthMemberEvent;
+import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.StudentMajorEvent;
 import com.green.common.kafka.member.memberTopic;
@@ -16,13 +18,16 @@ import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.professor.ProfessorRepository;
+import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Member;
+import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
+import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -174,6 +179,40 @@ public class AdminService {
                 .memberCode(member.getMemberCode())
                 .build();
     }
+
+    @Transactional
+    public MemberCreateRes createProfessor(ProfessorCreateReq req, MultipartFile pic) {
+        Member member = createMember(req, pic, EnumMemberRole.PROFESSOR);
+
+        Professor newProfessor = Professor.builder()
+                .member(member)
+                .majorId(req.getMajorId())
+                .degree(req.getDegree())
+                .position(req.getPosition() != null ? req.getPosition() : EnumProfessorPosition.PROFESSOR)
+                .labBuilding(req.getLabBuilding())
+                .labRoom(req.getLabRoom())
+                .labTel(req.getLabTel())
+                .status(req.getStatus() != null ? req.getStatus() : EnumProfessorStatus.EMPLOYMENT)
+                .build();
+
+        Professor savedProfessor = professorRepository.save(newProfessor);
+
+        // ProfessorEvent Outbox 저장
+        ProfessorEvent professorEvent = ProfessorEvent.builder()
+                .memberCode(member.getMemberCode())
+                .name(member.getName())
+                .degree(savedProfessor.getDegree().getCode())
+                .status(savedProfessor.getStatus().getCode())
+                .eventType(EventType.E_CREATED)
+                .build();
+
+        saveToOutbox(memberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
+
+        return MemberCreateRes.builder()
+                .memberCode(member.getMemberCode())
+                .build();
+    }
+
 
     private void saveToOutbox(String topic, Long aggregateId, Object event) {
         try {
