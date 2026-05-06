@@ -29,6 +29,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:9092
+    # [수신] Member 캐시 정보를 받기 위한 설정
+    consumer:
+      group-id: auth-service-group
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.green.common.model,com.green.common.kafka"
   mail:
     host: smtp.gmail.com        # Gmail SMTP 서버 주소
     port: 587                   # STARTTLS 방식의 표준 포트
