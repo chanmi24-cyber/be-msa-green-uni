@@ -1,13 +1,16 @@
 package com.green.core.application.attendance;
 
+import com.green.common.model.ResultResponse;
+import com.green.core.application.attendance.model.AttendSessionEndRes;
+import com.green.core.application.attendance.model.AttendSessionStartReq;
+import com.green.core.application.attendance.model.AttendSessionStartRes;
 import com.green.core.entity.attendance.QrToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -25,6 +28,16 @@ public class AttendController {
 
 
 
+    // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
+    @PostMapping("{lectureId}/sessions")
+    public ResponseEntity<ResultResponse<AttendSessionStartRes>> startSession(
+            @PathVariable Long lectureId,
+            @RequestBody AttendSessionStartReq req) {
+        AttendSessionStartRes res = attendService.startSession(lectureId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ResultResponse<>("출석 세션이 시작되었습니다.", res));
+    }
+
+    // ── ATTD-07 QR 토큰 SSE ─────────────────────────────────────────────────────
     @GetMapping(value = "sessions/{sessionId}/token", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter getQrTokenStream(@PathVariable Long sessionId) {
 
@@ -50,6 +63,7 @@ public class AttendController {
 
           log.info("QR 토큰 DB 저장 및 전송 완료 - sessionId: {}", sessionId);
 
+          //catch를 IOException만 하게되면 IO오류만 잡게되어서 아래에 나머지 오류를 잡도록 Exception 추가
         } catch (IOException e) {
           log.info("SSE 클라이언트 연결 끊김 - sessionId: {}", sessionId);
           emitter.completeWithError(e);
@@ -76,5 +90,14 @@ public class AttendController {
 
         // 5초마다 새 토큰 생성해서 emitter.send()로 push
         return emitter;
+    }
+
+    // ── ATTD-02 출석 세션 종료 ───────────────────────────────────────────────────
+    @PatchMapping("{lectureId}/sessions/{sessionId}")
+    public ResponseEntity<ResultResponse<AttendSessionEndRes>> endSession(
+            @PathVariable Long lectureId,
+            @PathVariable Long sessionId) {
+        AttendSessionEndRes res = attendService.endSession(lectureId, sessionId);
+        return ResponseEntity.ok(new ResultResponse<>("출석이 종료되었습니다.", res));
     }
 }

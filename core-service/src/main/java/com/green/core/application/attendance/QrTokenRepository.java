@@ -2,6 +2,8 @@ package com.green.core.application.attendance;
 
 import com.green.core.entity.attendance.QrToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -11,8 +13,8 @@ public interface QrTokenRepository extends JpaRepository<QrToken, Long> {
     //      WHERE attendsession_id = ? ORDER BY expires_at DESC LIMIT 1
 
     //JPQL로 쓰는법
-    //@Query("SELECT q FROM QrToken q WHERE q.attendSession.attendsessionId = :sessionId ORDER BY q.expiresAt DESC LIMIT 1")
-    Optional<QrToken> findTopByAttendSession_AttendSessionIdOrderByExpiresAtDesc(Long attendSessionId);
+    @Query("SELECT q FROM QrToken q WHERE q.attendSession.attendsessionId = :sessionId ORDER BY q.expiresAt DESC LIMIT 1")
+    Optional<QrToken> findTopBySessionId(@Param("sessionId") Long sessionId);
 
     Optional<QrToken> findByToken(String token); //학생이 출석하려는 QR의 상태가 유효한지 유효성검사를 위함
 }
