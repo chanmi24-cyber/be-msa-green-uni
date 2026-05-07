@@ -11,6 +11,7 @@ import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumMajorStatus;
+import com.green.core.repository.ProfessorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -194,7 +195,7 @@ public class MajorService {
 
     private final ProfessorCacheRepository professorCacheRepository;
 
-    // API-DEPT-02: 교수 목록 조회
+    // API-DEPT-02: 교수 목록 조회(캐시테이블)
     public List<ProfessorListRes> getProfessorList() {
         return professorCacheRepository.findAll().stream()
                 .map(p -> ProfessorListRes.builder()
