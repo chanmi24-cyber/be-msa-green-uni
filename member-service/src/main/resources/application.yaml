@@ -1,7 +1,8 @@
 constants:
   api:
       prefix: /api/member
-
+  file:
+    directory: ${FILE_DIRECTORY}
 
 server:
   port: ${MEMBER_PORT}
@@ -43,3 +44,6 @@ spring:
         spring.json.trusted.packages: "com.green.common.model"
 outbox:
   enabled: true
+logging:
+  level:
+    org.springframework.web: DEBUG

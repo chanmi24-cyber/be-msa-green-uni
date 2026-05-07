@@ -1,5 +1,6 @@
 package com.green.common.enumcode;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,16 @@ public enum EnumStudentStatus implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumStudentStatus from(String value) {
+        for (EnumStudentStatus status : EnumStudentStatus.values()) {
+            if (status.getCode().equalsIgnoreCase(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 status: " + value);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumStudentStatus> {

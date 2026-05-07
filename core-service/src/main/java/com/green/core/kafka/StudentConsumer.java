@@ -1,8 +1,9 @@
 package com.green.core.kafka;
 
 import com.green.common.constants.EventType;
-import com.green.common.kafka.KafkaTopic;
-import com.green.common.kafka.StudentEvent;
+import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.kafka.member.StudentEvent;
+import com.green.common.kafka.member.memberTopic;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.repository.StudentCacheRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class StudentConsumer {
     private final StudentCacheRepository studentCacheRepository;
 
     @Transactional
-    @KafkaListener(topics = KafkaTopic.STUDENT, groupId = "core-service-group")
+    @KafkaListener(topics = memberTopic.STUDENT, groupId = "core-service-group")
     public void consume(StudentEvent event) {
         log.info("Kafka 메시지 수신: {}", event);
 
@@ -29,6 +30,13 @@ public class StudentConsumer {
                 StudentCache cache = StudentCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
+                        .email(event.getEmail())
+                        .academicYear(event.getAcademicYear())
+                        .semester(event.getSemester())
+                        .status(EnumStudentStatus.from(event.getStatus()))
+                        .isTransfer(event.getIsTransfer())
+                        .isMultiChild(event.getIsMultiChild())
+                        .isVeteran(event.getIsVeteran())
                         .build();
                 studentCacheRepository.save(cache);
                 log.info("studentCache 정보저장 완료: {}", event.getMemberCode());

@@ -1,5 +1,9 @@
 package com.green.common.enumcode;
 
+<<<<<<< HEAD
+=======
+import com.fasterxml.jackson.annotation.JsonCreator;
+>>>>>>> origin/50-lecture-create
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,19 @@ public enum EnumBuilding implements EnumMapperType {
     private final String code;
     private final String value;
 
+<<<<<<< HEAD
+=======
+    @JsonCreator
+    public static EnumBuilding from(String value) {
+        for (EnumBuilding building : EnumBuilding.values()) {
+            if (building.getCode().equalsIgnoreCase(value)) {
+                return building;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 building: " + value);
+    }
+
+>>>>>>> origin/50-lecture-create
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumBuilding> {
         public CodeConverter() { super(EnumBuilding.class, false); }
