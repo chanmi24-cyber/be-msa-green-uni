@@ -1,9 +1,6 @@
 package com.green.academic.application.schedule;
 
-import com.green.academic.application.schedule.model.ScheduleActiveRes;
-import com.green.academic.application.schedule.model.ScheduleCreateReq;
-import com.green.academic.application.schedule.model.ScheduleListReq;
-import com.green.academic.application.schedule.model.ScheduleListRes;
+import com.green.academic.application.schedule.model.*;
 import com.green.academic.entity.Schedule;
 import com.green.academic.exception.ScheduleErrorCode;
 import com.green.common.auth.MemberContext;
@@ -52,23 +49,55 @@ public class ScheduleService {
                         s.getTitle(),
                         s.getStartDate().toLocalDate(),
                         s.getEndDate().toLocalDate(),
-                        s.getType(),
+                        s.getType().getCode(),
                         s.getIsActive()
                 ))
                 .toList();
     }
 
+    //학사일정에 따른 메뉴 활성화 로직
     @Transactional(readOnly = true)
     public Map<EnumScheduleType, Boolean> getActiveSchedules() {
         List<Schedule> activeSchedules = scheduleRepository.findByIsActiveTrue();
 
         Map<EnumScheduleType, Boolean> data = new LinkedHashMap<>();
         for (EnumScheduleType type : EnumScheduleType.values()) {
+            if (type == EnumScheduleType.ETC) continue; // ETC 제외
             data.put(type, false);
         }
         for (Schedule schedule : activeSchedules) {
+            if (schedule.getType() == EnumScheduleType.ETC) continue; // ETC 제외
             data.put(schedule.getType(), true);
         }
         return data;
     }
+
+    @Transactional
+    public ScheduleUpdateRes updateSchedule(Long scheduleId, ScheduleUpdateReq req) {
+        if (req.getStartDate().isAfter(req.getEndDate())) {
+            throw new BusinessException(ScheduleErrorCode.INVALID_DATE_RANGE);
+        }
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
+        schedule.update(req.getTitle(), req.getSemester(), req.getStartDate(),
+                req.getEndDate(), req.getType());
+        return ScheduleUpdateRes.builder()
+                .scheduleId(schedule.getScheduleId())
+                .semester(schedule.getSemester())
+                .title(schedule.getTitle())
+                .type(schedule.getType())
+                .startDate(schedule.getStartDate())
+                .endDate(schedule.getEndDate())
+                .isActive(schedule.getIsActive())
+                .updatedAt(schedule.getUpdatedAt())
+                .build();
+    }
+
+    @Transactional
+    public void deleteSchedule(Long scheduleId) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
+        scheduleRepository.delete(schedule);
+    }
+
 }
