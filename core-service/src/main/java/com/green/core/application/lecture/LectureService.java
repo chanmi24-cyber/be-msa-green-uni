@@ -33,10 +33,10 @@ public class LectureService {
     private final LectureScheduleRepository lectureScheduleRepository;
     private final MajorRepository majorRepository;
     private final LectureRejectionRepository lectureRejectionRepository;
+    private final ScheduleCacheRepository scheduleCacheRepository;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
-        private final ScheduleCacheRepository scheduleCacheRepository;
 
         // 강의개설 기간 체크
         boolean isCourseOpenActive = scheduleCacheRepository
