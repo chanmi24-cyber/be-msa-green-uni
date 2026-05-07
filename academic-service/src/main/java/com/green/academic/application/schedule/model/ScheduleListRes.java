@@ -1,5 +1,6 @@
 package com.green.academic.application.schedule.model;
 
+import com.green.common.enumcode.EnumScheduleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,6 +13,6 @@ public class ScheduleListRes {
     private String title;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String type;  // EnumScheduleType → String으로 변경
+    private EnumScheduleType type;
     private Boolean isActive;
 }
