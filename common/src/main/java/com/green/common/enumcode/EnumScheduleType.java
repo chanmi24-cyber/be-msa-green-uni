@@ -1,4 +1,5 @@
 package com.green.common.enumcode;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Converter;
 import lombok.Getter;
@@ -23,7 +24,7 @@ public enum EnumScheduleType implements EnumMapperType {
     @JsonCreator
     public static EnumScheduleType from(String value) {
         for (EnumScheduleType type : EnumScheduleType.values()) {
-            if (type.getCode().equalsIgnoreCase(value)) {
+            if (type.getValue().equals(value) || type.getCode().equals(value)) {
                 return type;
             }
         }
