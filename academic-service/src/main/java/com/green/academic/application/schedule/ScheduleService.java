@@ -55,15 +55,18 @@ public class ScheduleService {
                 .toList();
     }
 
+    //학사일정에 따른 메뉴 활성화 로직
     @Transactional(readOnly = true)
     public Map<EnumScheduleType, Boolean> getActiveSchedules() {
         List<Schedule> activeSchedules = scheduleRepository.findByIsActiveTrue();
 
         Map<EnumScheduleType, Boolean> data = new LinkedHashMap<>();
         for (EnumScheduleType type : EnumScheduleType.values()) {
+            if (type == EnumScheduleType.ETC) continue; // ETC 제외
             data.put(type, false);
         }
         for (Schedule schedule : activeSchedules) {
+            if (schedule.getType() == EnumScheduleType.ETC) continue; // ETC 제외
             data.put(schedule.getType(), true);
         }
         return data;
