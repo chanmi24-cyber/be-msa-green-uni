@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import java.util.List;
 
@@ -51,6 +53,8 @@ public class MajorService {
                 .capacity(req.getCapacity())
                 .professorCode(req.getChairProfessorCode())
                 .info(req.getInfo())
+                .courseDuration(req.getCourseDuration())
+                .foundedDate(req.getFoundedDate())
                 .build();
 
         majorRepository.save(major);
@@ -83,7 +87,7 @@ public class MajorService {
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
-                req.getCapacity(), req.getChairProfessorCode(), req.getInfo());
+                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate());
 
         // 이벤트 발행 추가
         MajorEvent event = MajorEvent.builder()
@@ -97,6 +101,14 @@ public class MajorService {
 
     // API-DEPT-03: 관리자 전체 목록 조회
     public List<MajorRes> getMajorList() {
+        // 학과별 전임교수 수 집계 Map 생성
+        Map<Long, Long> professorCountMap = majorRepository.findProfessorCountByMajor()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],   // majorId
+                        row -> (Long) row[1]    // count
+                ));
+
         return majorRepository.findAll().stream()
                 .map(m -> MajorRes.builder()
                         .majorId(m.getMajorId())
@@ -108,6 +120,7 @@ public class MajorService {
                         .capacity(m.getCapacity())
                         .collegeId(m.getCollege().getCollegeId())
                         .active(m.getActive())
+                        .professorCount(professorCountMap.getOrDefault(m.getMajorId(), 0L).intValue()) // ← 추가
                         .build())
                 .toList();
     }
@@ -138,6 +151,8 @@ public class MajorService {
                 .professorCode(major.getProfessorCode())
                 .capacity(major.getCapacity())
                 .info(major.getInfo())
+                .courseDuration(major.getCourseDuration())
+                .foundedDate(major.getFoundedDate())
                 .build();
     }
 
