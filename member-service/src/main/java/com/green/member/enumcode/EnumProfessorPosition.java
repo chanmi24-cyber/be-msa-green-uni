@@ -1,4 +1,5 @@
 package com.green.member.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
@@ -15,6 +16,16 @@ public enum EnumProfessorPosition implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumProfessorPosition from(String value) {
+        for (EnumProfessorPosition position : EnumProfessorPosition.values()) {
+            if (position.getCode().equalsIgnoreCase(value)) {
+                return position;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 position: " + value);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumProfessorPosition> {

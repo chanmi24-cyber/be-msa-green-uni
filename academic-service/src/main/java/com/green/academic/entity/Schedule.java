@@ -53,4 +53,7 @@ public class Schedule extends CreatedUpdatedAt {
     @Builder.Default
     private Boolean isNotifiedEnd = false;
 
+    public void updateActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 }
