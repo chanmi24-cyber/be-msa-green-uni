@@ -49,7 +49,7 @@ public class ScheduleService {
                         s.getTitle(),
                         s.getStartDate().toLocalDate(),
                         s.getEndDate().toLocalDate(),
-                        s.getType(),
+                        s.getType().getCode(),
                         s.getIsActive()
                 ))
                 .toList();
