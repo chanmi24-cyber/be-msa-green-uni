@@ -30,6 +30,7 @@ public class OutboxRelay {
                         String.valueOf(outbox.getAggregateId()),
                         outbox.getPayload()).get(); // 동기 대기
                 outboxRepository.deleteById(outbox.getId()); // 트랜잭션 내에서 삭제
+                log.info("Outbox topic: {}", outbox.getTopic());
             } catch (Exception e) {
                 log.error("카프카 전송 실패: {}", e.getMessage());
             }
