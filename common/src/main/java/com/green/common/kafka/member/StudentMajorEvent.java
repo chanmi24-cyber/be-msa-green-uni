@@ -1,4 +1,4 @@
-package com.green.common.kafka;
+package com.green.common.kafka.member;
 
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMajorType;
@@ -17,7 +17,7 @@ public class StudentMajorEvent implements Serializable {
     private Long studentMajorId;
     private Long studentCode;
     private Long majorId;
-    private EnumMajorType type;
+    private String type;
     private Boolean isActive;
     private EventType eventType;
 }

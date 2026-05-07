@@ -1,4 +1,5 @@
 package com.green.member.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
@@ -12,6 +13,16 @@ public enum EnumAdminStatus implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumAdminStatus from(String value) {
+        for (EnumAdminStatus status : EnumAdminStatus.values()) {
+            if (status.getCode().equalsIgnoreCase(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 status: " + value);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumAdminStatus> {
