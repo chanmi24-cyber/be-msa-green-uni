@@ -62,7 +62,7 @@ public class MajorService {
                 .collegeName(college.getName())
                 .eventType(EventType.E_CREATED)
                 .build();
-
+ㅇ
         saveToOutbox(event);
         log.info("4. outbox 저장 완료");
 
