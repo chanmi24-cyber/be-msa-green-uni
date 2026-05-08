@@ -121,4 +121,15 @@ public class LectureService {
         return lectureMapper.findAllLectures(req);
     }
 
+    // LEC-09, 10 공통
+    public LectureDetailRes getLectureDetail(Long lectureId, boolean isProfessor) {
+        LectureDetailRes res = isProfessor
+                ? lectureMapper.findProfessorLectureDetail(lectureId)
+                : lectureMapper.findStudentLectureDetail(lectureId);
+        if (res == null) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND);
+        }
+        return res;
+    }
+
 }

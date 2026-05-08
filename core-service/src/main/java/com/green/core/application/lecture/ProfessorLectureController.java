@@ -4,6 +4,7 @@ import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.core.application.lecture.model.LectureCreateReq;
+import com.green.core.application.lecture.model.LectureDetailRes;
 import com.green.core.application.lecture.model.MyLectureListReq;
 import com.green.core.application.lecture.model.MyLectureListRes;
 import jakarta.validation.Valid;

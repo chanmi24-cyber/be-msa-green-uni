@@ -3,14 +3,12 @@ package com.green.core.application.lecture;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+import com.green.core.application.lecture.model.LectureDetailRes;
 import com.green.core.application.lecture.model.LectureListRes;
 import com.green.core.application.lecture.model.MyLectureListReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
