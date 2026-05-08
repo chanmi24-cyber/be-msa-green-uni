@@ -90,6 +90,11 @@
         <result property="maxStd" column="maxStd"/>
     </resultMap>
 
+
+
+
+
+
     <!-- LEC-03 관리자: 승인관리 목록 -->
     <select id="findAdminLectures" resultMap="myLectureListResMap">
         SELECT
@@ -110,6 +115,7 @@
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         <where>
+            AND l.is_del = false
             <if test="status != null">
                 AND l.status = #{status}
             </if>
@@ -138,6 +144,7 @@
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         WHERE l.member_code = #{memberCode}
+        AND l.is_del = false
         <if test="req.lectureName != null and req.lectureName != ''">
             AND l.lecture_name LIKE CONCAT('%', #{req.lectureName}, '%')
         </if>
@@ -228,6 +235,7 @@
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         WHERE l.lecture_id = #{lectureId}
+        AND l.is_del = false
     </select>
 
     <!-- LEC-10 학생: 강의 상세 조회 -->
