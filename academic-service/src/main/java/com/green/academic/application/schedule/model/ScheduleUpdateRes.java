@@ -1,18 +1,19 @@
 package com.green.academic.application.schedule.model;
 
 import com.green.common.enumcode.EnumScheduleType;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
-@AllArgsConstructor
-public class ScheduleListRes {
+@Builder
+public class ScheduleUpdateRes {
     private Long scheduleId;
+    private Integer semester;
     private String title;
-    private LocalDate startDate;
-    private LocalDate endDate;
     private EnumScheduleType type;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private Boolean isActive;
+    private LocalDateTime updatedAt;
 }
