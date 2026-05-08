@@ -6,11 +6,13 @@ import com.green.common.enumcode.EnumMajorType;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorRepository;
+import com.green.member.application.professor.model.ProfessorProfileRes;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentProfileRes;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
+import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.repository.MajorCacheRepository;
@@ -91,8 +93,38 @@ public class MemberService {
                 .build();
     }
 
-    public MemberProfileRes findProfessor(Long memberCode){
-        return null;
+    public ProfessorProfileRes findProfessor(Long memberCode){
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
+        Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
+        log.info("professorInfo: {}", professorInfo);
+
+        MajorCache majorCache = majorCacheRepository.findById(professorInfo.getMajorId()).orElseThrow();
+
+        return ProfessorProfileRes.builder()
+                .memberCode(memberInfo.getMemberCode())
+                .role(MemberContext.get().role())
+                // 기본 정보
+                .name(memberInfo.getName())
+                .email(memberInfo.getEmail())
+                .address(memberInfo.getAddress())
+                .pic(memberInfo.getPic())
+                .birth(memberInfo.getBirth())
+                .tel(memberInfo.getTel())
+                .emergencyTel(memberInfo.getEmergencyTel())
+                .postcode(memberInfo.getPostcode())
+                .detailAddress(memberInfo.getDetailAddress())
+                .entryDate(memberInfo.getEntryDate())
+                .exitDate(memberInfo.getExitDate())
+                // 학사 정보
+                .degree(professorInfo.getDegree())
+                .position(professorInfo.getPosition())
+                .majorName(majorCache.getName())
+                .collegeName(majorCache.getCollegeName())
+                .labBuilding(professorInfo.getLabBuilding())
+                .labRoom(professorInfo.getLabRoom())
+                .labTel(professorInfo.getLabTel())
+                .status(professorInfo.getStatus())
+                .build();
     }
 
     public MemberProfileRes findAdmin(Long memberCode){
