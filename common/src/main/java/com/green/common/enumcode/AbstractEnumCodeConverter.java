@@ -22,8 +22,11 @@ public abstract class AbstractEnumCodeConverter<E extends Enum<E> & EnumMapperTy
 
     @Override
     public E convertToEntityAttribute(String dbData) {
-        if(!nullable && StringUtils.isBlank(dbData) || dbData == null) {
-            throw new IllegalArgumentException(String.format("%s(는)가 DB에 NULL 혹은 Empty로 저장되어 있습니다.", targetEnumClass.getSimpleName()));
+        if (dbData == null || StringUtils.isBlank(dbData)) {
+            if (!nullable) {
+                throw new IllegalArgumentException(String.format("%s(는)가 DB에 NULL 혹은 Empty로 저장되어 있습니다.", targetEnumClass.getSimpleName()));
+            }
+            return null;
         }
         return EnumConvertUtils.ofCode(targetEnumClass, dbData);
     }
