@@ -1,7 +1,10 @@
 package com.green.common.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
 
 @Getter
 @RequiredArgsConstructor
@@ -12,6 +15,14 @@ public enum EnumApprovalStatus implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumApprovalStatus from(String value) {
+        return Arrays.stream(values())
+                .filter(e -> e.getCode().equals(value))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid: " + value));
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumApprovalStatus> {

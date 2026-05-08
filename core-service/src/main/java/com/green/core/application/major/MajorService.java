@@ -19,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import java.util.List;
 
 @Slf4j
@@ -30,9 +34,46 @@ public class MajorService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
 
+    //유효성 검사
+    private void validateRequiredFields(MajorCreateUpdateReq req) {
+        // 1. 학과명 (공백 제외)
+        if (req.getName() == null || req.getName().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학과명을 입력해주세요.");
+        }
+        // 2. 소속대학 ID
+        if (req.getCollegeId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "소속대학을 선택해주세요.");
+        }
+        // 3. 건물 선택 (EnumBuilding)
+        if (req.getMajorBuilding() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "건물을 선택해주세요.");
+        }
+        // 4. 호수 (공백 제외)
+        if (req.getRoom() == null || req.getRoom().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "호수를 입력해주세요.");
+        }
+        // 5. 전화번호 (공백 제외)
+        if (req.getTel() == null || req.getTel().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "전화번호를 입력해주세요.");
+        }
+        // 6. 수업연한
+        if (req.getCourseDuration() == null || req.getCourseDuration() < 4) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수업연한을 4년 이상으로 입력해주세요.");
+        }
+        // 7. 입학정원
+        if (req.getCapacity() == null || req.getCapacity() < 30) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "입학정원을 30명 이상으로 입력해주세요.");
+        }
+        // 8. 개설일
+        if (req.getFoundedDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "개설일을 선택해주세요.");
+        }
+    }
+
     // API-DEPT-01: 학과 개설
     @Transactional
     public Long createMajor(MajorCreateUpdateReq req) {
+        validateRequiredFields(req);
         College college = collegeRepository.findById(req.getCollegeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
         log.info("1. college 조회 완료: {}", college.getName());
@@ -51,6 +92,8 @@ public class MajorService {
                 .capacity(req.getCapacity())
                 .professorCode(req.getChairProfessorCode())
                 .info(req.getInfo())
+                .courseDuration(req.getCourseDuration())
+                .foundedDate(req.getFoundedDate())
                 .build();
 
         majorRepository.save(major);
@@ -72,6 +115,7 @@ public class MajorService {
     // API-DEPT-01: 학과 수정
     @Transactional
     public void editMajor(Long majorId, MajorCreateUpdateReq req) {
+        validateRequiredFields(req);
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 학과입니다."));
 
@@ -83,7 +127,7 @@ public class MajorService {
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
-                req.getCapacity(), req.getChairProfessorCode(), req.getInfo());
+                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate());
 
         // 이벤트 발행 추가
         MajorEvent event = MajorEvent.builder()
@@ -97,6 +141,14 @@ public class MajorService {
 
     // API-DEPT-03: 관리자 전체 목록 조회
     public List<MajorRes> getMajorList() {
+        // 학과별 전임교수 수 집계 Map 생성
+        Map<Long, Long> professorCountMap = majorRepository.findProfessorCountByMajor()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],   // majorId
+                        row -> (Long) row[1]    // count
+                ));
+
         return majorRepository.findAll().stream()
                 .map(m -> MajorRes.builder()
                         .majorId(m.getMajorId())
@@ -108,6 +160,7 @@ public class MajorService {
                         .capacity(m.getCapacity())
                         .collegeId(m.getCollege().getCollegeId())
                         .active(m.getActive())
+                        .professorCount(professorCountMap.getOrDefault(m.getMajorId(), 0L).intValue()) // ← 추가
                         .build())
                 .toList();
     }
@@ -138,6 +191,8 @@ public class MajorService {
                 .professorCode(major.getProfessorCode())
                 .capacity(major.getCapacity())
                 .info(major.getInfo())
+                .courseDuration(major.getCourseDuration())
+                .foundedDate(major.getFoundedDate())
                 .build();
     }
 
@@ -199,6 +254,16 @@ public class MajorService {
                 .map(p -> ProfessorListRes.builder()
                         .memberCode(p.getMemberCode())
                         .name(p.getName())
+                        .build())
+                .toList();
+    }
+
+    //빌딩 목록 조회
+    public List<BuildingRes> getBuildingList() {
+        return Arrays.stream(EnumBuilding.values())
+                .map(b -> BuildingRes.builder()
+                        .code(b.name())
+                        .name(b.getValue())
                         .build())
                 .toList();
     }

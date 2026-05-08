@@ -5,6 +5,8 @@ import com.green.core.enumcode.EnumMajorStatus;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 @Getter
 @Builder
 public class MajorDetailRes {
@@ -17,5 +19,7 @@ public class MajorDetailRes {
     private String tel;
     private Long professorCode;
     private Integer capacity;
+    private Integer courseDuration;
+    private String foundedDate;
     private String info;
 }

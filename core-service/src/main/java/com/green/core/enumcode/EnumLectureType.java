@@ -1,9 +1,12 @@
 package com.green.core.enumcode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
 
 @Getter
 @RequiredArgsConstructor
@@ -15,6 +18,14 @@ public enum EnumLectureType implements EnumMapperType {
 
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumLectureType from(String value) {
+        return Arrays.stream(values())
+                .filter(e -> e.getCode().equalsIgnoreCase(value))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 lectureType: " + value));
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumLectureType> {
