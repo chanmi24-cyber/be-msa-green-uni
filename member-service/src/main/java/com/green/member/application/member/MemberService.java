@@ -4,6 +4,7 @@ import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.member.application.admin.AdminRepository;
+import com.green.member.application.admin.model.AdminProfileRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorProfileRes;
@@ -11,6 +12,7 @@ import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentProfileRes;
 import com.green.member.entity.cache.MajorCache;
+import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
@@ -127,9 +129,30 @@ public class MemberService {
                 .build();
     }
 
-    public MemberProfileRes findAdmin(Long memberCode){
-        return null;
+    public AdminProfileRes findAdmin(Long memberCode){
+        log.info("findAdmin 진입, memberCode: {}", memberCode);
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
+        log.info("memberInfo: {}", memberInfo);
+        Admin adminInfo = adminRepository.findById(memberCode).orElseThrow();
+        log.info("adminInfo: {}", adminInfo);
+
+        return AdminProfileRes.builder()
+                .memberCode(memberInfo.getMemberCode())
+                .role(MemberContext.get().role())
+                // 기본 정보
+                .name(memberInfo.getName())
+                .email(memberInfo.getEmail())
+                .address(memberInfo.getAddress())
+                .pic(memberInfo.getPic())
+                .birth(memberInfo.getBirth())
+                .tel(memberInfo.getTel())
+                .emergencyTel(memberInfo.getEmergencyTel())
+                .postcode(memberInfo.getPostcode())
+                .detailAddress(memberInfo.getDetailAddress())
+                .entryDate(memberInfo.getEntryDate())
+                .exitDate(memberInfo.getExitDate())
+                // 학사 정보
+                .status(adminInfo.getStatus())
+                .build();
     }
-
-
 }
