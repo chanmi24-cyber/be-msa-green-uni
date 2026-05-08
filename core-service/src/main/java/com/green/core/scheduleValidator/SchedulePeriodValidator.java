@@ -77,11 +77,4 @@ public class SchedulePeriodValidator {
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_OPEN_PERIOD);
     }
 
-    // 기타 기간 체크
-    public void checkEtc() {
-        boolean isActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.ETC)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_ETC_PERIOD);
-    }
 }
