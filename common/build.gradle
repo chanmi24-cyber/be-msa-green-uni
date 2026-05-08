@@ -12,6 +12,9 @@ dependencies {
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.springframework.boot:spring-boot-starter-kafka'
 
+    //jackson-datatype-jsr310 의존성(Jackson이 직렬화)
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
     // Spring Data Redis 라이브러리
     compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
     compileOnly 'org.springframework.boot:spring-boot-starter-cache'

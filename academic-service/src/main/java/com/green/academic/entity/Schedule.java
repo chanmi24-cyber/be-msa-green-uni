@@ -53,4 +53,18 @@ public class Schedule extends CreatedUpdatedAt {
     @Builder.Default
     private Boolean isNotifiedEnd = false;
 
+    public void updateActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public void update(String title, Integer semester, LocalDateTime startDate,
+                       LocalDateTime endDate, EnumScheduleType type) {
+        this.title = title;
+        this.semester = semester;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.type = type;
+    }
+
+
 }

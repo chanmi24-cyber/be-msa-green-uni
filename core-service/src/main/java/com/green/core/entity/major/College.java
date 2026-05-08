@@ -15,6 +15,6 @@ public class College {
     @Column(name = "college_id")
     private Long collegeId;
 
-    @Column(name = "name", nullable = false, length = 50)
+    @Column(name = "name", length = 50, nullable = false)
     private String name;
 }
