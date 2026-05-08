@@ -1,6 +1,9 @@
 package com.green.core.application.attendance;
 
 import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.core.application.attendance.model.AttendActiveSessionRes;
+import com.green.core.application.attendance.model.AttendLectureRes;
 import com.green.core.application.attendance.model.AttendScanReq;
 import com.green.core.application.attendance.model.AttendScanRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
@@ -11,6 +14,7 @@ import com.green.core.entity.attendance.AttendanceSession;
 import com.green.core.entity.attendance.QrToken;
 import com.green.core.entity.course.Course;
 import com.green.core.entity.lecture.Lecture;
+import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.enumcode.EnumAttendStatus;
 import com.green.core.enumcode.EnumSessionType;
 import lombok.RequiredArgsConstructor;
@@ -205,6 +209,70 @@ public class AttendService {
         attendanceRepository.save(attendance);
 
         return new AttendScanRes(attendance.getAttendId(), attendance.getStatus(), session.getClassDate());
+    }
+
+    // ── 활성 세션 조회 (페이지 재진입 시 기존 세션 복구용) ───────────────────────
+    @Transactional(readOnly = true)
+    public java.util.Optional<AttendActiveSessionRes> getActiveSession(Long lectureId) {
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+
+        Long professorCode = MemberContext.get().memberCode();
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 강의에 접근 권한이 없습니다.");
+        }
+
+        return attendanceSessionRepository.findByLecture_LectureIdAndIsActiveTrue(lectureId)
+                .map(s -> new AttendActiveSessionRes(s.getAttendsessionId(), s.getClassDate()));
+    }
+
+    // ── 교수 강의 목록 조회 (출석 QR 선택 화면용) ────────────────────────────────
+    @Transactional(readOnly = true)
+    public List<AttendLectureRes> getProfessorLectures() {
+        Long professorCode = MemberContext.get().memberCode();
+        List<Lecture> lectures = attendLectureRepository
+                .findByMemberCodeAndIsDelFalseAndStatus(professorCode, EnumApprovalStatus.APPROVED);
+
+        return lectures.stream().map(this::toLectureRes).toList();
+    }
+
+    // ── 특정 강의 정보 조회 (QR 출석 페이지 헤더용) ──────────────────────────────
+    @Transactional(readOnly = true)
+    public AttendLectureRes getProfessorLecture(Long lectureId) {
+        Long professorCode = MemberContext.get().memberCode();
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 강의에 접근 권한이 없습니다.");
+        }
+
+        return toLectureRes(lecture);
+    }
+
+    private AttendLectureRes toLectureRes(Lecture lecture) {
+        List<LectureSchedule> schedules = attendLectureScheduleRepository
+                .findByLectureIdWithRoom(lecture.getLectureId());
+
+        List<AttendLectureRes.ScheduleInfo> scheduleInfos = schedules.stream()
+                .map(s -> new AttendLectureRes.ScheduleInfo(
+                        s.getDayOfWeek(),
+                        s.getStartPeriod(),
+                        s.getEndPeriod(),
+                        s.getClassRoom().getBuilding().getValue() + " " + s.getClassRoom().getRoom()
+                ))
+                .toList();
+
+        return new AttendLectureRes(
+                lecture.getLectureId(),
+                lecture.getLectureName(),
+                lecture.getYear(),
+                lecture.getSemester(),
+                lecture.getCredit(),
+                lecture.getLectureType().getValue(),
+                lecture.getAcademicYear(),
+                scheduleInfos
+        );
     }
 
     // ── IP가 CIDR 범위 내에 있는지 확인 ──────────────────────────────────────────

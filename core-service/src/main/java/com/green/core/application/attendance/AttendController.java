@@ -1,10 +1,14 @@
 package com.green.core.application.attendance;
 
 import com.green.common.model.ResultResponse;
+import com.green.core.application.attendance.model.AttendActiveSessionRes;
+import com.green.core.application.attendance.model.AttendLectureRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
 import com.green.core.application.attendance.model.AttendSessionStartReq;
 import com.green.core.application.attendance.model.AttendSessionStartRes;
 import com.green.core.entity.attendance.QrToken;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,24 @@ public class AttendController {
     private final AttendService attendService;
 
 
+
+    // ── 교수 강의 목록 조회 (출석 QR 선택 화면용) ────────────────────────────────
+    @GetMapping("my-lectures")
+    public ResponseEntity<ResultResponse<List<AttendLectureRes>>> getProfessorLectures() {
+        return ResponseEntity.ok(new ResultResponse<>("교수 강의 목록 조회 성공", attendService.getProfessorLectures()));
+    }
+
+    // ── 특정 강의 정보 조회 (QR 출석 페이지 헤더용) ──────────────────────────────
+    @GetMapping("my-lectures/{lectureId}")
+    public ResponseEntity<ResultResponse<AttendLectureRes>> getProfessorLecture(@PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("강의 정보 조회 성공", attendService.getProfessorLecture(lectureId)));
+    }
+
+    // ── 활성 세션 조회 (페이지 재진입 시 기존 세션 복구) ────────────────────────
+    @GetMapping("{lectureId}/sessions/active")
+    public ResponseEntity<ResultResponse<AttendActiveSessionRes>> getActiveSession(@PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("활성 세션 조회", attendService.getActiveSession(lectureId).orElse(null)));
+    }
 
     // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
     @PostMapping("{lectureId}/sessions")
