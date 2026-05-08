@@ -74,4 +74,12 @@ public class AdminMajorController {
                  .data(majorService.getProfessorList())
                  .build();
      }
+
+    @GetMapping("/buildings")
+    public ResultResponse<List<BuildingRes>> getBuildingList() {
+        return ResultResponse.<List<BuildingRes>>builder()
+                .message("빌딩 목록 조회")
+                .data(majorService.getBuildingList())
+                .build();
+    }
 }
