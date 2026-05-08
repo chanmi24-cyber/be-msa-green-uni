@@ -1,12 +1,10 @@
 package com.green.core.application.lecture.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 // LEC-06, 07 공용
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

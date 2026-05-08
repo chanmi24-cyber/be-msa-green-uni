@@ -1,18 +1,18 @@
 package com.green.core.application.lecture.model;
 
 import com.green.common.enumcode.EnumApprovalStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 // LEC-03 관리자용
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class AdminLectureReq {
-        private Integer page;
-        private Integer size;
+        private Integer page ;
+        private Integer size ;
         private EnumApprovalStatus status;
+        private Integer StartIdx;
 }
