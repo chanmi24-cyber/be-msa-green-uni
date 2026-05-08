@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
-import java.time.Instant;
 import java.util.Date;
 
 @Slf4j
@@ -45,10 +44,7 @@ public class JwtTokenProvider {
 
     // JWT 문자열 만드는 메소드. 암호화된 문자열(데이터, 토큰만료 시간 포함)
     public String generateToken(JwtMember jwtMember, long tokenValidityMilleSeconds){
-        Instant now = Instant.now();
-        Instant expiryDate = now.plusMillis(tokenValidityMilleSeconds);
-
-        log.info("now: {}, expiryDate: {}", now, expiryDate);
+        Date now = new Date();
         return Jwts.builder()
                 // [헤더] 토큰 타입을 Bearer로 지정
                 .header().type(constJwt.bearerFormat())
@@ -56,9 +52,9 @@ public class JwtTokenProvider {
                 // [페이로드] 발급자
                 .issuer(constJwt.issuer())
                 // [페이로드] 발급 시간
-                .issuedAt(Date.from(now))
+                .issuedAt(now)
                 // [페이로드] 만료 시간 (현재시간 + 전달받은 유효시간)
-                .expiration(Date.from(expiryDate))
+                .expiration(new Date(now.getTime() + tokenValidityMilleSeconds))
                 // [페이로드] 실제 유저 데이터 (jwtMember 값)
                 .claim(constJwt.claimKey(), makeClaimMyUserToJson(jwtMember))
                 // 시크릿 키로 서명 (위변조 방지)
