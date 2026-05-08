@@ -21,19 +21,10 @@ public enum EnumLectureType implements EnumMapperType {
 
     @JsonCreator
     public static EnumLectureType from(String value) {
-<<<<<<< HEAD
         return Arrays.stream(values())
-                .filter(e -> e.getCode().equals(value))
+                .filter(e -> e.getCode().equalsIgnoreCase(value))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invalid: " + value));
-=======
-        for (EnumLectureType type : EnumLectureType.values()) {
-            if (type.getCode().equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException("유효하지 않은 lectureType: " + value);
->>>>>>> origin/50-lecture-create
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 lectureType: " + value));
     }
 
     @Converter(autoApply = true)
