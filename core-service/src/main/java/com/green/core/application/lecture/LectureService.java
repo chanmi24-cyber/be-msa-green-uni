@@ -132,4 +132,56 @@ public class LectureService {
         return res;
     }
 
+    // LEC-11 강의 수정
+    @Transactional
+    public void updateLecture(MemberDto memberDto, Long lectureId, LectureDetailReq req) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
+
+        if (!lecture.getMemberCode().equals(memberDto.memberCode())) {
+            throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+        }
+
+        if (lecture.getStatus() != EnumApprovalStatus.REJECTED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_MODIFIABLE);
+        }
+
+        Major major = majorRepository.findById(req.getMajorId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
+
+        // 기존 스케줄 삭제 후 재등록
+        lectureScheduleRepository.deleteAllByLecture(lecture);
+        for (LectureDetailReq.ScheduleReq s : req.getSchedules()) {
+            Classroom classroom = classroomRepository.findById(s.getRoomId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
+            LectureSchedule schedule = LectureSchedule.builder()
+                    .lecture(lecture)
+                    .classRoom(classroom)
+                    .dayOfWeek(s.getDayOfWeek())
+                    .startPeriod(s.getStartPeriod())
+                    .endPeriod(s.getEndPeriod())
+                    .build();
+            lectureScheduleRepository.save(schedule);
+        }
+
+        lecture.update(req, major);
+    }
+
+    // LEC-12 강의 삭제
+    @Transactional
+    public void deleteLecture(MemberDto memberDto, Long lectureId) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
+
+        if (!lecture.getMemberCode().equals(memberDto.memberCode())) {
+            throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+        }
+
+        if (lecture.getStatus() == EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_DELETABLE);
+        }
+
+        lecture.delete();
+    }
+
 }
