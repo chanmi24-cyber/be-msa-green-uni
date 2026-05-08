@@ -8,4 +8,6 @@ import java.time.LocalDate;
 public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
 
     boolean existsByLecture_LectureIdAndClassDateAndIsActiveTrue(Long lectureId, LocalDate classDate);
+
+    java.util.Optional<AttendanceSession> findByLecture_LectureIdAndIsActiveTrue(Long lectureId);
 }

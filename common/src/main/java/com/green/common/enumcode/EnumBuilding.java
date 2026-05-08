@@ -29,20 +29,20 @@ public enum EnumBuilding implements EnumMapperType {
     private final String value;
 
     @JsonCreator
-    public static EnumBuilding from(String input) {
-        if (input == null) return null;
+    public static EnumBuilding from(String value) {
+        if (value == null) return null;
 
         for (EnumBuilding building : EnumBuilding.values()) {
             // 1. 한글 명칭("인문관")으로 비교
-            if (building.getValue().equals(input)) {
+            if (building.getValue().equals(value)) {
                 return building;
             }
             // 2. 영문 코드("HUMANITIES")로 비교 (대소문자 무시)
-            if (building.getCode().equalsIgnoreCase(input)) {
+            if (building.getCode().equalsIgnoreCase(value)) {
                 return building;
             }
         }
-        throw new IllegalArgumentException("유효하지 않은 building 값입니다: " + input);
+        throw new IllegalArgumentException("유효하지 않은 building 값입니다: " + value);
     }
 
     @Converter(autoApply = true)
