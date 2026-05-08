@@ -1,9 +1,12 @@
 package com.green.gateway;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.util.TimeZone;
 
 @SpringBootApplication(scanBasePackages = {"com.green.gateway", "com.green.common"})
 public class GatewayApplication {
