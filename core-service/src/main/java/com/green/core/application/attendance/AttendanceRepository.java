@@ -21,4 +21,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
         @Param("classDate") LocalDate classDate);
 
   boolean existsByAttendsessionAndStudentCode(AttendanceSession attendsession, Long studentCode);
+
+  List<Attendance> findByAttendsession_AttendsessionId(Long sessionId);
+
+  @Query("SELECT a FROM Attendance a JOIN FETCH a.attendsession s WHERE a.attendId = :attendId AND s.lecture.lectureId = :lectureId")
+  java.util.Optional<Attendance> findByAttendIdAndLectureId(@Param("lectureId") Long lectureId, @Param("attendId") Long attendId);
 }

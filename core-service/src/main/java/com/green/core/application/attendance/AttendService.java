@@ -4,11 +4,15 @@ import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.core.application.attendance.model.AttendActiveSessionRes;
 import com.green.core.application.attendance.model.AttendLectureRes;
+import com.green.core.application.attendance.model.AttendProListRes;
 import com.green.core.application.attendance.model.AttendScanReq;
 import com.green.core.application.attendance.model.AttendScanRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
+import com.green.core.application.attendance.model.AttendSessionListRes;
 import com.green.core.application.attendance.model.AttendSessionStartReq;
 import com.green.core.application.attendance.model.AttendSessionStartRes;
+import com.green.core.application.attendance.model.AttendStatusUpdateReq;
+import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.attendance.Attendance;
 import com.green.core.entity.attendance.AttendanceSession;
 import com.green.core.entity.attendance.QrToken;
@@ -26,8 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +49,7 @@ public class AttendService {
     private final AttendEnrollmentRepository attendEnrollmentRepository;
     private final AttendLectureRepository attendLectureRepository;
     private final AttendLectureScheduleRepository attendLectureScheduleRepository;
+    private final AttendStudentCacheRepository attendStudentCacheRepository;
 
     // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
     @Transactional
@@ -226,6 +234,92 @@ public class AttendService {
         }
 
         return toLectureRes(lecture);
+    }
+
+    // ── 출석부 세션 목록 조회 ────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public List<AttendSessionListRes> getSessionList(Long lectureId) {
+        Long professorCode = MemberContext.get().memberCode();
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+        return attendanceSessionRepository.findByLecture_LectureIdOrderByClassDateDesc(lectureId)
+                .stream()
+                .map(s -> new AttendSessionListRes(
+                        s.getAttendsessionId(),
+                        s.getClassDate(),
+                        s.getSessionType().getValue(),
+                        s.getIsActive()))
+                .toList();
+    }
+
+    // ── 세션별 출석부(수강생 전체 기준) 조회 ───────────────────────────────────────
+    // 수강신청된 학생 전원을 기준으로 출력하며, 출석 기록이 있으면 상태 표시, 없으면 "미처리"
+    @Transactional(readOnly = true)
+    public List<AttendProListRes> getRoster(Long lectureId, Long sessionId) {
+        Long professorCode = MemberContext.get().memberCode();
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+        AttendanceSession session = attendanceSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 세션입니다."));
+        if (!session.getLecture().getLectureId().equals(lectureId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+
+        // 수강생 전원 조회 (출석 기록 없는 학생도 포함)
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
+
+        // 이 세션의 출석 기록 (studentCode → Attendance)
+        Map<Long, Attendance> attendanceMap = attendanceRepository
+                .findByAttendsession_AttendsessionId(sessionId)
+                .stream()
+                .collect(Collectors.toMap(Attendance::getStudentCode, a -> a));
+
+        // 학생 정보 캐시 조회
+        List<Long> studentCodes = enrollments.stream().map(Course::getStudentCode).distinct().toList();
+        Map<Long, StudentCache> studentMap = attendStudentCacheRepository.findAllById(studentCodes)
+                .stream().collect(Collectors.toMap(StudentCache::getMemberCode, s -> s));
+
+        return enrollments.stream()
+                .map(e -> {
+                    Long studentCode = e.getStudentCode();
+                    Attendance att = attendanceMap.get(studentCode);
+                    StudentCache sc = studentMap.get(studentCode);
+                    return new AttendProListRes(
+                            att != null ? att.getAttendId() : null,
+                            studentCode,
+                            sc != null ? sc.getName() : "알 수 없음",
+                            sc != null ? sc.getAcademicYear() : null,
+                            att != null ? att.getStatus().getValue() : "미처리",
+                            att != null ? att.getReason() : null
+                    );
+                })
+                .toList();
+    }
+
+    // ── 출석 상태 단건 수정 ──────────────────────────────────────────────────────────
+    @Transactional
+    public void updateAttendStatus(Long lectureId, Long attendId, AttendStatusUpdateReq req) {
+        Long professorCode = MemberContext.get().memberCode();
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+        Attendance attendance = attendanceRepository.findByAttendIdAndLectureId(lectureId, attendId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "출석 기록을 찾을 수 없습니다."));
+
+        EnumAttendStatus newStatus = Arrays.stream(EnumAttendStatus.values())
+                .filter(s -> s.getCode().equals(req.getStatus()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 출석 상태입니다."));
+
+        attendance.updateStatus(newStatus, req.getReason());
     }
 
     // ── 세션 종료 + 결석 처리 (endSession · 스케줄러 공용) ─────────────────────────
