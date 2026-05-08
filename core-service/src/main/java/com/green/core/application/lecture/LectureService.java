@@ -18,6 +18,7 @@ import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
 import com.green.core.repository.ScheduleCacheRepository;
+import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,17 +35,13 @@ public class LectureService {
     private final MajorRepository majorRepository;
     private final LectureRejectionRepository lectureRejectionRepository;
     private final ScheduleCacheRepository scheduleCacheRepository;
+    private final SchedulePeriodValidator schedulePeriodValidator;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
 
         // 강의개설 기간 체크
-        boolean isCourseOpenActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_OPEN)
-                .isPresent();
-        if (!isCourseOpenActive) {
-            throw new BusinessException(LectureErrorCode.NOT_COURSE_OPEN_PERIOD);
-        }
+        schedulePeriodValidator.checkCourseOpen();
 
         Major major = majorRepository.findById(req.getMajorId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
