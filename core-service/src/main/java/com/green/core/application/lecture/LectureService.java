@@ -1,10 +1,11 @@
 package com.green.core.application.lecture;
 
 import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
-import com.green.core.application.lecture.mapper.LectureMapper;
-import com.green.core.application.lecture.model.*;
+import com.green.core.application.lecture.model.LectureApprovalReq;
+import com.green.core.application.lecture.model.LectureCreateReq;
 import com.green.core.application.lecture.repository.ClassroomRepository;
 import com.green.core.application.lecture.repository.LectureRepository;
 import com.green.core.application.lecture.repository.LectureScheduleRepository;
@@ -16,13 +17,12 @@ import com.green.core.entity.lecture.LectureRejection;
 import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
+import com.green.core.repository.ScheduleCacheRepository;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 
 @Slf4j
@@ -34,8 +34,8 @@ public class LectureService {
     private final LectureScheduleRepository lectureScheduleRepository;
     private final MajorRepository majorRepository;
     private final LectureRejectionRepository lectureRejectionRepository;
+    private final ScheduleCacheRepository scheduleCacheRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
-    private final LectureMapper lectureMapper;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -99,26 +99,6 @@ public class LectureService {
 
         // 상태 변경 → Lecture에 메서드 있음.
         lecture.updateStatus(req.getStatus());
-    }
-
-    // LEC-03 관리자: 승인관리 목록
-    public List<MyLectureListRes> getAdminLectures(AdminLectureReq req) {
-        return lectureMapper.findAdminLectures(req);
-    }
-
-    // LEC-06 교수: 내 강의 목록
-    public List<MyLectureListRes> getProfessorMyLectures(MemberDto memberDto, MyLectureListReq req) {
-        return lectureMapper.findProfessorMyLectures(memberDto.memberCode(), req);
-    }
-
-    // LEC-07 학생: 내 강의 목록
-    public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
-        return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
-    }
-
-    // LEC-08 전체 강의 목록
-    public List<LectureListRes> getAllLectures(LectureListReq req) {
-        return lectureMapper.findAllLectures(req);
     }
 
 }
