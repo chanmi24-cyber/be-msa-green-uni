@@ -101,30 +101,8 @@ public class AttendService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 강의에 접근 권한이 없습니다.");
         }
 
-        // 2. 세션 종료 처리 (is_active = false, ended_at = 지금)
-        session.end();
-
-        // 3. 이 강의의 수강생 목록 조회
-        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
-
-        // 4. 오늘 날짜로 이미 출석 기록이 있는 학생 ID 목록 조회
-        LocalDate classDate = session.getClassDate();
-        List<Long> attendedStudentCodes = attendanceRepository
-                .findStudentCodeByLectureIdAndClassDate(lectureId, classDate);
-        //  → "오늘 이미 스캔한 학생들의 ID 목록"
-
-        // 5. 수강생 중 출석 기록 없는 학생만 골라서 ABSENT INSERT
-        List<Attendance> absentList = enrollments.stream()
-                .filter(e -> !attendedStudentCodes.contains(e.getStudentCode()))
-                .map(e -> Attendance.builder()
-                        .attendsession(session)
-                        .course(e)
-                        .studentCode(e.getStudentCode())
-                        .status(EnumAttendStatus.ABSENT)
-                        .build())
-                .toList();
-
-        attendanceRepository.saveAll(absentList);
+        // 2. 세션 종료 처리 및 결석 일괄 INSERT
+        processSessionEnd(session);
 
         return new AttendSessionEndRes(sessionId, false, session.getEndedAt());
     }
@@ -248,6 +226,30 @@ public class AttendService {
         }
 
         return toLectureRes(lecture);
+    }
+
+    // ── 세션 종료 + 결석 처리 (endSession · 스케줄러 공용) ─────────────────────────
+    public void processSessionEnd(AttendanceSession session) {
+        session.end();
+
+        Long lectureId = session.getLecture().getLectureId();
+        LocalDate classDate = session.getClassDate();
+
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
+        List<Long> attendedStudentCodes = attendanceRepository
+                .findStudentCodeByLectureIdAndClassDate(lectureId, classDate);
+
+        List<Attendance> absentList = enrollments.stream()
+                .filter(e -> !attendedStudentCodes.contains(e.getStudentCode()))
+                .map(e -> Attendance.builder()
+                        .attendsession(session)
+                        .course(e)
+                        .studentCode(e.getStudentCode())
+                        .status(EnumAttendStatus.ABSENT)
+                        .build())
+                .toList();
+
+        attendanceRepository.saveAll(absentList);
     }
 
     private AttendLectureRes toLectureRes(Lecture lecture) {
