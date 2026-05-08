@@ -1,19 +1,15 @@
 package com.green.core.application.lecture;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.common.enumcode.EnumChangeType;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.core.application.lecture.mapper.LectureMapper;
 import com.green.core.application.lecture.model.*;
-import com.green.core.application.lecture.repository.ClassroomRepository;
-import com.green.core.application.lecture.repository.LectureRepository;
-import com.green.core.application.lecture.repository.LectureScheduleRepository;
-import com.green.core.application.lecture.repository.LectureRejectionRepository;
+import com.green.core.application.lecture.repository.*;
 import com.green.core.application.major.MajorRepository;
-import com.green.core.entity.lecture.Classroom;
-import com.green.core.entity.lecture.Lecture;
-import com.green.core.entity.lecture.LectureRejection;
-import com.green.core.entity.lecture.LectureSchedule;
+import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
@@ -22,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -36,6 +34,8 @@ public class LectureService {
     private final LectureRejectionRepository lectureRejectionRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final LectureMapper lectureMapper;
+    private final LectureHistoryRepository lectureHistoryRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -146,6 +146,29 @@ public class LectureService {
             throw new BusinessException(LectureErrorCode.LECTURE_NOT_MODIFIABLE);
         }
 
+
+        // 히스토리저장용 - 수정 전 데이터 JSON으로 저장
+        try {
+            String beforeData = String.format(
+                    "{\"lectureId\":%d,\"lectureName\":\"%s\",\"status\":\"%s\"}",
+                    lecture.getLectureId(),
+                    lecture.getLectureName(),
+                    lecture.getStatus()
+            );
+
+            LectureHistory history = LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("강의 수정")
+                    .updatorCode(memberDto.memberCode())
+                    .build();
+            lectureHistoryRepository.save(history);
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        //수정로직
         Major major = majorRepository.findById(req.getMajorId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
 
@@ -181,6 +204,31 @@ public class LectureService {
             throw new BusinessException(LectureErrorCode.LECTURE_NOT_DELETABLE);
         }
 
+        //히스토리 저장용
+        try {
+            Map<String, Object> beforeMap = new HashMap<>();
+            beforeMap.put("lectureId", lecture.getLectureId());
+            beforeMap.put("lectureName", lecture.getLectureName());
+            beforeMap.put("status", lecture.getStatus().getCode());
+            beforeMap.put("year", lecture.getYear());
+            beforeMap.put("semester", lecture.getSemester());
+            beforeMap.put("credit", lecture.getCredit());
+            beforeMap.put("lectureType", lecture.getLectureType().getCode());
+            beforeMap.put("memberCode", lecture.getMemberCode());
+            String beforeData = objectMapper.writeValueAsString(beforeMap);
+            LectureHistory history = LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.DELETE)
+                    .beforeData(beforeData)
+                    .changeReason("강의 삭제")
+                    .updatorCode(memberDto.memberCode())
+                    .build();
+            lectureHistoryRepository.save(history);
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        //삭제로직
         lecture.delete();
     }
 
