@@ -15,7 +15,7 @@ public class MajorRes {
     private String tel;
     private Long professorCode;
     private Integer capacity;
-//    private Integer professorCount;
+    private Integer professorCount;
     private Long collegeId;
     private EnumMajorStatus active;
 //    private Integer totalPages;
