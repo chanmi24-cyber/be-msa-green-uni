@@ -11,4 +11,8 @@ public interface AttendLectureScheduleRepository extends JpaRepository<LectureSc
 
     @Query("SELECT ls FROM LectureSchedule ls JOIN FETCH ls.classRoom WHERE ls.lecture.lectureId = :lectureId")
     List<LectureSchedule> findByLectureIdWithRoom(@Param("lectureId") Long lectureId);
+
+    //요일별 스케줄 조회 추가
+    @Query("SELECT ls FROM LectureSchedule ls WHERE ls.lecture.lectureId = :lectureId AND ls.dayOfWeek = :dayOfWeek")
+    List<LectureSchedule> findByLectureIdAndDayOfWeek(@Param("lectureId") Long lectureId, @Param("dayOfWeek") String dayOfWeek);
 }
