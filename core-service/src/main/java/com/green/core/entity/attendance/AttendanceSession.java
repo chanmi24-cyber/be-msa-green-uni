@@ -43,4 +43,10 @@ public class AttendanceSession {
 
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
+
+    // JPA에서 엔티티 값을 바꿀 때는 setter 대신 의미있는 메서드로 만드는 게 관례
+    public void end() {
+        this.isActive = false;
+        this.endedAt = LocalDateTime.now();
+    }
 }
