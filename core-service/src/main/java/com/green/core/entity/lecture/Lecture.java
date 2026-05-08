@@ -81,4 +81,8 @@ public class Lecture extends CreatedUpdatedAt {
             this.year = LocalDate.now().getYear();
         }
     }
+
+    public void updateStatus(EnumApprovalStatus status) {
+        this.status = status;
+    }
 }
