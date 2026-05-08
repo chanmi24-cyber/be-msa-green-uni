@@ -7,6 +7,8 @@ import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "major")
 @Getter
@@ -33,10 +35,10 @@ public class Major extends CreatedUpdatedAt {
     @Column(name = "major_building", nullable = false, length = 30)
     private EnumBuilding majorBuilding;
 
-    @Column(name = "room", length = 20)
+    @Column(name = "room", length = 20, nullable = false)
     private String room;
 
-    @Column(name = "tel", length = 15)
+    @Column(name = "tel", length = 15, nullable = false)
     private String tel;
 
     @Column(name = "professor_code")
@@ -47,4 +49,27 @@ public class Major extends CreatedUpdatedAt {
 
     @Column(name = "info", length = 255)
     private String info;
+
+    @Column(name = "course_duration")
+    private Integer courseDuration;
+
+    @Column(name = "founded_date", length = 10)
+    private String foundedDate;
+
+    public void update(String name, EnumMajorStatus active, College college,
+                       EnumBuilding majorBuilding, String room, String tel,
+                       Integer capacity, Long professorCode, String info, Integer courseDuration, String foundedDate) {
+        this.name = name;
+        this.active = active;
+        this.college = college;
+        this.majorBuilding = majorBuilding;
+        this.room = room;
+        this.tel = tel;
+        this.capacity = capacity;
+        this.professorCode = professorCode;
+        this.info = info;
+        this.courseDuration = courseDuration;
+        this.foundedDate = foundedDate;
+    }
+
 }

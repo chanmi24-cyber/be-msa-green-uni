@@ -14,10 +14,11 @@ import java.time.LocalDateTime;
 @Builder
 public class ScheduleCache {
 
-    @Id @Tsid
+    @Id
     @Column(name = "schedule_id")
     private Long scheduleId;
 
+    @Convert(converter = EnumScheduleType.CodeConverter.class)
     @Column(name = "type", nullable = false, length = 30)
     private EnumScheduleType type;
 

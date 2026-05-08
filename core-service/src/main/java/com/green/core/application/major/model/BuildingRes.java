@@ -1,8 +1,11 @@
 package com.green.core.application.major.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class MajorCreateReq {
+@Builder
+public class BuildingRes {
+    private String code;
     private String name;
 }
