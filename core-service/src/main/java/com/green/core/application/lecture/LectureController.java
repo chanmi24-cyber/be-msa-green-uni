@@ -1,14 +1,15 @@
 package com.green.core.application.lecture;
 
+import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+import com.green.core.application.lecture.model.LectureDetailRes;
 import com.green.core.application.lecture.model.LectureListReq;
 import com.green.core.application.lecture.model.LectureListRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,4 +28,14 @@ public class LectureController {
                 .build();
     }
 
+    @GetMapping("/{lectureId}")
+    public ResultResponse<LectureDetailRes> getLectureDetail(@PathVariable Long lectureId) {
+        MemberDto memberDto = MemberContext.get();
+        boolean isProfessor = memberDto.role() == EnumMemberRole.PROFESSOR
+                || memberDto.role() == EnumMemberRole.ADMIN;
+        return ResultResponse.<LectureDetailRes>builder()
+                .message("강의 상세 조회 성공")
+                .data(lectureService.getLectureDetail(lectureId, isProfessor))
+                .build();
+    }
 }
