@@ -7,7 +7,6 @@ import lombok.*;
 import com.green.core.entity.lecture.Lecture;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "attendance_cancel",
@@ -35,8 +34,4 @@ public class AttendanceCancel extends CreatedUpdatedAt {
 
     @Column(name = "makeup_date")
     private LocalDate makeupDate;
-
-    public void completeMakeup(LocalDate makeupDate) {
-        this.makeupDate = makeupDate;
-    }
 }
