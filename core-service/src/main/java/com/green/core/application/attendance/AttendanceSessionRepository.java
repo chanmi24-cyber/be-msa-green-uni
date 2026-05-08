@@ -17,4 +17,6 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     //활성 세션 전체 조회 추가
     @Query("SELECT s FROM AttendanceSession s JOIN FETCH s.lecture WHERE s.isActive = true")
     List<AttendanceSession> findAllActiveWithLecture();
+
+    List<AttendanceSession> findByLecture_LectureIdOrderByClassDateDesc(Long lectureId);
 }

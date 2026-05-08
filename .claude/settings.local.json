@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Content \"D:\\\\YouYounggeun\\\\JAVA\\\\JAVA\\\\fe-msa-green-uni\\\\src\\\\router\\\\routes\\\\routeAttendance.js\" | Select-Object -Property @{Name='Line';Expression={$_.ReadCount}}, @{Name='Content';Expression={$_}} | Format-Table -AutoSize)"
+    ]
+  }
+}

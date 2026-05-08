@@ -3,9 +3,12 @@ package com.green.core.application.attendance;
 import com.green.common.model.ResultResponse;
 import com.green.core.application.attendance.model.AttendActiveSessionRes;
 import com.green.core.application.attendance.model.AttendLectureRes;
+import com.green.core.application.attendance.model.AttendProListRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
+import com.green.core.application.attendance.model.AttendSessionListRes;
 import com.green.core.application.attendance.model.AttendSessionStartReq;
 import com.green.core.application.attendance.model.AttendSessionStartRes;
+import com.green.core.application.attendance.model.AttendStatusUpdateReq;
 import com.green.core.entity.attendance.QrToken;
 
 import java.util.List;
@@ -121,5 +124,30 @@ public class AttendController {
             @PathVariable Long sessionId) {
         AttendSessionEndRes res = attendService.endSession(lectureId, sessionId);
         return ResponseEntity.ok(new ResultResponse<>("출석이 종료되었습니다.", res));
+    }
+
+    // ── 출석부 세션 목록 조회 ────────────────────────────────────────────────────
+    @GetMapping("{lectureId}/sessions")
+    public ResponseEntity<ResultResponse<List<AttendSessionListRes>>> getSessionList(
+            @PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("세션 목록 조회 성공", attendService.getSessionList(lectureId)));
+    }
+
+    // ── 세션별 출석부 조회 ───────────────────────────────────────────────────────
+    @GetMapping("{lectureId}/sessions/{sessionId}/roster")
+    public ResponseEntity<ResultResponse<List<AttendProListRes>>> getRoster(
+            @PathVariable Long lectureId,
+            @PathVariable Long sessionId) {
+        return ResponseEntity.ok(new ResultResponse<>("출석부 조회 성공", attendService.getRoster(lectureId, sessionId)));
+    }
+
+    // ── 출석 상태 단건 수정 ──────────────────────────────────────────────────────
+    @PatchMapping("{lectureId}/attendances/{attendId}")
+    public ResponseEntity<ResultResponse<Void>> updateAttendStatus(
+            @PathVariable Long lectureId,
+            @PathVariable Long attendId,
+            @RequestBody AttendStatusUpdateReq req) {
+        attendService.updateAttendStatus(lectureId, attendId, req);
+        return ResponseEntity.ok(new ResultResponse<>("출석 상태가 수정되었습니다.", null));
     }
 }
