@@ -7,6 +7,8 @@ import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "major")
 @Getter
@@ -48,9 +50,15 @@ public class Major extends CreatedUpdatedAt {
     @Column(name = "info", length = 255)
     private String info;
 
+    @Column(name = "course_duration")
+    private Integer courseDuration;
+
+    @Column(name = "founded_date", length = 10)
+    private String foundedDate;
+
     public void update(String name, EnumMajorStatus active, College college,
                        EnumBuilding majorBuilding, String room, String tel,
-                       Integer capacity, Long professorCode, String info) {
+                       Integer capacity, Long professorCode, String info, Integer courseDuration, String foundedDate) {
         this.name = name;
         this.active = active;
         this.college = college;
@@ -60,6 +68,8 @@ public class Major extends CreatedUpdatedAt {
         this.capacity = capacity;
         this.professorCode = professorCode;
         this.info = info;
+        this.courseDuration = courseDuration;
+        this.foundedDate = foundedDate;
     }
 
 }

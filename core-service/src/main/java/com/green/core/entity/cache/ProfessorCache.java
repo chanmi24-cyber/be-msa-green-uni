@@ -1,5 +1,6 @@
 package com.green.core.entity.cache;
 import com.green.common.enumcode.EnumProfessorStatus;
+import com.green.core.entity.major.Major;
 import jakarta.persistence.*;
 import lombok.*;
 @Entity
@@ -22,4 +23,8 @@ public class ProfessorCache {
 
     @Column(name = "status", nullable = false, length = 20)
     private EnumProfessorStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    private Major major;
 }
