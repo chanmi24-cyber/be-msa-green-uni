@@ -11,5 +11,5 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @ToString
 public class AdminProfileRes extends MemberProfileRes {
-    private EnumAdminStatus status;
+    private String status;
 }

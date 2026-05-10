@@ -16,10 +16,10 @@ import lombok.experimental.SuperBuilder;
 public class ProfessorProfileRes extends MemberProfileRes {
     private String collegeName;
     private String majorName;
-    private EnumProfessorDegree degree;
-    private EnumProfessorPosition position;
-    private EnumBuilding labBuilding;
+    private String degree;
+    private String position;
+    private String labBuilding;
     private String labRoom;
     private String labTel;
-    private EnumProfessorStatus status;
+    private String status;
 }

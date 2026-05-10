@@ -91,7 +91,7 @@ public class MemberService {
                 .isMultiChild(studentInfo.getIsMultiChild())
                 .isTransfer(studentInfo.getIsTransfer())
                 .isVeteran(studentInfo.getIsVeteran())
-                .status(studentInfo.getStatus())
+                .status(studentInfo.getStatus().getCode())
                 .build();
     }
 
@@ -118,14 +118,14 @@ public class MemberService {
                 .entryDate(memberInfo.getEntryDate())
                 .exitDate(memberInfo.getExitDate())
                 // 학사 정보
-                .degree(professorInfo.getDegree())
-                .position(professorInfo.getPosition())
+                .degree(professorInfo.getDegree().getCode())
+                .position(professorInfo.getPosition().getCode())
                 .majorName(majorCache.getName())
                 .collegeName(majorCache.getCollegeName())
-                .labBuilding(professorInfo.getLabBuilding())
+                .labBuilding(professorInfo.getLabBuilding().getCode())
                 .labRoom(professorInfo.getLabRoom())
                 .labTel(professorInfo.getLabTel())
-                .status(professorInfo.getStatus())
+                .status(professorInfo.getStatus().getCode())
                 .build();
     }
 
@@ -152,7 +152,7 @@ public class MemberService {
                 .entryDate(memberInfo.getEntryDate())
                 .exitDate(memberInfo.getExitDate())
                 // 학사 정보
-                .status(adminInfo.getStatus())
+                .status(adminInfo.getStatus().getCode())
                 .build();
     }
 }
