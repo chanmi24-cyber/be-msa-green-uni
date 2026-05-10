@@ -19,5 +19,5 @@ public class StudentProfileRes extends MemberProfileRes {
     private Boolean isTransfer;
     private Boolean isMultiChild;
     private Boolean isVeteran;
-    private EnumStudentStatus status;
+    private String status;
 }
