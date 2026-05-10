@@ -54,14 +54,14 @@ public class MemberService {
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
-            case STUDENT   -> findStudent(memberCode);
-            case PROFESSOR -> findProfessor(memberCode);
-            case ADMIN     -> findAdmin(memberCode);
+            case STUDENT   -> findStudent(memberCode, role);
+            case PROFESSOR -> findProfessor(memberCode, role);
+            case ADMIN     -> findAdmin(memberCode, role);
         };
         return memberProfile;
     }
     // 학생 정보 조회
-    public StudentProfileRes findStudent(Long memberCode){
+    public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo : {}", memberInfo);
         Student studentInfo = studentRepository.findById(memberCode).orElseThrow();
@@ -86,7 +86,7 @@ public class MemberService {
 
         return StudentProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())
@@ -112,7 +112,7 @@ public class MemberService {
                 .build();
     }
     // 교수 정보 조회
-    public ProfessorProfileRes findProfessor(Long memberCode){
+    public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
         log.info("professorInfo: {}", professorInfo);
@@ -121,7 +121,7 @@ public class MemberService {
 
         return ProfessorProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())
@@ -146,7 +146,7 @@ public class MemberService {
                 .build();
     }
     // 관리자 정보 조회
-    public AdminProfileRes findAdmin(Long memberCode){
+    public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo: {}", memberInfo);
@@ -155,7 +155,7 @@ public class MemberService {
 
         return AdminProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())

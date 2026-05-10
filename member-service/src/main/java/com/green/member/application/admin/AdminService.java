@@ -7,6 +7,8 @@ import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
@@ -16,8 +18,10 @@ import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.member.MemberRepository;
+import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
+import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.StudentMajorRepository;
@@ -51,6 +55,7 @@ public class AdminService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
     private final MyFileUtil myFileUtil;
+    private final MemberService memberService;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -248,5 +253,21 @@ public class AdminService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Outbox 직렬화 실패", e);
         }
+    }
+
+    public MemberProfileRes getMemberProfile(Long memberCode) {
+        EnumMemberRole role = getRoleFromMemberCode(memberCode);
+        return memberService.getMyProfile(memberCode, role);
+    }
+
+    private EnumMemberRole getRoleFromMemberCode(Long memberCode) {
+        String code = String.valueOf(memberCode);
+        char roleChar = code.charAt(code.length() - 4);
+        return switch (roleChar) {
+            case '1' -> EnumMemberRole.STUDENT;
+            case '2' -> EnumMemberRole.PROFESSOR;
+            case '3' -> EnumMemberRole.ADMIN;
+            default -> throw new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND);
+        };
     }
 }
