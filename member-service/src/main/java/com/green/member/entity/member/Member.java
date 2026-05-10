@@ -54,6 +54,17 @@ public class Member extends CreatedUpdatedAt {
     public void setPic(String pic) {
         this.pic = pic;
     }
+
+    public void updateCommon(String tel, String emergencyTel,
+                             String postcode, String address,
+                             String detailAddress, String pic) {
+        if (tel != null) this.tel = tel;
+        if (emergencyTel != null) this.emergencyTel = emergencyTel;
+        if (postcode != null) this.postcode = postcode;
+        if (address != null) this.address = address;
+        if (detailAddress != null) this.detailAddress = detailAddress;
+        if (pic != null) this.pic = pic;
+    }
 }
 
 

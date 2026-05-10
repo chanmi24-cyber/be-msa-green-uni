@@ -5,12 +5,15 @@ import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
+import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberProfileRes;
+import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorProfileRes;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentProfileRes;
+import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
@@ -21,7 +24,10 @@ import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -34,7 +40,9 @@ public class MemberService {
     private final StudentMajorRepository studentMajorRepository;
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
+    private final MyFileUtil myFileUtil;
 
+    // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
             case STUDENT   -> findStudent(memberCode);
@@ -43,7 +51,7 @@ public class MemberService {
         };
         return memberProfile;
     }
-
+    // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo : {}", memberInfo);
@@ -94,7 +102,7 @@ public class MemberService {
                 .status(studentInfo.getStatus().getCode())
                 .build();
     }
-
+    // 교수 정보 조회
     public ProfessorProfileRes findProfessor(Long memberCode){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
@@ -128,7 +136,7 @@ public class MemberService {
                 .status(professorInfo.getStatus().getCode())
                 .build();
     }
-
+    // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
@@ -154,5 +162,49 @@ public class MemberService {
                 // 학사 정보
                 .status(adminInfo.getStatus().getCode())
                 .build();
+    }
+
+    @Transactional
+    public void updateMyProfile(Long memberCode, EnumMemberRole role,
+                                MemberUpdateReq req, MultipartFile pic) {
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+
+        // 사진 처리
+        String savedPicFileName = null;
+        if (pic != null) {
+            // 기존 사진 삭제
+            if (member.getPic() != null) {
+                try {
+                    myFileUtil.deleteFile(String.format("member/%s/%s", memberCode, member.getPic()));
+                } catch (Exception e) {
+                    log.warn("기존 파일 삭제 실패: {}", e.getMessage());
+                }
+            }
+            savedPicFileName = myFileUtil.makeRandomFileName(pic);
+            String middlePath = "member/" + memberCode;
+            myFileUtil.makeFolders(middlePath);
+            String fullFilePath = String.format("%s/%s", middlePath, savedPicFileName);
+            try {
+                myFileUtil.transferTo(pic, fullFilePath);
+            } catch (IOException e) {
+                log.error("파일 저장 실패: {}", e.getMessage());
+            }
+        }
+
+        // 공통 필드 업데이트
+        member.updateCommon(
+                req.getTel(),
+                req.getEmergencyTel(),
+                req.getPostcode(),
+                req.getAddress(),
+                req.getDetailAddress(),
+                savedPicFileName
+        );
+
+        // 교수 연구실 업데이트
+        if (role == EnumMemberRole.PROFESSOR) {
+            Professor professor = professorRepository.findById(memberCode).orElseThrow();
+            professor.updateLab(req.getLabBuilding(), req.getLabRoom(), req.getLabTel());
+        }
     }
 }
