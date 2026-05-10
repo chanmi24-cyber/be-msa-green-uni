@@ -107,7 +107,7 @@ public class AuthController {
     @PatchMapping("/my/emails")
     public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){
         MemberDto loginMember = MemberContext.get();
-        authService.updateEmail( loginMember.memberCode(), req );
+        authService.updateEmail( loginMember.memberCode(), req.getEmail() );
         return ResultResponse.builder()
                 .message("회원 이메일 변경")
                 .data(1)

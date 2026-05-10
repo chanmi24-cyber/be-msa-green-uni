@@ -1,8 +1,15 @@
 package com.green.member.application.member;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.auth.MemberContext;
+import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
+import com.green.common.kafka.auth.AuthMemberEvent;
+import com.green.common.kafka.member.memberTopic;
+import com.green.common.outbox.Outbox;
+import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
 import com.green.member.application.member.model.MemberCreateReq;
@@ -41,6 +48,8 @@ public class MemberService {
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
     private final MyFileUtil myFileUtil;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
@@ -198,13 +207,40 @@ public class MemberService {
                 req.getPostcode(),
                 req.getAddress(),
                 req.getDetailAddress(),
-                savedPicFileName
+                savedPicFileName,
+                req.getEmail()
         );
 
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
             Professor professor = professorRepository.findById(memberCode).orElseThrow();
             professor.updateLab(req.getLabBuilding(), req.getLabRoom(), req.getLabTel());
+        }
+
+        // AuthMemberEvent Outbox 저장
+        AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                .memberCode(memberCode)
+                .email(member.getEmail())
+                .eventType(EventType.E_UPDATED)
+                .build();
+
+        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+
+    }
+
+
+    private void saveToOutbox(String topic, Long aggregateId, Object event) {
+        try {
+            String payload = objectMapper.writeValueAsString(event);
+            Outbox outbox = Outbox.builder()
+                    .topic(topic)
+                    .aggregateId(aggregateId)
+                    .eventType(EventType.E_CREATED.name())
+                    .payload(payload)
+                    .build();
+            outboxRepository.save(outbox);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Outbox 직렬화 실패", e);
         }
     }
 }

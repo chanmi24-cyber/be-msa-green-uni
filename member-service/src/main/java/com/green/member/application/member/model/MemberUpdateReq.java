@@ -14,6 +14,7 @@ public class MemberUpdateReq {
     private String address;
     private String detailAddress;
     private String pic;
+    private String email;
 
     // 교수 전용 (nullable)
     private EnumBuilding labBuilding;
