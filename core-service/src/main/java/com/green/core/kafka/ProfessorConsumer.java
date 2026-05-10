@@ -4,6 +4,7 @@ import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.memberTopic;
+import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProfessorConsumer {
     private final ProfessorCacheRepository professorCacheRepository;
+    private final MajorRepository majorRepository;
 
     @Transactional
     @KafkaListener(topics =  memberTopic.PROFESSOR, groupId = "core-service-group")
@@ -29,6 +31,7 @@ public class ProfessorConsumer {
                 ProfessorCache cache = ProfessorCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
+                        .major(majorRepository.findById(event.getMajorId()).orElse(null))
                         .degree(event.getDegree())
                         .status(EnumProfessorStatus.from(event.getStatus()))
                         .build();
