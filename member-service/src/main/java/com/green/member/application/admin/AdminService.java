@@ -205,6 +205,7 @@ public class AdminService {
         ProfessorEvent professorEvent = ProfessorEvent.builder()
                 .memberCode(member.getMemberCode())
                 .name(member.getName())
+                .majorId(savedProfessor.getMajorId())
                 .degree(savedProfessor.getDegree().getCode())
                 .status(savedProfessor.getStatus().getCode())
                 .eventType(EventType.E_CREATED)
