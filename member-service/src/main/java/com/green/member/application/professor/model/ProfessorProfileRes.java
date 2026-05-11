@@ -1,11 +1,6 @@
 package com.green.member.application.professor.model;
 
-import com.green.common.enumcode.EnumBuilding;
-import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.member.application.member.model.MemberProfileRes;
-import com.green.member.enumcode.EnumProfessorDegree;
-import com.green.member.enumcode.EnumProfessorPosition;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
