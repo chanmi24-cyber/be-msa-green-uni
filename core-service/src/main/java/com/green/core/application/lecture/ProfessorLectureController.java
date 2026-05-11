@@ -3,10 +3,14 @@ package com.green.core.application.lecture;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+<<<<<<< feature/member
 import com.green.core.application.lecture.model.LectureCreateReq;
 import com.green.core.application.lecture.model.LectureDetailRes;
 import com.green.core.application.lecture.model.MyLectureListReq;
 import com.green.core.application.lecture.model.MyLectureListRes;
+=======
+import com.green.core.application.lecture.model.*;
+>>>>>>> develop
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,4 +43,27 @@ public class ProfessorLectureController {
                 .build();
     }
 
+<<<<<<< feature/member
+=======
+    @PatchMapping("/{lectureId}")
+    public ResultResponse<?> updateLecture(
+            @PathVariable Long lectureId,
+            @RequestBody LectureDetailReq req) {
+        MemberDto memberDto = MemberContext.get();
+        lectureService.updateLecture(memberDto, lectureId, req);
+        return ResultResponse.builder()
+                .message("강의 수정 성공")
+                .build();
+    }
+
+    @DeleteMapping("/{lectureId}")
+    public ResultResponse<?> deleteLecture(@PathVariable Long lectureId) {
+        MemberDto memberDto = MemberContext.get();
+        lectureService.deleteLecture(memberDto, lectureId);
+        return ResultResponse.builder()
+                .message("강의 삭제 성공")
+                .build();
+    }
+
+>>>>>>> develop
 }
