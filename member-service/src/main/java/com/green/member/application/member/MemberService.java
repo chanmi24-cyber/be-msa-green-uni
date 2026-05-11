@@ -3,6 +3,7 @@ package com.green.member.application.member;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
+import com.green.common.enumcode.EnumChangeType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.kafka.KafkaEvent;
@@ -24,6 +25,7 @@ import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
+import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
@@ -35,7 +37,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -50,6 +54,8 @@ public class MemberService {
     private final MyFileUtil myFileUtil;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final MemberHistoryRepository memberHistoryRepository;
+    private final MemberHistoryService memberHistoryService;
 
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
@@ -202,6 +208,13 @@ public class MemberService {
         }
 
         String oldEmail = member.getEmail();
+        String oldTel = member.getTel();
+        String oldEmergencyTel = member.getEmergencyTel();
+        String oldPostcode = member.getPostcode();
+        String oldAddress = member.getAddress();
+        String oldDetailAddress = member.getDetailAddress();
+        String oldPic = member.getPic();
+
         log.info("oldEmail: {}, reqEmail: {}", oldEmail, req.getEmail());
 
         // 공통 필드 업데이트
@@ -239,11 +252,32 @@ public class MemberService {
             }
         }
 
+        // MemberHistory 저장을 위한 변경된 필드만 수집
+        Map<String, Object> before = new LinkedHashMap<>();
+        if (req.getEmail() != null && !req.getEmail().equals(oldEmail)) before.put("email", oldEmail);
+        if (req.getTel() != null && !req.getTel().equals(oldTel)) before.put("tel", oldTel);
+        if (req.getEmergencyTel() != null && !req.getEmergencyTel().equals(oldEmergencyTel)) before.put("emergencyTel", oldEmergencyTel);
+        if (req.getPostcode() != null && !req.getPostcode().equals(oldPostcode)) before.put("postcode", oldPostcode);
+        if (req.getAddress() != null && !req.getAddress().equals(oldAddress)) before.put("address", oldAddress);
+        if (req.getDetailAddress() != null && !req.getDetailAddress().equals(oldDetailAddress)) before.put("detailAddress", oldDetailAddress);
+        if (savedPicFileName != null && !savedPicFileName.equals(oldPic)) before.put("pic", oldPic);
+
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
             Professor professor = professorRepository.findById(memberCode).orElseThrow();
+            String oldLabBuilding = professor.getLabBuilding() != null ? professor.getLabBuilding().getCode() : null;
+            String oldLabRoom = professor.getLabRoom();
+            String oldLabTel = professor.getLabTel();
+
             professor.updateLab(req.getLabBuilding(), req.getLabRoom(), req.getLabTel());
+
+            if (req.getLabBuilding() != null && !req.getLabBuilding().getCode().equals(oldLabBuilding)) before.put("labBuilding", oldLabBuilding);
+            if (req.getLabRoom() != null && !req.getLabRoom().equals(oldLabRoom)) before.put("labRoom", oldLabRoom);
+            if (req.getLabTel() != null && !req.getLabTel().equals(oldLabTel)) before.put("labTel", oldLabTel);
         }
+
+        memberHistoryService.save(memberCode, memberCode, before);
+
     }
 
 
@@ -260,6 +294,22 @@ public class MemberService {
             outboxRepository.save(outbox);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Outbox 직렬화 실패", e);
+        }
+    }
+
+    private void saveMemberHistory(Long memberCode, Long updatorCode, Map<String, Object> beforeData) {
+        if (beforeData.isEmpty()) return;
+        try {
+            String json = objectMapper.writeValueAsString(beforeData);
+            MemberHistory history = MemberHistory.builder()
+                    .member(memberRepository.getReferenceById(memberCode))
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(json)
+                    .updatorCode(updatorCode)
+                    .build();
+            memberHistoryRepository.save(history);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("히스토리 직렬화 실패", e);
         }
     }
 }
