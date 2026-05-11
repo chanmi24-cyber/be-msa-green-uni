@@ -2,13 +2,23 @@ package com.green.core.application.lecture;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumApprovalStatus;
+<<<<<<< feature/member
+=======
 import com.green.common.enumcode.EnumChangeType;
 import com.green.common.enumcode.EnumMemberRole;
+>>>>>>> develop
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.core.application.lecture.mapper.LectureMapper;
 import com.green.core.application.lecture.model.*;
+<<<<<<< feature/member
+import com.green.core.application.lecture.repository.ClassroomRepository;
+import com.green.core.application.lecture.repository.LectureRepository;
+import com.green.core.application.lecture.repository.LectureScheduleRepository;
+import com.green.core.application.lecture.repository.LectureRejectionRepository;
+=======
 import com.green.core.application.lecture.repository.*;
+>>>>>>> develop
 import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
@@ -19,9 +29,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+<<<<<<< feature/member
+import java.util.List;
+=======
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+>>>>>>> develop
 
 
 @Slf4j
@@ -35,8 +49,11 @@ public class LectureService {
     private final LectureRejectionRepository lectureRejectionRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final LectureMapper lectureMapper;
+<<<<<<< feature/member
+=======
     private final LectureHistoryRepository lectureHistoryRepository;
     private final ObjectMapper objectMapper;
+>>>>>>> develop
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -123,6 +140,12 @@ public class LectureService {
     }
 
     // LEC-09, 10 공통
+<<<<<<< feature/member
+    public LectureDetailRes getLectureDetail(Long lectureId, boolean isProfessor) {
+        LectureDetailRes res = isProfessor
+                ? lectureMapper.findProfessorLectureDetail(lectureId)
+                : lectureMapper.findStudentLectureDetail(lectureId);
+=======
     public LectureDetailRes getLectureDetail(MemberDto memberDto, Long lectureId) {
         LectureDetailRes res;
 
@@ -140,12 +163,15 @@ public class LectureService {
             res = lectureMapper.findProAdmLectureDetail(lectureId); // 체크 없음
         }
 
+>>>>>>> develop
         if (res == null) {
             throw new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND);
         }
         return res;
     }
 
+<<<<<<< feature/member
+=======
     // LEC-11 강의 수정
     @Transactional
     public void updateLecture(MemberDto memberDto, Long lectureId, LectureDetailReq req) {
@@ -246,4 +272,5 @@ public class LectureService {
         lecture.delete();
     }
 
+>>>>>>> develop
 }

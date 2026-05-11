@@ -12,7 +12,11 @@ public interface LectureMapper {
     List<MyLectureListRes> findProfessorMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
     List<LectureListRes> findStudentMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
     List<LectureListRes> findAllLectures(LectureListReq req);
+<<<<<<< feature/member
+    LectureDetailRes findProfessorLectureDetail(Long lectureId);
+=======
     LectureDetailRes findProAdmLectureDetail(Long lectureId);
+>>>>>>> develop
     LectureDetailRes findStudentLectureDetail(Long lectureId);
 
 }

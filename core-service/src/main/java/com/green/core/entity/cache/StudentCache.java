@@ -22,6 +22,12 @@ public class StudentCache {
     @Column(name = "email", nullable = false, length = 50)
     private String email;
 
+    @Column(name = "major_id", nullable = false)
+    private Long majorId;
+
+    @Column(name = "minor_id")
+    private Long minorId; // 부전공 없으면 null
+
     @Column(name = "academic_year")
     private Integer academicYear;
 
@@ -40,4 +46,3 @@ public class StudentCache {
     @Column(name = "is_veteran", nullable = false)
     private Boolean isVeteran;
 }
-

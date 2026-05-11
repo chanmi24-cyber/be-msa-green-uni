@@ -114,11 +114,10 @@ public class AuthService {
 
     // 회원 이메일 변경
     @Transactional
-    public void updateEmail(long memberCode, EmailUpdateReq req){
+    public void updateEmail(long memberCode, String email){
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
-
-        authMember.updateEmail( req.getEmail() );
+        authMember.updateEmail(email);
     }
 
 }

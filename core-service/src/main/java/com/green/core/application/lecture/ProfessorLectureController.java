@@ -3,7 +3,14 @@ package com.green.core.application.lecture;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+<<<<<<< feature/member
+import com.green.core.application.lecture.model.LectureCreateReq;
+import com.green.core.application.lecture.model.LectureDetailRes;
+import com.green.core.application.lecture.model.MyLectureListReq;
+import com.green.core.application.lecture.model.MyLectureListRes;
+=======
 import com.green.core.application.lecture.model.*;
+>>>>>>> develop
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +43,8 @@ public class ProfessorLectureController {
                 .build();
     }
 
+<<<<<<< feature/member
+=======
     @PatchMapping("/{lectureId}")
     public ResultResponse<?> updateLecture(
             @PathVariable Long lectureId,
@@ -56,4 +65,5 @@ public class ProfessorLectureController {
                 .build();
     }
 
+>>>>>>> develop
 }
