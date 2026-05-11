@@ -3,6 +3,7 @@ package com.green.core.application.lecture;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumChangeType;
+import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.core.application.lecture.mapper.LectureMapper;
@@ -122,10 +123,23 @@ public class LectureService {
     }
 
     // LEC-09, 10 공통
-    public LectureDetailRes getLectureDetail(Long lectureId, boolean isProfessor) {
-        LectureDetailRes res = isProfessor
-                ? lectureMapper.findProfessorLectureDetail(lectureId)
-                : lectureMapper.findStudentLectureDetail(lectureId);
+    public LectureDetailRes getLectureDetail(MemberDto memberDto, Long lectureId) {
+        LectureDetailRes res;
+
+        if (memberDto.role() == EnumMemberRole.STUDENT) {
+            res = lectureMapper.findStudentLectureDetail(lectureId);
+
+        } else if (memberDto.role() == EnumMemberRole.PROFESSOR) {
+            res = lectureMapper.findProAdmLectureDetail(lectureId);
+            // 본인 강의인지 체크
+            if (res != null && !res.getMemberCode().equals(memberDto.memberCode())) {
+                throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+            }
+
+        } else { // ADMIN
+            res = lectureMapper.findProAdmLectureDetail(lectureId); // 체크 없음
+        }
+
         if (res == null) {
             throw new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND);
         }
