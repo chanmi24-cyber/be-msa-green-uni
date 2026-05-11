@@ -162,26 +162,14 @@ public class AdminService {
                 .email(member.getEmail())
                 .academicYear(savedStudent.getAcademicYear())
                 .semester(savedStudent.getSemester())
+                .majorId(savedStudentMajor.getMajorId())
                 .status(savedStudent.getStatus().getCode())
                 .isTransfer(savedStudent.getIsTransfer())
                 .isMultiChild(savedStudent.getIsMultiChild())
                 .isVeteran(savedStudent.getIsVeteran())
                 .eventType(EventType.E_CREATED)
                 .build();
-
         saveToOutbox(memberTopic.STUDENT, member.getMemberCode(), studentEvent);
-
-        // StudentMajorEvent Outbox 저장
-        StudentMajorEvent studentMajorEvent = StudentMajorEvent.builder()
-                .studentMajorId(savedStudentMajor.getStudentMajorId())
-                .studentCode(member.getMemberCode())
-                .majorId(savedStudentMajor.getMajorId())
-                .type(savedStudentMajor.getType().getCode())
-                .isActive(savedStudentMajor.getIsActive())
-                .eventType(EventType.E_CREATED)
-                .build();
-
-        saveToOutbox(memberTopic.STUDENT_MAJOR, savedStudentMajor.getStudentMajorId(), studentMajorEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
