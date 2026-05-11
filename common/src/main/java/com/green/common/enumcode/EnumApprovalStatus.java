@@ -9,7 +9,7 @@ import java.util.Arrays;
 @Getter
 @RequiredArgsConstructor
 public enum EnumApprovalStatus implements EnumMapperType {
-    PENDING("PENDING", "승인대기"),
+    PENDING("PENDING", "대기"),
     APPROVED("APPROVED", "승인"),
     REJECTED("REJECTED", "반려");
 
