@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.core.application.lecture.mapper.LectureMapper">
+
+    <!-- 공통 schedule 컬럼 -->
+    <sql id="scheduleColumns">
+        ls.day_of_week  AS dayOfWeek,
+        ls.start_period AS startPeriod,
+        ls.end_period   AS endPeriod,
+        lr.building,
+        lr.room         AS room
+    </sql>
+
+    <!-- 공통 schedule JOIN -->
+    <sql id="scheduleJoins">
+        LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
+        LEFT JOIN classroom lr        ON ls.room_id = lr.room_id
+    </sql>
+
+    <!--schedules가 List<ScheduleRes>로 보여줘서 중첩리스트 사용하기 위함-->
+    <resultMap id="myLectureListResMap" type="com.green.core.application.lecture.model.MyLectureListRes">
+        <id property="lectureId" column="lectureId"/>
+        <result property="memberCode" column="memberCode"/>
+        <result property="status" column="status"/>
+        <result property="lectureType" column="lectureType"/>
+        <result property="lectureName" column="lectureName"/>
+        <result property="majorName" column="majorName"/>
+        <result property="proName" column="proName"/>
+        <result property="credit" column="credit"/>
+        <result property="academicYear" column="academicYear"/>
+        <result property="year" column="year"/>
+        <result property="semester" column="semester"/>
+        <collection property="schedules" ofType="com.green.core.application.lecture.model.MyLectureListRes$ScheduleRes">
+            <result property="dayOfWeek" column="dayOfWeek"/>
+            <result property="startPeriod" column="startPeriod"/>
+            <result property="endPeriod" column="endPeriod"/>
+            <result property="building" column="building"/>
+            <result property="room" column="room"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="lectureListResMap" type="com.green.core.application.lecture.model.LectureListRes">
+        <id property="lectureId" column="lectureId"/>
+        <result property="memberCode" column="memberCode"/>
+        <result property="lectureType" column="lectureType"/>
+        <result property="lectureName" column="lectureName"/>
+        <result property="majorName" column="majorName"/>
+        <result property="proName" column="proName"/>
+        <result property="credit" column="credit"/>
+        <result property="academicYear" column="academicYear"/>
+        <result property="year" column="year"/>
+        <result property="semester" column="semester"/>
+        <collection property="schedules" ofType="com.green.core.application.lecture.model.LectureListRes$ScheduleRes">
+            <result property="dayOfWeek" column="dayOfWeek"/>
+            <result property="startPeriod" column="startPeriod"/>
+            <result property="endPeriod" column="endPeriod"/>
+            <result property="building" column="building"/>
+            <result property="room" column="room"/>
+        </collection>
+    </resultMap>
+
+    <!-- base: status, maxStd 없음 (학생용) -->
+    <resultMap id="lectureDetailResMap" type="com.green.core.application.lecture.model.LectureDetailRes">
+        <id property="lectureId" column="lectureId"/>
+        <result property="majorId" column="majorId"/>
+        <result property="majorName" column="majorName"/>
+        <result property="year" column="year"/>
+        <result property="semester" column="semester"/>
+        <result property="lectureName" column="lectureName"/>
+        <result property="credit" column="credit"/>
+        <result property="lectureType" column="lectureType"/>
+        <result property="refBooks" column="refBooks"/>
+        <result property="goal" column="goal"/>
+        <result property="weeklyPlan" column="weeklyPlan"/>
+        <result property="academicYear" column="academicYear"/>
+        <result property="startDate" column="startDate"/>
+        <result property="endDate" column="endDate"/>
+        <collection property="schedules" ofType="com.green.core.application.lecture.model.LectureDetailRes$ScheduleRes">
+            <result property="dayOfWeek" column="dayOfWeek"/>
+            <result property="startPeriod" column="startPeriod"/>
+            <result property="endPeriod" column="endPeriod"/>
+            <result property="building" column="building"/>
+            <result property="room" column="room"/>
+        </collection>
+    </resultMap>
+
+    <!-- 교수용: base 상속 + status, maxStd 추가 -->
+    <resultMap id="proAdmLectureDetailResMap" type="com.green.core.application.lecture.model.LectureDetailRes" extends="lectureDetailResMap">
+        <result property="memberCode" column="memberCode"/>
+        <result property="status" column="status"/>
+        <result property="maxStd" column="maxStd"/>
+        <result property="rejectionReason" column="rejectionReason"/>
+        <result property="rejectionAt" column="rejectionAt"/>
+    </resultMap>
+
+
+
+
+
+
+    <!-- LEC-03 관리자: 승인관리 목록 -->
+    <select id="findAdminLectures" resultMap="myLectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.member_code   AS memberCode,
+        l.status,
+        l.lecture_type  AS lectureType,
+        l.lecture_name  AS lectureName,
+        mj.name         AS majorName,
+        pc.name         AS proName,
+        l.credit,
+        l.academic_year AS academicYear,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM (
+        SELECT DISTINCT l.lecture_id
+        FROM lecture l
+        WHERE l.is_del = false
+        <if test="status != null">AND l.status = #{status}</if>
+        ORDER BY l.lecture_id DESC
+        LIMIT #{size} OFFSET #{startIdx}
+        ) paged
+        JOIN lecture l ON l.lecture_id = paged.lecture_id
+        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
+        LEFT JOIN major mj ON l.major_id = mj.major_id
+        LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
+        LEFT JOIN classroom lr ON ls.room_id = lr.room_id
+        ORDER BY l.lecture_id DESC
+    </select>
+
+    <!-- LEC-06 교수: 내 강의 목록 -->
+    <select id="findProfessorMyLectures" resultMap="myLectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.member_code   AS memberCode,
+        l.status,
+        l.lecture_type  AS lectureType,
+        l.lecture_name  AS lectureName,
+        mj.name         AS majorName,
+        pc.name         AS proName,
+        l.credit,
+        l.academic_year AS academicYear,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM (
+        SELECT DISTINCT l.lecture_id
+        FROM lecture l
+        WHERE l.member_code = #{memberCode}
+        AND l.is_del = false
+        <if test="req.status != null">AND l.status = #{req.status}</if>
+        <if test="req.lectureName != null and req.lectureName != ''">
+            AND l.lecture_name LIKE CONCAT('%', #{req.lectureName}, '%')
+        </if>
+        <if test="req.year != null">AND l.year = #{req.year}</if>
+        <if test="req.semester != null">AND l.semester = #{req.semester}</if>
+        ORDER BY l.lecture_id DESC
+        LIMIT #{req.size} OFFSET #{req.startIdx}
+        ) paged
+        JOIN lecture l ON l.lecture_id = paged.lecture_id
+        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
+        LEFT JOIN major mj ON l.major_id = mj.major_id
+        LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
+        LEFT JOIN classroom lr ON ls.room_id = lr.room_id
+        ORDER BY l.lecture_id DESC
+    </select>
+
+    <!-- LEC-07 학생: 수강신청한 강의 -->
+    <select id="findStudentMyLectures" resultMap="lectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.lecture_type  AS lectureType,
+        l.lecture_name  AS lectureName,
+        mj.name         AS majorName,
+        pc.name         AS proName,
+        l.credit,
+        l.academic_year AS academicYear,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM course c
+        JOIN lecture l                ON c.lecture_id = l.lecture_id
+        LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
+        LEFT JOIN major mj            ON l.major_id = mj.major_id
+        <include refid="scheduleJoins"/>
+        WHERE c.student_code = #{memberCode}
+        AND l.status = 'APPROVED'
+        <if test="req.year != null">AND l.year = #{req.year}</if>
+        <if test="req.semester != null">AND l.semester = #{req.semester}</if>
+        ORDER BY l.lecture_id DESC
+        LIMIT #{req.size} OFFSET #{req.startIdx}
+    </select>
+
+    <!-- LEC-08 전체 강의 목록 -->
+    <select id="findAllLectures" resultMap="lectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.lecture_type  AS lectureType,
+        l.lecture_name  AS lectureName,
+        mj.name         AS majorName,
+        pc.name         AS proName,
+        l.credit,
+        l.academic_year AS academicYear,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM lecture l
+        LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
+        LEFT JOIN major mj            ON l.major_id = mj.major_id
+        <include refid="scheduleJoins"/>
+        WHERE l.status = 'APPROVED'
+        <if test="proName != null and proName != ''">
+            AND pc.name LIKE CONCAT('%', #{proName}, '%')
+        </if>
+        <if test="lectureName != null and lectureName != ''">
+            AND l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
+        </if>
+        <if test="majorId != null">AND l.major_id = #{majorId}</if>
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
+        ORDER BY l.lecture_id DESC
+        LIMIT #{size} OFFSET #{startIdx}
+    </select>
+
+    <!-- LEC-09 교수, 관리자: 강의 상세 조회 -->
+    <select id="findProAdmLectureDetail" resultMap="proAdmLectureDetailResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.major_id      AS majorId,
+        mj.name         AS majorName,
+        l.year,
+        l.semester,
+        l.lecture_name  AS lectureName,
+        l.credit,
+        l.lecture_type  AS lectureType,
+        l.ref_books     AS refBooks,
+        l.goal,
+        l.weekly_plan   AS weeklyPlan,
+        l.academic_year AS academicYear,
+        l.max_std       AS maxStd,
+        l.status,
+        l.start_date    AS startDate,
+        l.end_date      AS endDate,
+        l.member_code   AS memberCode,
+        lrj.reason      AS rejectionReason,
+        lrj.created_at AS rejectionAt,
+        <include refid="scheduleColumns"/>
+        FROM lecture l
+        LEFT JOIN major mj            ON l.major_id = mj.major_id
+        LEFT JOIN lecture_rejection lrj ON lrj.rejection_id = (
+        SELECT rejection_id FROM lecture_rejection
+        WHERE lecture_id = l.lecture_id
+        ORDER BY created_at DESC
+        LIMIT 1
+        )
+        <include refid="scheduleJoins"/>
+        WHERE l.lecture_id = #{lectureId}
+        AND l.is_del = false
+    </select>
+
+    <!-- LEC-10 학생: 강의 상세 조회 -->
+    <select id="findStudentLectureDetail" resultMap="lectureDetailResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.major_id      AS majorId,
+        mj.name         AS majorName,
+        l.year,
+        l.semester,
+        l.lecture_name  AS lectureName,
+        l.credit,
+        l.lecture_type  AS lectureType,
+        l.ref_books     AS refBooks,
+        l.goal,
+        l.weekly_plan   AS weeklyPlan,
+        l.academic_year AS academicYear,
+        l.start_date    AS startDate,
+        l.end_date      AS endDate,
+        <include refid="scheduleColumns"/>
+        FROM lecture l
+        LEFT JOIN major mj            ON l.major_id = mj.major_id
+        <include refid="scheduleJoins"/>
+        WHERE l.lecture_id = #{lectureId}
+    </select>
+
+</mapper>

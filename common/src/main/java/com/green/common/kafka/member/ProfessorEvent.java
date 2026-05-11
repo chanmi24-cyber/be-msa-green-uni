@@ -15,6 +15,7 @@ import java.io.Serializable;
 public class ProfessorEvent implements Serializable {
     private Long memberCode;
     private String name;
+    private Long majorId;
     private String degree;
     private String status;
     private EventType eventType;
