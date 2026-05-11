@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @ToString
 public class MemberProfileRes {
     private Long memberCode;
-    private EnumMemberRole role;
+    private String role;
     private String name;
     private LocalDate birth;
     private String pic;

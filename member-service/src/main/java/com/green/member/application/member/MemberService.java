@@ -6,7 +6,9 @@ import com.green.common.auth.MemberContext;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
+import com.green.common.kafka.KafkaEvent;
 import com.green.common.kafka.auth.AuthMemberEvent;
+import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.memberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
@@ -54,14 +56,14 @@ public class MemberService {
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
-            case STUDENT   -> findStudent(memberCode);
-            case PROFESSOR -> findProfessor(memberCode);
-            case ADMIN     -> findAdmin(memberCode);
+            case STUDENT   -> findStudent(memberCode, role);
+            case PROFESSOR -> findProfessor(memberCode, role);
+            case ADMIN     -> findAdmin(memberCode, role);
         };
         return memberProfile;
     }
     // 학생 정보 조회
-    public StudentProfileRes findStudent(Long memberCode){
+    public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo : {}", memberInfo);
         Student studentInfo = studentRepository.findById(memberCode).orElseThrow();
@@ -86,7 +88,7 @@ public class MemberService {
 
         return StudentProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())
@@ -112,7 +114,7 @@ public class MemberService {
                 .build();
     }
     // 교수 정보 조회
-    public ProfessorProfileRes findProfessor(Long memberCode){
+    public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
         log.info("professorInfo: {}", professorInfo);
@@ -121,7 +123,7 @@ public class MemberService {
 
         return ProfessorProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())
@@ -146,7 +148,7 @@ public class MemberService {
                 .build();
     }
     // 관리자 정보 조회
-    public AdminProfileRes findAdmin(Long memberCode){
+    public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo: {}", memberInfo);
@@ -155,7 +157,7 @@ public class MemberService {
 
         return AdminProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
-                .role(MemberContext.get().role())
+                .role(role.getCode())
                 // 기본 정보
                 .name(memberInfo.getName())
                 .email(memberInfo.getEmail())
@@ -173,6 +175,7 @@ public class MemberService {
                 .build();
     }
 
+    // 내 정보 수정
     @Transactional
     public void updateMyProfile(Long memberCode, EnumMemberRole role,
                                 MemberUpdateReq req, MultipartFile pic) {
@@ -211,31 +214,41 @@ public class MemberService {
                 req.getEmail()
         );
 
+        // AuthMemberEvent Outbox 저장
+        AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                .memberCode(memberCode)
+                .email(req.getEmail())
+                .eventType(EventType.E_UPDATED)
+                .build();
+        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
             Professor professor = professorRepository.findById(memberCode).orElseThrow();
             professor.updateLab(req.getLabBuilding(), req.getLabRoom(), req.getLabTel());
         }
 
-        // AuthMemberEvent Outbox 저장
-        AuthMemberEvent authEvent = AuthMemberEvent.builder()
-                .memberCode(memberCode)
-                .email(member.getEmail())
-                .eventType(EventType.E_UPDATED)
-                .build();
+        if (role == EnumMemberRole.STUDENT) {
+            // StudentEvent Outbox 저장
+            StudentEvent studentEvent = StudentEvent.builder()
+                    .memberCode(member.getMemberCode())
+                    .email(req.getEmail())
+                    .eventType(EventType.E_UPDATED)
+                    .build();
 
-        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
-
+            saveToOutbox(memberTopic.STUDENT, member.getMemberCode(), studentEvent);
+        }
     }
 
 
-    private void saveToOutbox(String topic, Long aggregateId, Object event) {
+    private void saveToOutbox(String topic, Long aggregateId, KafkaEvent event) {
+        log.info("saveToOutbox 호출됨 - topic: {}, aggregateId: {}", topic, aggregateId);
         try {
             String payload = objectMapper.writeValueAsString(event);
             Outbox outbox = Outbox.builder()
                     .topic(topic)
                     .aggregateId(aggregateId)
-                    .eventType(EventType.E_CREATED.name())
+                    .eventType(event.getEventType().name())
                     .payload(payload)
                     .build();
             outboxRepository.save(outbox);

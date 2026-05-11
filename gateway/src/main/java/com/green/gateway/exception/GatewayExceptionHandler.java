@@ -1,6 +1,9 @@
 package com.green.gateway.exception;
 
+import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.CommonErrorCode;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +34,17 @@ public class GatewayExceptionHandler {
     @ExceptionHandler(TimeoutException.class)
     public ResponseEntity<Object> handleTimeoutError(TimeoutException e) {
         return handleExceptionInternal(CommonErrorCode.GATEWAY_TIMEOUT);
+    }
+
+    // 토큰은 정상이나 유효기간이 지난 경우 (401)
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<Object> ExpiredJwtException(Exception e) {
+        return handleExceptionInternal(AuthErrorCode.EXPIRED_TOKEN);
+    }
+    // 토큰의 형식 자체가 잘못된 경우 (401)
+    @ExceptionHandler(MalformedJwtException.class)
+    public ResponseEntity<Object> MalformedJwtException(Exception e) {
+        return handleExceptionInternal(AuthErrorCode.INVALID_REFRESH_TOKEN);
     }
 
     // 그 외 게이트웨이 자체 오류
