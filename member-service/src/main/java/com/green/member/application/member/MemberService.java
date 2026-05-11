@@ -201,6 +201,8 @@ public class MemberService {
             }
         }
 
+        String oldEmail = member.getEmail();
+
         // 공통 필드 업데이트
         member.updateCommon(
                 req.getTel(),
@@ -212,29 +214,33 @@ public class MemberService {
                 req.getEmail()
         );
 
-        // AuthMemberEvent Outbox 저장
-        AuthMemberEvent authEvent = AuthMemberEvent.builder()
-                .memberCode(memberCode)
-                .email(req.getEmail())
-                .eventType(EventType.E_UPDATED)
-                .build();
-        saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+        // 이메일 처리
+        if(req.getEmail() != null && !req.getEmail().equals(oldEmail)){
+
+            // AuthMemberEvent Outbox 저장
+            AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                    .memberCode(memberCode)
+                    .email(req.getEmail())
+                    .eventType(EventType.E_UPDATED)
+                    .build();
+            saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+
+            // StudentEvent Outbox 저장
+            if (role == EnumMemberRole.STUDENT) {
+                StudentEvent studentEvent = StudentEvent.builder()
+                        .memberCode(member.getMemberCode())
+                        .email(req.getEmail())
+                        .eventType(EventType.E_UPDATED)
+                        .build();
+
+                saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
+            }
+        }
 
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
             Professor professor = professorRepository.findById(memberCode).orElseThrow();
             professor.updateLab(req.getLabBuilding(), req.getLabRoom(), req.getLabTel());
-        }
-
-        if (role == EnumMemberRole.STUDENT) {
-            // StudentEvent Outbox 저장
-            StudentEvent studentEvent = StudentEvent.builder()
-                    .memberCode(member.getMemberCode())
-                    .email(req.getEmail())
-                    .eventType(EventType.E_UPDATED)
-                    .build();
-
-            saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
         }
     }
 
