@@ -39,9 +39,9 @@ public class CourseController {
 
     // API-ENRL-02: 내 수강 신청 목록 조회
     @GetMapping("/my")
-    public ResultResponse<List<MyCourseRes>> getMyCourses() {
-        List<MyCourseRes> list = courseService.getMyCourses();
-        return ResultResponse.<List<MyCourseRes>>builder()
+    public ResultResponse<MyCourseListRes> getMyCourses() {
+        MyCourseListRes list = courseService.getMyCourses();
+        return ResultResponse.<MyCourseListRes>builder()
                 .message("내 수강 신청 목록 조회")
                 .data(list)
                 .build();

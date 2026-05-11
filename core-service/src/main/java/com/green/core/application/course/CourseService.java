@@ -1,18 +1,23 @@
 package com.green.core.application.course;
 
 import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.common.enumcode.EnumBuilding;
 import com.green.common.enumcode.EnumScheduleType;
+import com.green.common.exception.BusinessException;
 import com.green.core.application.course.model.*;
 import com.green.core.application.lecture.repository.LectureRepository;
 import com.green.core.application.lecture.repository.LectureScheduleRepository;
+import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.course.Course;
 import com.green.core.entity.grade.Grade;
 import com.green.core.entity.lecture.Lecture;
 import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.repository.GradeRepository;
+import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.ScheduleCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
+import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,8 @@ public class CourseService {
     private final StudentCacheRepository studentCacheRepository;
     private final GradeRepository gradeRepository;
     private final HttpServletRequest request;
+    private final ProfessorCacheRepository professorCacheRepository;
+    private final SchedulePeriodValidator schedulePeriodValidator;
 
     // API-ENRL-06: 수강 신청 페이지 활성화 제어
     @Transactional(readOnly = true)
@@ -73,12 +80,42 @@ public class CourseService {
                 .map(l -> {
                     int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
                             l.getLectureId(), currentYear, currentSemester);
+
+                    // 수업시간 및 강의실 정보
+                    List<LectureSchedule> schedules = lectureScheduleRepository
+                            .findByLecture_LectureId(l.getLectureId());
+                    String dayOfWeek = null;
+                    Integer startPeriod = null;
+                    Integer endPeriod = null;
+                    EnumBuilding building = null;
+                    String roomNumber = null;
+                    if (!schedules.isEmpty()) {
+                        LectureSchedule s = schedules.get(0);
+                        dayOfWeek = s.getDayOfWeek();
+                        startPeriod = s.getStartPeriod();
+                        endPeriod = s.getEndPeriod();
+                        building = s.getClassRoom().getBuilding();
+                        roomNumber = s.getClassRoom().getRoom();
+                    }
+
+                    // 교수 이름
+                    String proName = professorCacheRepository.findById(l.getMemberCode())
+                            .map(ProfessorCache::getName)
+                            .orElse(null);
+
                     return CourseRes.builder()
                             .lectureId(l.getLectureId())
+                            .majorName(l.getMajor() != null ? l.getMajor().getName() : null)
                             .lectureName(l.getLectureName())
-                            .credit(l.getCredit())
+                            .building(building)
+                            .roomNumber(roomNumber)
                             .lectureType(l.getLectureType().getValue())
                             .academicYear(l.getAcademicYear())
+                            .proName(proName)
+                            .dayOfWeek(dayOfWeek)
+                            .startPeriod(startPeriod)
+                            .endPeriod(endPeriod)
+                            .credit(l.getCredit())
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
                             .build();
@@ -88,34 +125,73 @@ public class CourseService {
 
     // API-ENRL-02: 내 수강 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<MyCourseRes> getMyCourses() {
+    public MyCourseListRes getMyCourses() {
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 
-        return courseRepository
+        List<MyCourseRes> courses = courseRepository
                 .findByStudentCodeAndYearAndSemester(studentCode, currentYear, currentSemester)
                 .stream()
                 .map(c -> {
                     Lecture l = c.getLecture();
                     int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
                             l.getLectureId(), currentYear, currentSemester);
+
+                    List<LectureSchedule> schedules = lectureScheduleRepository
+                            .findByLecture_LectureId(l.getLectureId());
+                    String dayOfWeek = null;
+                    Integer startPeriod = null;
+                    Integer endPeriod = null;
+                    EnumBuilding building = null;
+                    String roomNumber = null;
+                    if (!schedules.isEmpty()) {
+                        LectureSchedule s = schedules.get(0);
+                        dayOfWeek = s.getDayOfWeek();
+                        startPeriod = s.getStartPeriod();
+                        endPeriod = s.getEndPeriod();
+                        building = s.getClassRoom().getBuilding();
+                        roomNumber = s.getClassRoom().getRoom();
+                    }
+
+                    String proName = professorCacheRepository.findById(l.getMemberCode())
+                            .map(ProfessorCache::getName)
+                            .orElse(null);
+
                     return MyCourseRes.builder()
                             .lectureId(l.getLectureId())
+                            .majorName(l.getMajor() != null ? l.getMajor().getName() : null)
                             .lectureName(l.getLectureName())
-                            .credit(l.getCredit())
+                            .building(building)
+                            .roomNumber(roomNumber)
                             .lectureType(l.getLectureType().getValue())
                             .academicYear(l.getAcademicYear())
+                            .proName(proName)
+                            .dayOfWeek(dayOfWeek)
+                            .startPeriod(startPeriod)
+                            .endPeriod(endPeriod)
+                            .credit(l.getCredit())
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
                             .build();
                 })
                 .toList();
+
+        int totalCredits = courseRepository.sumCreditByStudentCodeAndYearAndSemester(
+                studentCode, currentYear, currentSemester);
+
+        return MyCourseListRes.builder()
+                .totalEnrolledCredits(totalCredits)
+                .courses(courses)
+                .build();
     }
 
     // API-ENRL-03: 수강 신청 실행
     @Transactional
     public CourseCreateRes createCourse(CourseCreateReq req) {
+
+        schedulePeriodValidator.checkCourseRegistrationOrModification();
+
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 
@@ -222,6 +298,9 @@ public class CourseService {
     // API-ENRL-04: 수강 신청 취소
     @Transactional
     public void deleteCourse(Long lectureId) {
+
+        schedulePeriodValidator.checkCourseRegistrationOrModification();
+
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 

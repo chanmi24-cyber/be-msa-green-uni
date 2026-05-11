@@ -1,5 +1,6 @@
 package com.green.core.application.course.model;
 
+import com.green.common.enumcode.EnumBuilding;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +14,7 @@ public class MyCourseRes {
     private Long lectureId;
     private String majorName;
     private String lectureName;
-    private String building;
+    private EnumBuilding building;
     private String roomNumber;
     private String lectureType;
     private Integer academicYear;
