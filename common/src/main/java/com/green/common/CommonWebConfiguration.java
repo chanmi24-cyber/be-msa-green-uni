@@ -11,6 +11,10 @@ import org.springframework.web.method.HandlerTypePredicate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import com.green.common.enumcode.EnumMapperType;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.converter.ConverterFactory;
+import org.springframework.format.FormatterRegistry;
 
 @Slf4j
 @Configuration
@@ -39,4 +43,22 @@ public class CommonWebConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(memberContextInterceptor)
                 .addPathPatterns("/**"); // 모든 경로에서 인터셉터 작동;
     }
+
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addConverterFactory(new ConverterFactory<String, EnumMapperType>() {
+            @Override
+            public <T extends EnumMapperType> Converter<String, T> getConverter(Class<T> targetType) {
+                return source -> {
+                    for (T constant : targetType.getEnumConstants()) {
+                        if (constant.getCode().equals(source)) {
+                            return constant;
+                        }
+                    }
+                    throw new IllegalArgumentException("Invalid code: " + source);
+                };
+            }
+        });
+    }
+
 }
