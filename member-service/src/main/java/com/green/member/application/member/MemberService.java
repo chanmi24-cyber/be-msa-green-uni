@@ -202,6 +202,7 @@ public class MemberService {
         }
 
         String oldEmail = member.getEmail();
+        log.info("oldEmail: {}, reqEmail: {}", oldEmail, req.getEmail());
 
         // 공통 필드 업데이트
         member.updateCommon(
@@ -231,6 +232,7 @@ public class MemberService {
                         .memberCode(member.getMemberCode())
                         .email(req.getEmail())
                         .eventType(EventType.E_UPDATED)
+                        .updateType("EMAIL")
                         .build();
 
                 saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
