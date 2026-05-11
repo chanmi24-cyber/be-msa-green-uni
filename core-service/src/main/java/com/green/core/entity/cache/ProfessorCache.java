@@ -27,4 +27,7 @@ public class ProfessorCache {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")
     private Major major;
+
+    @Column(name = "major_id", insertable = false, updatable = false)
+    private Long majorId;
 }
