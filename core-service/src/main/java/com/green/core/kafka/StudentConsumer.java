@@ -3,7 +3,7 @@ package com.green.core.kafka;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.kafka.member.StudentEvent;
-import com.green.common.kafka.member.memberTopic;
+import com.green.common.kafka.member.MemberTopic;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.repository.StudentCacheRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class StudentConsumer {
     private final StudentCacheRepository studentCacheRepository;
 
     @Transactional
-    @KafkaListener(topics = memberTopic.STUDENT, groupId = "core-service-group")
+    @KafkaListener(topics = MemberTopic.STUDENT, groupId = "core-service-group")
     public void consume(StudentEvent event) {
         log.info("Kafka 메시지 수신: {}", event);
 

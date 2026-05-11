@@ -3,11 +3,10 @@ package com.green.core.kafka;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.common.kafka.member.ProfessorEvent;
-import com.green.common.kafka.member.memberTopic;
+import com.green.common.kafka.member.MemberTopic;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.repository.ProfessorCacheRepository;
-import com.green.core.repository.StudentCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -22,7 +21,7 @@ public class ProfessorConsumer {
     private final MajorRepository majorRepository;
 
     @Transactional
-    @KafkaListener(topics =  memberTopic.PROFESSOR, groupId = "core-service-group")
+    @KafkaListener(topics =  MemberTopic.PROFESSOR, groupId = "core-service-group")
     public void consume(ProfessorEvent event) {
         log.info("ProfessorEvent consumed: {}", event.getMemberCode());
         try {

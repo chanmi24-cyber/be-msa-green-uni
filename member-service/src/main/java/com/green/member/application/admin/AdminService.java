@@ -13,7 +13,7 @@ import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.StudentMajorEvent;
-import com.green.common.kafka.member.memberTopic;
+import com.green.common.kafka.member.MemberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.admin.model.AdminCreateReq;
@@ -123,7 +123,7 @@ public class AdminService {
                 .role(role.getCode())
                 .build();
 
-        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+        saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
         return newMember;
     }
@@ -169,7 +169,7 @@ public class AdminService {
                 .isVeteran(savedStudent.getIsVeteran())
                 .eventType(EventType.E_CREATED)
                 .build();
-        saveToOutbox(memberTopic.STUDENT, member.getMemberCode(), studentEvent);
+        saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
@@ -204,7 +204,7 @@ public class AdminService {
                 .eventType(EventType.E_CREATED)
                 .build();
 
-        saveToOutbox(memberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
+        saveToOutbox(MemberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
