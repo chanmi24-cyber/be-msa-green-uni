@@ -85,13 +85,6 @@
     </resultMap>
 
     <!-- 교수용: base 상속 + status, maxStd 추가 -->
-<<<<<<< feature/member
-    <resultMap id="proLectureDetailResMap" type="com.green.core.application.lecture.model.LectureDetailRes" extends="lectureDetailResMap">
-        <result property="status" column="status"/>
-        <result property="maxStd" column="maxStd"/>
-    </resultMap>
-
-=======
     <resultMap id="proAdmLectureDetailResMap" type="com.green.core.application.lecture.model.LectureDetailRes" extends="lectureDetailResMap">
         <result property="memberCode" column="memberCode"/>
         <result property="status" column="status"/>
@@ -105,7 +98,6 @@
 
 
 
->>>>>>> develop
     <!-- LEC-03 관리자: 승인관리 목록 -->
     <select id="findAdminLectures" resultMap="myLectureListResMap">
         SELECT
@@ -121,19 +113,6 @@
         l.year,
         l.semester,
         <include refid="scheduleColumns"/>
-<<<<<<< feature/member
-        FROM lecture l
-        LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
-        LEFT JOIN major mj            ON l.major_id = mj.major_id
-        <include refid="scheduleJoins"/>
-        <where>
-            <if test="status != null">
-                AND l.status = #{status}
-            </if>
-        </where>
-        ORDER BY l.lecture_id DESC
-        LIMIT #{size} OFFSET #{startIdx}
-=======
         FROM (
         SELECT DISTINCT l.lecture_id
         FROM lecture l
@@ -148,7 +127,6 @@
         LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
         LEFT JOIN classroom lr ON ls.room_id = lr.room_id
         ORDER BY l.lecture_id DESC
->>>>>>> develop
     </select>
 
     <!-- LEC-06 교수: 내 강의 목록 -->
@@ -166,20 +144,12 @@
         l.year,
         l.semester,
         <include refid="scheduleColumns"/>
-<<<<<<< feature/member
-        FROM lecture l
-        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
-        LEFT JOIN major mj            ON l.major_id = mj.major_id
-        <include refid="scheduleJoins"/>
-        WHERE l.member_code = #{memberCode}
-=======
         FROM (
         SELECT DISTINCT l.lecture_id
         FROM lecture l
         WHERE l.member_code = #{memberCode}
         AND l.is_del = false
         <if test="req.status != null">AND l.status = #{req.status}</if>
->>>>>>> develop
         <if test="req.lectureName != null and req.lectureName != ''">
             AND l.lecture_name LIKE CONCAT('%', #{req.lectureName}, '%')
         </if>
@@ -187,8 +157,6 @@
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{req.size} OFFSET #{req.startIdx}
-<<<<<<< feature/member
-=======
         ) paged
         JOIN lecture l ON l.lecture_id = paged.lecture_id
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
@@ -196,7 +164,6 @@
         LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
         LEFT JOIN classroom lr ON ls.room_id = lr.room_id
         ORDER BY l.lecture_id DESC
->>>>>>> develop
     </select>
 
     <!-- LEC-07 학생: 수강신청한 강의 -->
@@ -256,13 +223,8 @@
         LIMIT #{size} OFFSET #{startIdx}
     </select>
 
-<<<<<<< feature/member
-    <!-- LEC-09 교수: 강의 상세 조회 -->
-    <select id="findProfessorLectureDetail" resultMap="proLectureDetailResMap">
-=======
     <!-- LEC-09 교수, 관리자: 강의 상세 조회 -->
     <select id="findProAdmLectureDetail" resultMap="proAdmLectureDetailResMap">
->>>>>>> develop
         SELECT
         l.lecture_id    AS lectureId,
         l.major_id      AS majorId,
@@ -280,13 +242,6 @@
         l.status,
         l.start_date    AS startDate,
         l.end_date      AS endDate,
-<<<<<<< feature/member
-        <include refid="scheduleColumns"/>
-        FROM lecture l
-        LEFT JOIN major mj            ON l.major_id = mj.major_id
-        <include refid="scheduleJoins"/>
-        WHERE l.lecture_id = #{lectureId}
-=======
         l.member_code   AS memberCode,
         lrj.reason      AS rejectionReason,
         lrj.created_at AS rejectionAt,
@@ -294,15 +249,14 @@
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         LEFT JOIN lecture_rejection lrj ON lrj.rejection_id = (
-            SELECT rejection_id FROM lecture_rejection
-            WHERE lecture_id = l.lecture_id
-            ORDER BY created_at DESC
-            LIMIT 1
+        SELECT rejection_id FROM lecture_rejection
+        WHERE lecture_id = l.lecture_id
+        ORDER BY created_at DESC
+        LIMIT 1
         )
         <include refid="scheduleJoins"/>
         WHERE l.lecture_id = #{lectureId}
         AND l.is_del = false
->>>>>>> develop
     </select>
 
     <!-- LEC-10 학생: 강의 상세 조회 -->

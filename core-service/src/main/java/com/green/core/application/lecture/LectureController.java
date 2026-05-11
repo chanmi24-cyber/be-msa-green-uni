@@ -31,17 +31,9 @@ public class LectureController {
     @GetMapping("/{lectureId}")
     public ResultResponse<LectureDetailRes> getLectureDetail(@PathVariable Long lectureId) {
         MemberDto memberDto = MemberContext.get();
-<<<<<<< feature/member
-        boolean isProfessor = memberDto.role() == EnumMemberRole.PROFESSOR
-                || memberDto.role() == EnumMemberRole.ADMIN;
-        return ResultResponse.<LectureDetailRes>builder()
-                .message("강의 상세 조회 성공")
-                .data(lectureService.getLectureDetail(lectureId, isProfessor))
-=======
         return ResultResponse.<LectureDetailRes>builder()
                 .message("강의 상세 조회 성공")
                 .data(lectureService.getLectureDetail(memberDto, lectureId))
->>>>>>> develop
                 .build();
     }
 }
