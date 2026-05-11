@@ -2,19 +2,17 @@ package com.green.member.application.member;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.green.common.auth.MemberContext;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.kafka.KafkaEvent;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
-import com.green.common.kafka.member.memberTopic;
+import com.green.common.kafka.member.MemberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
-import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
@@ -220,7 +218,7 @@ public class MemberService {
                 .email(req.getEmail())
                 .eventType(EventType.E_UPDATED)
                 .build();
-        saveToOutbox(memberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+        saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
@@ -236,7 +234,7 @@ public class MemberService {
                     .eventType(EventType.E_UPDATED)
                     .build();
 
-            saveToOutbox(memberTopic.STUDENT, member.getMemberCode(), studentEvent);
+            saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
         }
     }
 
