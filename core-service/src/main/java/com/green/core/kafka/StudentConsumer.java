@@ -18,14 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentConsumer {
     private final StudentCacheRepository studentCacheRepository;
 
+    @Transactional
     @KafkaListener(topics = MemberTopic.STUDENT, groupId = "core-service-group")
     public void consume(StudentEvent event) {
         log.info("StudentEvent consumed: {}", event);
 
         try {
             EventType type = event.getEventType();
-            if (type == EventType.E_CREATED || type == EventType.E_UPDATED ) {
-                // 저장 또는 수정
+            if (type == EventType.E_CREATED ) {
                 StudentCache cache = StudentCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
@@ -41,10 +41,10 @@ public class StudentConsumer {
                         .build();
                 studentCacheRepository.save(cache);
                 log.info("studentCache 정보저장 완료: {}", event.getMemberCode());
-            }else if (type == EventType.E_DELETED) {
-                // 삭제
-                studentCacheRepository.deleteById(event.getMemberCode());
-                log.info("삭제 완료: {}", event.getMemberCode());
+            } else if (type == EventType.E_UPDATED) {
+                if ("EMAIL".equals(event.getUpdateType())) {
+                    studentCacheRepository.updateEmail(event.getMemberCode(), event.getEmail());
+                }
             }
 
         } catch (Exception e) {

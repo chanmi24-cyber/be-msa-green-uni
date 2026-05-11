@@ -24,6 +24,6 @@ public class ProfessorCache {
     @Column(name = "status", nullable = false, length = 20)
     private EnumProfessorStatus status;
 
-    @Column(name = "major_id")
+    @Column(name = "major_id", nullable = false)
     private Long majorId;
 }
