@@ -18,15 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentConsumer {
     private final StudentCacheRepository studentCacheRepository;
 
-    @Transactional
     @KafkaListener(topics = MemberTopic.STUDENT, groupId = "core-service-group")
     public void consume(StudentEvent event) {
-        log.info("Kafka 메시지 수신: {}", event);
+        log.info("StudentEvent consumed: {}", event);
 
         try {
             EventType type = event.getEventType();
             if (type == EventType.E_CREATED || type == EventType.E_UPDATED ) {
-                // 저장 또는 수정 (Idempotent: 동일 ID면 덮어쓰기 됨)
+                // 저장 또는 수정
                 StudentCache cache = StudentCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
@@ -34,6 +33,7 @@ public class StudentConsumer {
                         .academicYear(event.getAcademicYear())
                         .semester(event.getSemester())
                         .majorId(event.getMajorId())
+                        .minorId(event.getMinorId())
                         .status(EnumStudentStatus.from(event.getStatus()))
                         .isTransfer(event.getIsTransfer())
                         .isMultiChild(event.getIsMultiChild())

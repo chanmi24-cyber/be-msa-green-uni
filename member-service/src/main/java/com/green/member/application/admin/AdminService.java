@@ -12,7 +12,6 @@ import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
-import com.green.common.kafka.member.StudentMajorEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
@@ -121,6 +120,7 @@ public class AdminService {
                 .email(member.getEmail())
                 .password(rawPassword)
                 .role(role.getCode())
+                .eventType(EventType.E_CREATED)
                 .build();
 
         saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
