@@ -14,7 +14,8 @@ public enum SchedulePeriodErrorCode implements ErrorCode {
     NOT_GRADE_APPEAL_PERIOD("SC007", "성적이의신청 기간이 아닙니다.", HttpStatus.FORBIDDEN),
     NOT_LECTURE_EVALUATION_PERIOD("SC008", "강의평가 기간이 아닙니다.", HttpStatus.FORBIDDEN),
     NOT_TUITION_PAYMENT_PERIOD("SC009", "등록금납부 기간이 아닙니다.", HttpStatus.FORBIDDEN),
-    NOT_COURSE_OPEN_PERIOD("SC010", "강의개설신청 기간이 아닙니다.", HttpStatus.FORBIDDEN)
+    NOT_COURSE_OPEN_PERIOD("SC010", "강의개설신청 기간이 아닙니다.", HttpStatus.FORBIDDEN),
+    NOT_MAJOR_CHANGE_PERIOD("SC011", "전과 신청 기간이 아닙니다.", HttpStatus.FORBIDDEN)
     ;
     private final String code;
     private final String message;

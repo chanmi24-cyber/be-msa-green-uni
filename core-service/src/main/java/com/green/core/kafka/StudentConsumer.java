@@ -33,6 +33,7 @@ public class StudentConsumer {
                         .email(event.getEmail())
                         .academicYear(event.getAcademicYear())
                         .semester(event.getSemester())
+                        .majorId(event.getMajorId())
                         .status(EnumStudentStatus.from(event.getStatus()))
                         .isTransfer(event.getIsTransfer())
                         .isMultiChild(event.getIsMultiChild())

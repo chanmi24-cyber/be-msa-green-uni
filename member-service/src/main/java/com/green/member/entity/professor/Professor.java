@@ -48,4 +48,10 @@ public class Professor extends UpdatedAt {
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumProfessorStatus status = EnumProfessorStatus.EMPLOYMENT;
+
+    public void updateLab(EnumBuilding labBuilding, String labRoom, String labTel) {
+        if (labBuilding != null) this.labBuilding = labBuilding;
+        if (labRoom != null) this.labRoom = labRoom;
+        if (labTel != null) this.labTel = labTel;
+    }
 }

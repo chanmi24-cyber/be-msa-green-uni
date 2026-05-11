@@ -1,15 +1,19 @@
 package com.green.core.application.lecture;
 
 import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumBuilding;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.core.application.lecture.model.*;
+import com.green.core.application.lecture.repository.ClassroomRepository;
+import com.green.core.entity.lecture.Classroom;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -17,6 +21,7 @@ import java.util.List;
 @RequestMapping("/professor/lectures")
 public class ProfessorLectureController {
     private final LectureService lectureService;
+    private final ClassroomRepository classroomRepository;
 
     @PostMapping
     public ResultResponse<?> createLecture(@Valid @RequestBody LectureCreateReq req){
@@ -53,6 +58,15 @@ public class ProfessorLectureController {
         lectureService.deleteLecture(memberDto, lectureId);
         return ResultResponse.builder()
                 .message("강의 삭제 성공")
+                .build();
+    }
+
+    @GetMapping("/classrooms")
+    public ResultResponse<?> getClassrooms(@RequestParam EnumBuilding building) {
+        List<Classroom> rooms = classroomRepository.findByBuilding(building);
+        return ResultResponse.builder()
+                .message("강의실 목록 조회")
+                .data(rooms)
                 .build();
     }
 

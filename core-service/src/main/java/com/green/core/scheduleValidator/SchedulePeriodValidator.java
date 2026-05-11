@@ -92,4 +92,11 @@ public class SchedulePeriodValidator {
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_OPEN_PERIOD);
     }
 
+    // 전과 신청 기간 체크
+    public void checkMajorChange() {
+        boolean isActive = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.MAJOR_CHANGE)
+                .isPresent();
+        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_MAJOR_CHANGE_PERIOD);
+    }
 }

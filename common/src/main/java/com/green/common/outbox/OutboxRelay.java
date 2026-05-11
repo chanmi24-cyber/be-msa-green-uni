@@ -1,5 +1,6 @@
 package com.green.common.outbox;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,11 +19,17 @@ public class OutboxRelay {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    @PostConstruct
+    public void init() {
+        log.info("OutboxRelay 빈 등록됨");
+    }
+
     // 10초마다 실행 (간격은 조절 가능)
     @Scheduled(fixedDelay = 10_000, initialDelay = 20_000)
     @Transactional
     public void publishEvents() {
         List<Outbox> waitingEvents = outboxRepository.findAll();
+        log.info("OutboxRelay 실행됨 - 대기 이벤트 수: {}", waitingEvents.size());
 
         for (Outbox outbox : waitingEvents) {
             try {

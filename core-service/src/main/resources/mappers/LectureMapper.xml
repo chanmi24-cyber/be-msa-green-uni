@@ -249,10 +249,10 @@
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         LEFT JOIN lecture_rejection lrj ON lrj.rejection_id = (
-            SELECT rejection_id FROM lecture_rejection
-            WHERE lecture_id = l.lecture_id
-            ORDER BY created_at DESC
-            LIMIT 1
+        SELECT rejection_id FROM lecture_rejection
+        WHERE lecture_id = l.lecture_id
+        ORDER BY created_at DESC
+        LIMIT 1
         )
         <include refid="scheduleJoins"/>
         WHERE l.lecture_id = #{lectureId}
