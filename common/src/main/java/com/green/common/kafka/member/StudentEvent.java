@@ -2,6 +2,8 @@ package com.green.common.kafka.member;
 
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.kafka.KafkaEvent;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,13 +15,15 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentEvent implements Serializable {
+public class StudentEvent implements Serializable, KafkaEvent {
     private String memberType;
     private Long memberCode;
     private String name;
     private String email;
     private Integer academicYear;
     private Integer semester;
+    private Long majorId;
+    private Long minorId;
     private String status;
     private Boolean isTransfer;
     private Boolean isMultiChild;

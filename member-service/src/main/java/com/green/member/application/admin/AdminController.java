@@ -2,7 +2,9 @@ package com.green.member.application.admin;
 
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.AdminCreateReq;
+import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
+import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,15 @@ public class AdminController {
         MemberCreateRes res = adminService.createAdmin(req, pic);
         return ResultResponse.builder()
                 .message("관리자 정보 등록 성공")
+                .data(res)
+                .build();
+    }
+
+    @GetMapping("/{memberCode}")
+    public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
+        MemberProfileRes res = adminService.getMemberProfile(memberCode);
+        return ResultResponse.builder()
+                .message("회원 프로파일 조회")
                 .data(res)
                 .build();
     }
