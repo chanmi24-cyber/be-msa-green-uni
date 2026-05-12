@@ -16,4 +16,8 @@ public interface ProfessorCacheRepository  extends JpaRepository<ProfessorCache,
                               @Param("majorId") Long majorId,
                                 @Param("name") String name);
 
+    @Modifying
+    @Query("UPDATE ProfessorCache p SET p.status = :status WHERE p.memberCode = :memberCode")
+    void updateStatus(@Param("memberCode") Long memberCode,
+                      @Param("status") EnumProfessorStatus status);
 }

@@ -40,10 +40,23 @@ public class StudentConsumer {
                         .isVeteran(event.getIsVeteran())
                         .build();
                 studentCacheRepository.save(cache);
-                log.info("studentCache 정보저장 완료: {}", event.getMemberCode());
             } else if (type == EventType.E_UPDATED) {
                 if ("EMAIL".equals(event.getUpdateType())) {
                     studentCacheRepository.updateEmail(event.getMemberCode(), event.getEmail());
+                } else if ("PROFILE".equals(event.getUpdateType())) {
+                    // TODO: PR 머지 후 활성화
+                    // studentCacheRepository.updateProfile(
+                    //         event.getMemberCode(),
+                    //         event.getName(),
+                    //         event.getMajorId(),
+                    //         event.getIsTransfer(),
+                    //         event.getIsMultiChild(),
+                    //         event.getIsVeteran()
+                    // );
+                } else if ("STATUS".equals(event.getUpdateType())) {
+                    // TODO: PR 머지 후 활성화
+                    // studentCacheRepository.updateStatus(event.getMemberCode(),
+                    //         EnumStudentStatus.from(event.getStatus()));
                 }
             }
 

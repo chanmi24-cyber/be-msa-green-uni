@@ -255,22 +255,69 @@ public class AdminService {
     }
 
     // 학생 계정 개인 정보 수정
-    public void updateStudentProfile(Long memberCode, Long updatorCode, AdminStudentUpdateReq req) {
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+    public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req) {
 
         // 공통 필드 업데이트
-        member.updateCommonByAdmin(
-                req.getName(),
-                req.getBirth()
-        );
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+        String oldName = member.getName();
+        LocalDate oldBirth = member.getBirth();
+        member.updateCommonByAdmin( req.getName(),req.getBirth() );
 
         // 학생 필드 업데이트
         Student student = studentRepository.findById(memberCode).orElseThrow();
+        Boolean oldIsTransfer = student.getIsTransfer();
+        Boolean oldIsMultiChild = student.getIsMultiChild();
+        Boolean oldIsVeteran = student.getIsVeteran();
         student.updateByAdmin(
                 req.getIsTransfer(),
                 req.getIsMultiChild(),
                 req.getIsVeteran()
         );
+
+        // MemberHistory 저장
+        Map<String, Object> before = new LinkedHashMap<>();
+        if (req.getName() != null && !req.getName().equals(oldName)) before.put("name", oldName);
+        if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
+        if (req.getIsTransfer() != null && !req.getIsTransfer().equals(oldIsTransfer)) before.put("isTransfer", oldIsTransfer);
+        if (req.getIsMultiChild() != null && !req.getIsMultiChild().equals(oldIsMultiChild)) before.put("isMultiChild", oldIsMultiChild);
+        if (req.getIsVeteran() != null && !req.getIsVeteran().equals(oldIsVeteran)) before.put("isVeteran", oldIsVeteran);
+
+        // 전공 변경 처리
+        StudentMajor currentPrimaryMajor = studentMajorRepository
+                .findByStudent_MemberCodeAndTypeAndIsActiveTrue(memberCode, EnumMajorType.PRIMARY)
+                .orElseThrow();
+        Long currentMajorId = currentPrimaryMajor.getMajorId();
+        if (req.getMajorId() != null && !req.getMajorId().equals(currentMajorId)) {
+            currentPrimaryMajor.deactivate();
+            StudentMajor newPrimaryMajor = StudentMajor.builder()
+                    .student(student)
+                    .majorId(req.getMajorId())
+                    .type(EnumMajorType.PRIMARY)
+                    .build();
+            studentMajorRepository.save(newPrimaryMajor);
+            before.put("majorId", currentMajorId);
+            currentMajorId = req.getMajorId();
+        }
+        memberHistoryService.save(memberCode, updaterCode, before);
+
+        // StudentEvent Outbox 저장
+        boolean nameChanged = req.getName() != null && !req.getName().equals(oldName);
+        boolean transferChanged = req.getIsTransfer() != null && !req.getIsTransfer().equals(oldIsTransfer);
+        boolean multiChildChanged = req.getIsMultiChild() != null && !req.getIsMultiChild().equals(oldIsMultiChild);
+        boolean veteranChanged = req.getIsVeteran() != null && !req.getIsVeteran().equals(oldIsVeteran);
+        if (nameChanged || transferChanged || multiChildChanged || veteranChanged) {
+            StudentEvent studentEvent = StudentEvent.builder()
+                    .memberCode(member.getMemberCode())
+                    .name(member.getName())
+                    .majorId(currentMajorId)  // 새 majorId
+                    .isTransfer(student.getIsTransfer())
+                    .isMultiChild(student.getIsMultiChild())
+                    .isVeteran(student.getIsVeteran())
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("PROFILE")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
+        }
     }
 
     // 교수 계정 정보 수정

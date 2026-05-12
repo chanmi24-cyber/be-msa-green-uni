@@ -9,6 +9,7 @@ import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.admin.model.AdminMemberUpdateReq;
 import com.green.member.application.admin.model.AdminProfessorUpdateReq;
+import com.green.member.application.admin.model.AdminStudentUpdateReq;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
@@ -82,6 +83,15 @@ public class AdminController {
         adminService.updateProfessor(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
                 .message("교수 계정 정보 수정 성공")
+                .build();
+    }
+    // 학생 계정 정보 수정
+    @PatchMapping("/students/{memberCode}")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminStudentUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateStudent(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("학생 계정 정보 수정 성공")
                 .build();
     }
 }
