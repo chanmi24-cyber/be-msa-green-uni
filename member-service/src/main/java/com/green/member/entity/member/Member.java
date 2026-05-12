@@ -66,6 +66,12 @@ public class Member extends CreatedUpdatedAt {
         if (pic != null) this.pic = pic;
         if (email != null) this.email = email;
     }
+
+    public void updateCommonByAdmin(String name, LocalDate birth, LocalDate exitDate){
+        if(name != null) this.name = name;
+        if(birth != null) this.birth = birth;
+        if(exitDate != null) this.exitDate = exitDate;
+    }
 }
 
 

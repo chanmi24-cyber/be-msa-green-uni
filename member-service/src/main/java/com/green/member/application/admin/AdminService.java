@@ -3,10 +3,7 @@ package com.green.member.application.admin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumMajorType;
-import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.enumcode.EnumProfessorStatus;
-import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.enumcode.*;
 import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
@@ -17,11 +14,17 @@ import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.OutboxService;
 import com.green.member.application.admin.model.AdminCreateReq;
+import com.green.member.application.admin.model.AdminMemberUpdateReq;
+import com.green.member.application.admin.model.AdminProfessorUpdateReq;
+import com.green.member.application.admin.model.AdminStudentUpdateReq;
+import com.green.member.application.member.MemberHistoryRepository;
+import com.green.member.application.member.MemberHistoryService;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
+import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.StudentMajorRepository;
@@ -30,6 +33,7 @@ import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
+import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
@@ -42,6 +46,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -57,6 +65,7 @@ public class AdminService {
     private final MyFileUtil myFileUtil;
     private final MemberService memberService;
     private final OutboxService outboxService;
+    private final MemberHistoryService memberHistoryService;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -234,7 +243,7 @@ public class AdminService {
         return memberService.getMyProfile(memberCode, role);
     }
 
-    private EnumMemberRole getRoleFromMemberCode(Long memberCode) {
+    public EnumMemberRole getRoleFromMemberCode(Long memberCode) {
         String code = String.valueOf(memberCode);
         char roleChar = code.charAt(code.length() - 4);
         return switch (roleChar) {
@@ -243,5 +252,64 @@ public class AdminService {
             case '3' -> EnumMemberRole.ADMIN;
             default -> throw new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND);
         };
+    }
+
+    // 학생 계정 개인 정보 수정
+    public void updateStudentProfile(Long memberCode, Long updatorCode, AdminStudentUpdateReq req) {
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+
+        // 공통 필드 업데이트
+        member.updateCommonByAdmin(
+                req.getName(),
+                req.getBirth(),
+                req.getExitDate()
+        );
+
+        // 학생 필드 업데이트
+        Student student = studentRepository.findById(memberCode).orElseThrow();
+        student.updateByAdmin(
+                req.getIsTransfer(),
+                req.getIsMultiChild(),
+                req.getIsVeteran()
+        );
+    }
+
+    // 교수 계정 개인 정보 수정
+    public void updateProfessorProfile(Long memberCode, Long updatorCode, AdminProfessorUpdateReq req) {
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+
+        // 공통 필드 업데이트
+        member.updateCommonByAdmin(
+                req.getName(),
+                req.getBirth(),
+                req.getExitDate()
+        );
+
+        // 교수 필드 업데이트
+        Professor professor = professorRepository.findById(memberCode).orElseThrow();
+    }
+
+    // 관리자 계정 개인 정보 수정
+    public void updateProfile(Long memberCode, Long updatorCode, AdminMemberUpdateReq req) {
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+
+        String oldName = member.getName();
+        LocalDate oldBirth = member.getBirth();
+        LocalDate oldExitDate = member.getExitDate();
+
+        // 공통 필드 업데이트
+        member.updateCommonByAdmin(
+                req.getName(),
+                req.getBirth(),
+                req.getExitDate()
+        );
+
+        // MemberHistory 저장을 위한 변경된 필드만 수집
+        Map<String, Object> before = new LinkedHashMap<>();
+        if (req.getName() != null && !req.getName().equals(oldName)) before.put("name", oldName);
+        if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
+        if (req.getExitDate() != null && !req.getExitDate().equals(oldExitDate)) before.put("exitDate", oldExitDate);
+
+        memberHistoryService.save(memberCode, updatorCode, before);
     }
 }

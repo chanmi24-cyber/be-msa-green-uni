@@ -1,10 +1,17 @@
 package com.green.member.application.admin;
 
+import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
+import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.AdminCreateReq;
+import com.green.member.application.admin.model.AdminMemberUpdateReq;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
+import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +62,22 @@ public class AdminController {
         return ResultResponse.builder()
                 .message("회원 프로파일 조회")
                 .data(res)
+                .build();
+    }
+
+    // 관리자 계정 변경
+    @PatchMapping("/{memberCode}/profile")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestPart AdminMemberUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        EnumMemberRole role = adminService.getRoleFromMemberCode(memberCode);
+
+        switch (role) {
+            case EnumMemberRole.STUDENT -> adminService.updateStudentProfile(memberCode, loginMember.memberCode(), req);
+            case EnumMemberRole.PROFESSOR -> adminService.updateProfessorProfile(memberCode, loginMember.memberCode(), req);
+            default -> adminService.updateProfile(memberCode, loginMember.memberCode(), req);
+
+        return ResultResponse.builder()
+                .message("관리자의 계정 개인정보 수정")
                 .build();
     }
 }
