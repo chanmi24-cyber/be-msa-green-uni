@@ -261,8 +261,7 @@ public class AdminService {
         // 공통 필드 업데이트
         member.updateCommonByAdmin(
                 req.getName(),
-                req.getBirth(),
-                req.getExitDate()
+                req.getBirth()
         );
 
         // 학생 필드 업데이트
@@ -281,8 +280,7 @@ public class AdminService {
         // 공통 필드 업데이트
         member.updateCommonByAdmin(
                 req.getName(),
-                req.getBirth(),
-                req.getExitDate()
+                req.getBirth()
         );
 
         // 교수 필드 업데이트
@@ -290,7 +288,7 @@ public class AdminService {
     }
 
     // 관리자 계정 개인 정보 수정
-    public void updateProfile(Long memberCode, Long updatorCode, AdminMemberUpdateReq req) {
+    public void updateAdminProfile(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
         Member member = memberRepository.findById(memberCode).orElseThrow();
 
         String oldName = member.getName();
@@ -300,16 +298,14 @@ public class AdminService {
         // 공통 필드 업데이트
         member.updateCommonByAdmin(
                 req.getName(),
-                req.getBirth(),
-                req.getExitDate()
+                req.getBirth()
         );
 
         // MemberHistory 저장을 위한 변경된 필드만 수집
         Map<String, Object> before = new LinkedHashMap<>();
         if (req.getName() != null && !req.getName().equals(oldName)) before.put("name", oldName);
         if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
-        if (req.getExitDate() != null && !req.getExitDate().equals(oldExitDate)) before.put("exitDate", oldExitDate);
 
-        memberHistoryService.save(memberCode, updatorCode, before);
+        memberHistoryService.save(memberCode, updaterCode, before);
     }
 }

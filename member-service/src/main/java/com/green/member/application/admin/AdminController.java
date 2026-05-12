@@ -65,19 +65,13 @@ public class AdminController {
                 .build();
     }
 
-    // 관리자 계정 변경
-    @PatchMapping("/{memberCode}/profile")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestPart AdminMemberUpdateReq req) {
+    // 관리자 계정 정보 수정
+    @PatchMapping("/{memberCode}/admin/profile")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminMemberUpdateReq req) {
         MemberDto loginMember = MemberContext.get();
-        EnumMemberRole role = adminService.getRoleFromMemberCode(memberCode);
-
-        switch (role) {
-            case EnumMemberRole.STUDENT -> adminService.updateStudentProfile(memberCode, loginMember.memberCode(), req);
-            case EnumMemberRole.PROFESSOR -> adminService.updateProfessorProfile(memberCode, loginMember.memberCode(), req);
-            default -> adminService.updateProfile(memberCode, loginMember.memberCode(), req);
-
+        adminService.updateAdminProfile(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
-                .message("관리자의 계정 개인정보 수정")
+                .message("관리자 계정 개인 정보 수정 성공")
                 .build();
     }
 }

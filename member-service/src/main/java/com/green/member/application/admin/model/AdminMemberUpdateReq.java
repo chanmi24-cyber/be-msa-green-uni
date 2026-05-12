@@ -10,5 +10,4 @@ import java.time.LocalDate;
 public class AdminMemberUpdateReq {
     private String name;
     private LocalDate birth;
-    private LocalDate exitDate;
 }
