@@ -8,6 +8,7 @@ import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.admin.model.AdminMemberUpdateReq;
+import com.green.member.application.admin.model.AdminProfessorUpdateReq;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
@@ -66,12 +67,21 @@ public class AdminController {
     }
 
     // 관리자 계정 정보 수정
-    @PatchMapping("/{memberCode}/admin/profile")
+    @PatchMapping("/admins/{memberCode}")
     public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminMemberUpdateReq req) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateAdminProfile(memberCode, loginMember.memberCode(), req);
+        adminService.updateAdmin(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
-                .message("관리자 계정 개인 정보 수정 성공")
+                .message("관리자 계정 정보 수정 성공")
+                .build();
+    }
+    // 교수 계정 정보 수정
+    @PatchMapping("/professors/{memberCode}")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminProfessorUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateProfessor(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("교수 계정 정보 수정 성공")
                 .build();
     }
 }

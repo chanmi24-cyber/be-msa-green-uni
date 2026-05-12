@@ -273,27 +273,52 @@ public class AdminService {
         );
     }
 
-    // 교수 계정 개인 정보 수정
-    public void updateProfessorProfile(Long memberCode, Long updatorCode, AdminProfessorUpdateReq req) {
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+    // 교수 계정 정보 수정
+    public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req) {
 
         // 공통 필드 업데이트
-        member.updateCommonByAdmin(
-                req.getName(),
-                req.getBirth()
-        );
+        Member member = memberRepository.findById(memberCode).orElseThrow();
+        String oldName = member.getName();
+        LocalDate oldBirth = member.getBirth();
+        member.updateCommonByAdmin( req.getName(),req.getBirth() );
 
         // 교수 필드 업데이트
         Professor professor = professorRepository.findById(memberCode).orElseThrow();
+        EnumProfessorDegree oldDegree = professor.getDegree();
+        Long oldMajorId = professor.getMajorId();
+        professor.updateByAdmin( req.getDegree(), req.getMajorId() );
+
+        // MemberHistory 저장
+        Map<String, Object> before = new LinkedHashMap<>();
+        if (req.getName() != null && !req.getName().equals(oldName)) before.put("name", oldName);
+        if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
+        if (req.getDegree() != null && !req.getDegree().equals(oldDegree)) before.put("degree", oldDegree);
+        if (req.getMajorId() != null && !req.getMajorId().equals(oldMajorId)) before.put("majorId", oldMajorId);
+        memberHistoryService.save(memberCode, updaterCode, before);
+
+        // ProfessorEvent Outbox 저장
+        boolean nameChanged = req.getName() != null && !req.getName().equals(oldName);
+        boolean degreeChanged = req.getDegree() != null && !req.getDegree().equals(oldDegree);
+        boolean majorChanged = req.getMajorId() != null && !req.getMajorId().equals(oldMajorId);
+        if (nameChanged || degreeChanged || majorChanged) {
+            ProfessorEvent professorEvent = ProfessorEvent.builder()
+                    .memberCode(member.getMemberCode())
+                    .name(member.getName())
+                    .degree(professor.getDegree().getCode())
+                    .majorId(professor.getMajorId())
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("PROFILE")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
+        }
     }
 
-    // 관리자 계정 개인 정보 수정
-    public void updateAdminProfile(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
+    // 관리자 계정 정보 수정
+    public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
         Member member = memberRepository.findById(memberCode).orElseThrow();
 
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
-        LocalDate oldExitDate = member.getExitDate();
 
         // 공통 필드 업데이트
         member.updateCommonByAdmin(
