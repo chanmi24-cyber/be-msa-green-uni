@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import com.green.common.kafka.member.memberTopic;
+import com.green.common.kafka.member.MemberTopic;
 import com.green.auth.application.auth.model.AuthMemberCreateReq;
 
 @Slf4j
@@ -17,7 +17,7 @@ import com.green.auth.application.auth.model.AuthMemberCreateReq;
 public class AuthMemberConsumer {
     private final AuthService authService;
 
-    @KafkaListener(topics = memberTopic.AUTH_MEMBER, groupId = "auth-service-group")
+    @KafkaListener(topics = MemberTopic.AUTH_MEMBER, groupId = "auth-service-group")
     public void consume(AuthMemberEvent event) {
         log.info("AuthMemberEvent consumed: {}", event.getMemberCode());
         EventType type = event.getEventType();
