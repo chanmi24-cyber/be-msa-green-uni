@@ -15,6 +15,7 @@ import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
+import com.green.member.application.OutboxService;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.MemberService;
@@ -55,6 +56,7 @@ public class AdminService {
     private final ObjectMapper objectMapper;
     private final MyFileUtil myFileUtil;
     private final MemberService memberService;
+    private final OutboxService outboxService;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -122,8 +124,7 @@ public class AdminService {
                 .role(role.getCode())
                 .eventType(EventType.E_CREATED)
                 .build();
-
-        saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+        outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
         return newMember;
     }
@@ -169,7 +170,7 @@ public class AdminService {
                 .isVeteran(savedStudent.getIsVeteran())
                 .eventType(EventType.E_CREATED)
                 .build();
-        saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
+        outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
@@ -204,7 +205,7 @@ public class AdminService {
                 .eventType(EventType.E_CREATED)
                 .build();
 
-        saveToOutbox(MemberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
+        outboxService.saveToOutbox(MemberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
@@ -226,21 +227,6 @@ public class AdminService {
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())
                 .build();
-    }
-
-    private void saveToOutbox(String topic, Long aggregateId, Object event) {
-        try {
-            String payload = objectMapper.writeValueAsString(event);
-            Outbox outbox = Outbox.builder()
-                    .topic(topic)
-                    .aggregateId(aggregateId)
-                    .eventType(EventType.E_CREATED.name())
-                    .payload(payload)
-                    .build();
-            outboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Outbox 직렬화 실패", e);
-        }
     }
 
     public MemberProfileRes getMemberProfile(Long memberCode) {
