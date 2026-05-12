@@ -13,20 +13,19 @@ public class SchedulePeriodValidator {
 
     private final ScheduleCacheRepository scheduleCacheRepository;
 
-    // 수강신청 기간 체크
-    public void checkCourseRegistration() {
-        boolean isActive = scheduleCacheRepository
+    // 수강신청, 수강정정 예외 로직
+    public void checkCourseRegistrationOrModification() {
+        boolean isRegistration = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_REGISTRATION_PERIOD);
-    }
+                .isEmpty();
 
-    // 수강정정 기간 체크
-    public void checkCourseModification() {
-        boolean isActive = scheduleCacheRepository
+        boolean isModification = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_MODIFICATION_PERIOD);
+                .isEmpty();
+
+        if (!isRegistration && !isModification) {
+            throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_REGISTRATION_PERIOD);
+        }
     }
 
     // 성적입력 기간 체크

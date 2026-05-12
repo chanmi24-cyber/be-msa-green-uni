@@ -2,6 +2,7 @@ package com.green.core.entity.lecture;
 
 import com.green.common.entity.CreatedUpdatedAt;
 import com.green.common.enumcode.EnumApprovalStatus;
+import com.green.core.application.lecture.model.LectureDetailReq;
 import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumLectureType;
 import io.hypersistence.utils.hibernate.id.Tsid;
@@ -85,4 +86,28 @@ public class Lecture extends CreatedUpdatedAt {
     public void updateStatus(EnumApprovalStatus status) {
         this.status = status;
     }
+
+
+    public void update(LectureDetailReq req, Major major) {
+        this.major = major;
+        this.year = req.getYear();
+        this.semester = req.getSemester();
+        this.lectureName = req.getLectureName();
+        this.credit = req.getCredit();
+        this.lectureType = req.getLectureType();
+        this.refBooks = req.getRefBooks();
+        this.goal = req.getGoal();
+        this.weeklyPlan = req.getWeeklyPlan();
+        this.academicYear = req.getAcademicYear();
+        this.maxStd = req.getMaxStd();
+        this.startDate = req.getStartDate();
+        this.endDate = req.getEndDate();
+        this.status = EnumApprovalStatus.PENDING; // 수정 후 자동 PENDING
+    }
+
+    public void delete() {
+        this.isDel = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
 }

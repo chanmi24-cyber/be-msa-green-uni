@@ -3,7 +3,7 @@ package com.green.member.entity.professor;
 import com.green.common.entity.UpdatedAt;
 import com.green.common.enumcode.EnumBuilding;
 import com.green.member.entity.member.Member;
-import com.green.member.enumcode.EnumProfessorDegree;
+import com.green.common.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;
 import jakarta.persistence.*;
@@ -48,4 +48,10 @@ public class Professor extends UpdatedAt {
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumProfessorStatus status = EnumProfessorStatus.EMPLOYMENT;
+
+    public void updateLab(EnumBuilding labBuilding, String labRoom, String labTel) {
+        if (labBuilding != null) this.labBuilding = labBuilding;
+        if (labRoom != null) this.labRoom = labRoom;
+        if (labTel != null) this.labTel = labTel;
+    }
 }

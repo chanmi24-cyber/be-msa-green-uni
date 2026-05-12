@@ -1,6 +1,6 @@
 package com.green.core.entity.cache;
 import com.green.common.enumcode.EnumProfessorStatus;
-import com.green.core.entity.major.Major;
+import com.green.common.enumcode.EnumProfessorDegree;
 import jakarta.persistence.*;
 import lombok.*;
 @Entity
@@ -19,12 +19,11 @@ public class ProfessorCache {
     private String name;
 
     @Column(name = "degree", length = 20)
-    private String degree;
+    private EnumProfessorDegree degree;
 
     @Column(name = "status", nullable = false, length = 20)
     private EnumProfessorStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "major_id")
-    private Major major;
+    @Column(name = "major_id", nullable = false)
+    private Long majorId;
 }

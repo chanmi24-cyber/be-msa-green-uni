@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class LectureDetailRes {
+    private Long memberCode;
     private Long lectureId;
     private Long majorId;
     private String majorName;
@@ -29,6 +30,8 @@ public class LectureDetailRes {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private List<ScheduleRes> schedules;
+    private String rejectionReason;
+    private LocalDateTime rejectionAt;// 반려사유 (REJECTED일 때만 값 있음)
 
     @Getter
     @NoArgsConstructor
