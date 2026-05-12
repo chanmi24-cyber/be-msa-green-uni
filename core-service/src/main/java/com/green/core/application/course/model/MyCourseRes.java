@@ -26,5 +26,5 @@ public class MyCourseRes {
     private Integer maxStd;
     private Integer remStd;
     private String status;
-    private Integer isAttended;
+    private Integer isAttended; // 0: 취소 가능, 1 이상: 취소 불가
 }

@@ -173,6 +173,7 @@ public class CourseService {
                             .credit(l.getCredit())
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
+                            .isAttended(0) // 수강신청 기간 중 항상 취소 가능
                             .build();
                 })
                 .toList();
@@ -209,19 +210,27 @@ public class CourseService {
         }
         log.info("3. 강의 조회 완료 - lectureId: {}", req.getLectureId());
 
+        log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
+                student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
         // 학과 조건 확인 (전공과목만 학과 제한, 교양은 무관)
         boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
         if (isMajorSubject) {
             Long lectureMajorId = lecture.getMajor().getMajorId();
             boolean isMajorMatch = lectureMajorId.equals(student.getMajorId())
-                    || lectureMajorId.equals(student.getMinorId());
+                    || studentCacheRepository.countMinorByStudentCodeAndMajorId(
+                    studentCode, lectureMajorId) > 0;
+
             if (!isMajorMatch) {
                 throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "신청 대상 학과가 아닙니다.");
             }
         }
 
-        // 학년 조건 확인
-        if (!lecture.getAcademicYear().equals(student.getAcademicYear())) {
+        // 학년 조건 - 부전공 과목이면 스킵
+        boolean isMinorSubject = isMajorSubject
+                && studentCacheRepository.countMinorByStudentCodeAndMajorId(
+                studentCode, lecture.getMajor().getMajorId()) > 0;
+
+        if (!isMinorSubject && !lecture.getAcademicYear().equals(student.getAcademicYear())) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "신청 대상 학년이 아닙니다.");
         }
         log.info("4. 학과/학년 조건 확인 완료");
