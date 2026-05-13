@@ -13,6 +13,7 @@ import com.green.core.application.attendance.model.AttendSessionListRes;
 import com.green.core.application.attendance.model.AttendSessionStartReq;
 import com.green.core.application.attendance.model.AttendSessionStartRes;
 import com.green.core.application.attendance.model.AttendStatusUpdateReq;
+import com.green.core.application.attendance.model.AttendStuListRes;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.attendance.Attendance;
@@ -34,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -485,6 +487,63 @@ public class AttendService {
                 lecture.getAcademicYear(),
                 scheduleInfos
         );
+    }
+
+    // ── ATTD-04 학생 본인 출석 조회 ──────────────────────────────────────────────
+    // lectureId 없으면 수강 중인 전체 강의 출석 반환, 있으면 해당 강의만 필터
+    @Transactional(readOnly = true)
+    public List<AttendStuListRes> getMyAttendance(Long lectureId) {
+        Long studentCode = MemberContext.get().memberCode();
+
+        List<Attendance> attendances = lectureId != null
+                ? attendanceRepository.findByStudentCodeAndLectureIdWithDetails(studentCode, lectureId)
+                : attendanceRepository.findByStudentCodeWithDetails(studentCode);
+
+        // 강의별로 그룹핑 — LinkedHashMap으로 조회 순서(강의 ID 오름차순) 유지
+        Map<Long, List<Attendance>> byLecture = attendances.stream()
+                .collect(Collectors.groupingBy(
+                        a -> a.getAttendsession().getLecture().getLectureId(),
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        return byLecture.entrySet().stream()
+                .map(entry -> {
+                    List<Attendance> records = entry.getValue();
+                    Lecture lecture = records.get(0).getAttendsession().getLecture();
+
+                    int attendCount     = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.ATTEND).count();
+                    int absentCount     = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.ABSENT).count();
+                    int lateCount       = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.LATE).count();
+                    int earlyLeaveCount = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.EARLY_LEAVE).count();
+
+                    List<AttendStuListRes.Detail> details = records.stream()
+                            .map(a -> new AttendStuListRes.Detail(
+                                    formatAttendDate(a.getAttendsession().getClassDate()),
+                                    a.getStatus().getCode(),
+                                    a.getReason()
+                            ))
+                            .toList();
+
+                    return new AttendStuListRes(
+                            lecture.getLectureId(),
+                            lecture.getLectureName(),
+                            records.size(),
+                            attendCount,
+                            absentCount,
+                            lateCount,
+                            earlyLeaveCount,
+                            details
+                    );
+                })
+                .toList();
+    }
+
+    // "2026-04-01(수)" 형식 — 스펙 AttendStuListRes.Detail.attendDate 참고
+    private static final String[] DAY_KO = {"", "월", "화", "수", "목", "금", "토", "일"};
+
+    private String formatAttendDate(LocalDate date) {
+        return date + "(" + DAY_KO[date.getDayOfWeek().getValue()] + ")";
     }
 
     // ── IP가 CIDR 범위 내에 있는지 확인 ──────────────────────────────────────────
