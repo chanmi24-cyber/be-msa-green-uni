@@ -34,13 +34,13 @@ spec:
         booleanParam(name: 'FORCE_MEMBER', defaultValue: false, description: 'Member-Service를 강제로 빌드합니다.')
         booleanParam(name: 'FORCE_CORE', defaultValue: false, description: 'Core-Service를 강제로 빌드합니다.')
         booleanParam(name: 'FORCE_ACADEMIC', defaultValue: false, description: 'Academic-Service를 강제로 빌드합니다.')
-        booleanParam(name: 'FORCE_GATEWAY', defaultValue: false, description: 'Gateway-Service를 강제로 빌드합니다.')
+        booleanParam(name: 'FORCE_GATEWAY', defaultValue: false, description: 'Gateway를 강제로 빌드합니다.')
     }
 
     environment {
         REGISTRY = "harbor.greenart.n-e.kr"
         PROJECT  = "greenuni"
-        SERVICES = "auth-service,member-service, core-service, academic-service, gateway-service"
+        SERVICES = "auth-service,member-service, core-service, academic-service, gateway"
     }
 
     stages {
@@ -95,7 +95,7 @@ def shouldBuild(String serviceName) {
         'member-service': 'member',
         'core-service': 'core',
         'academic-service': 'academic',
-        'gateway-service': 'gateway'
+        'gateway': 'gateway'
     ]
 
     // 1. 강제 빌드 파라미터 체크
