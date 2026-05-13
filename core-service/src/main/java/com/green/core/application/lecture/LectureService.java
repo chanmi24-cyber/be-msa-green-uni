@@ -155,9 +155,9 @@ public class LectureService {
 
         } else if (memberDto.role() == EnumMemberRole.PROFESSOR) {
             res = lectureMapper.findProAdmLectureDetail(lectureId);
-            // 본인 강의인지 체크
+            // 본인 강의가 아니면 → 403 대신 학생용으로 fallback
             if (res != null && !res.getMemberCode().equals(memberDto.memberCode())) {
-                throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+                res = lectureMapper.findStudentLectureDetail(lectureId);
             }
 
         } else { // ADMIN

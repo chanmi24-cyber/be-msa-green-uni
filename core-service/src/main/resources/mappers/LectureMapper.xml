@@ -66,6 +66,7 @@
         <id property="lectureId" column="lectureId"/>
         <result property="majorId" column="majorId"/>
         <result property="majorName" column="majorName"/>
+        <result property="proName" column="proName"/>
         <result property="year" column="year"/>
         <result property="semester" column="semester"/>
         <result property="lectureName" column="lectureName"/>
@@ -242,11 +243,15 @@
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         WHERE l.status = 'APPROVED'
-        <if test="proName != null and proName != ''">
-            AND pc.name LIKE CONCAT('%', #{proName}, '%')
-        </if>
-        <if test="lectureName != null and lectureName != ''">
-            AND l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
+        <if test="(lectureName != null and lectureName != '') or (proName != null and proName != '')">
+            AND (
+            <if test="lectureName != null and lectureName != ''">
+                l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
+            </if>
+            <if test="proName != null and proName != ''">
+                OR pc.name LIKE CONCAT('%', #{proName}, '%')
+            </if>
+            )
         </if>
         <if test="majorId != null">AND l.major_id = #{majorId}</if>
         <if test="year != null">AND l.year = #{year}</if>
@@ -261,6 +266,7 @@
         l.lecture_id    AS lectureId,
         l.major_id      AS majorId,
         mj.name         AS majorName,
+        pc.name         AS proName,
         l.year,
         l.semester,
         l.lecture_name  AS lectureName,
@@ -280,6 +286,7 @@
         <include refid="scheduleColumns"/>
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
+        LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
         LEFT JOIN lecture_rejection lrj ON lrj.rejection_id = (
         SELECT rejection_id FROM lecture_rejection
         WHERE lecture_id = l.lecture_id
@@ -297,6 +304,7 @@
         l.lecture_id    AS lectureId,
         l.major_id      AS majorId,
         mj.name         AS majorName,
+        pc.name         AS proName,
         l.year,
         l.semester,
         l.lecture_name  AS lectureName,
@@ -311,6 +319,7 @@
         <include refid="scheduleColumns"/>
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
+        LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
         <include refid="scheduleJoins"/>
         WHERE l.lecture_id = #{lectureId}
     </select>
