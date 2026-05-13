@@ -7,13 +7,8 @@ constants:
     secret-key: ${JWT_SECRET_KEY} # 비밀 레시피(절대 공개되어서는 안 된다)
     access-token-cookie-name: access-token
     access-token-cookie-path: /
-<<<<<<< HEAD
-    access-token-cookie-validity-seconds: 1295995 # 15일 - 5초 # 1시간 - 5초 3595
-    access-token-validity-milliseconds: 1296000000 # 15일 # 1시간 3600000
-=======
     access-token-cookie-validity-seconds: 86395  # 24시간 - 5초
     access-token-validity-milliseconds: 86400000  # 24시간
->>>>>>> feature/attendance
     refresh-token-cookie-name: refresh-token
     refresh-token-cookie-path: /
     refresh-token-cookie-validity-seconds: 1295995 # 15일 - 5초

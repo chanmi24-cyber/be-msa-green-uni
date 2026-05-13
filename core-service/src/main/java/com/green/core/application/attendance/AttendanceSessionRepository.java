@@ -10,9 +10,11 @@ import java.util.Optional;
 
 public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
 
-    boolean existsByLecture_LectureIdAndClassDateAndIsActiveTrue(Long lectureId, LocalDate classDate);
+    boolean existsByLecture_LectureIdAndClassDate(Long lectureId, LocalDate classDate);
 
     Optional<AttendanceSession> findByLecture_LectureIdAndIsActiveTrue(Long lectureId);
+
+    Optional<AttendanceSession> findByLecture_LectureIdAndClassDate(Long lectureId, java.time.LocalDate classDate);
 
     //활성 세션 전체 조회 추가
     @Query("SELECT s FROM AttendanceSession s JOIN FETCH s.lecture WHERE s.isActive = true")
