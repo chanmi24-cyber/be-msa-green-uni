@@ -433,42 +433,67 @@ public class AdminService {
         EnumProfessorPosition oldPosition = professor.getPosition();
         EnumProfessorPosition newPosition = req.getPosition();
 
-        // 상태 변경
-        professor.updateStatusAndPosition(req.getStatus(), req.getPosition());
-
-        // changeType 결정
         String changeType;
-        if (newStatus == EnumProfessorStatus.RETIREMENT) {
-            changeType = "퇴임";
-            // exitDate 자동 세팅
-            Member member = memberRepository.findById(memberCode).orElseThrow();
-            member.setExitDate(LocalDate.now());
-        } else if (oldStatus == EnumProfessorStatus.EMPLOYMENT && newStatus == EnumProfessorStatus.ABSENCE) {
-            changeType = "휴직";
-        } else if (oldStatus == EnumProfessorStatus.ABSENCE && newStatus == EnumProfessorStatus.EMPLOYMENT) {
-            changeType = "복직";
-        } else if (newStatus == EnumProfessorStatus.SABBATICAL) {
-            changeType = "안식년";
-        } else if (oldStatus == EnumProfessorStatus.SABBATICAL && newStatus == EnumProfessorStatus.EMPLOYMENT) {
-            changeType = "안식년종료";
-        } else {
-            changeType = "상태변경";
+
+        // 상태 변경
+        if(req.getStatus() != null){
+            professor.updateStatus(req.getStatus());
+            if (newStatus == EnumProfessorStatus.RETIREMENT) {
+                changeType = "퇴임";
+                // exitDate 자동 세팅
+                Member member = memberRepository.findById(memberCode).orElseThrow();
+                member.setExitDate(LocalDate.now());
+            } else if (oldStatus == EnumProfessorStatus.EMPLOYMENT && newStatus == EnumProfessorStatus.ABSENCE) {
+                changeType = "휴직";
+            } else if (oldStatus == EnumProfessorStatus.ABSENCE && newStatus == EnumProfessorStatus.EMPLOYMENT) {
+                changeType = "복직";
+            } else if (newStatus == EnumProfessorStatus.SABBATICAL) {
+                changeType = "안식년";
+            } else if (oldStatus == EnumProfessorStatus.SABBATICAL && newStatus == EnumProfessorStatus.EMPLOYMENT) {
+                changeType = "안식년종료";
+            } else {
+                changeType = "상태변경";
+            }
+
+            // ProfessorHistory 저장
+            ProfessorHistory history = ProfessorHistory.builder()
+                    .professor(professor)
+                    .changeType(changeType)
+                    .oldStatus(oldStatus)
+                    .newStatus(newStatus)
+                    .startDate(req.getStartDate())
+                    .endDate(req.getEndDate())
+                    .reason(req.getReason())
+                    .updatorCode(updaterCode)
+                    .build();
+            professorHistoryRepository.save(history);
+
+            // ProfessorEvent Outbox 저장
+            ProfessorEvent professorEvent = ProfessorEvent.builder()
+                    .memberCode(professor.getMemberCode())
+                    .status(professor.getStatus().getCode())
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("STATUS")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.PROFESSOR, professor.getMemberCode(), professorEvent);
         }
 
-        // ProfessorHistory 저장
-        ProfessorHistory history = ProfessorHistory.builder()
-                .professor(professor)
-                .changeType(changeType)
-                .oldStatus(oldStatus)
-                .newStatus(newStatus)
-                .oldPosition(oldPosition)
-                .newPosition(newPosition)
-                .startDate(req.getStartDate())
-                .endDate(req.getEndDate())
-                .reason(req.getReason())
-                .updatorCode(updaterCode)
-                .build();
-        professorHistoryRepository.save(history);
+        // 직위 변경
+        if(req.getPosition() != null){
+            professor.updatePosition(req.getPosition());
+            // ProfessorHistory 저장
+            ProfessorHistory history = ProfessorHistory.builder()
+                    .professor(professor)
+                    .changeType("직위변경")
+                    .oldPosition(oldPosition)
+                    .newPosition(newPosition)
+                    .startDate(req.getStartDate())
+                    .endDate(req.getEndDate())
+                    .reason(req.getReason())
+                    .updatorCode(updaterCode)
+                    .build();
+            professorHistoryRepository.save(history);
+        }
     }
 
     public void updateStudentStatus(Long memberCode, Long updaterCode, StatusUpdateStudentReq req){

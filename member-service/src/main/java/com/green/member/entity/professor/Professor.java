@@ -60,8 +60,10 @@ public class Professor extends UpdatedAt {
         if(majorId != null) this.majorId = majorId;
     }
 
-    public void updateStatusAndPosition(EnumProfessorStatus status, EnumProfessorPosition position){
+    public void updateStatus(EnumProfessorStatus status){
         if(status != null) this.status = status;
+    }
+    public void updatePosition(EnumProfessorPosition position){
         if(position != null) this.position = position;
     }
 }
