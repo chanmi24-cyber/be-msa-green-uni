@@ -539,6 +539,15 @@ public class AdminService {
                 .build();
         studentHistoryRepository.save(history);
 
+        // StudentEvent Outbox 저장
+            StudentEvent studentEvent = StudentEvent.builder()
+                    .memberCode(student.getMemberCode())
+                    .status(student.getStatus().getCode())
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("STATUS")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
+
         // 퇴학이면 로그인 불가 처리
         if (newStatus == EnumStudentStatus.EXPULSION) {
             AuthMemberEvent authEvent = AuthMemberEvent.builder()
