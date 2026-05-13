@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface LectureScheduleRepository extends JpaRepository<LectureSchedule, Long> {
     @Modifying
     @Query("DELETE FROM LectureSchedule ls WHERE ls.lecture = :lecture")
@@ -29,4 +31,6 @@ public interface LectureScheduleRepository extends JpaRepository<LectureSchedule
             @Param("year") Integer year,
             @Param("semester") Integer semester
     );
+
+    List<LectureSchedule> findByLecture_LectureId(Long lectureId);
 }

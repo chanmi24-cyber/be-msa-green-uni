@@ -24,11 +24,8 @@ public interface MajorRepository extends JpaRepository<Major, Long> {
 
     List<Major> findByActiveNot(EnumMajorStatus active);
 
-    @Query("""
-    SELECT m.majorId, COUNT(p.memberCode)
-    FROM Major m
-    LEFT JOIN ProfessorCache p ON p.major.majorId = m.majorId
-    GROUP BY m.majorId
-    """)
+    @Query("SELECT m.majorId, COUNT(p.memberCode) FROM Major m " +
+            "LEFT JOIN ProfessorCache p ON p.majorId = m.majorId " +
+            "GROUP BY m.majorId")
     List<Object[]> findProfessorCountByMajor();
 }
