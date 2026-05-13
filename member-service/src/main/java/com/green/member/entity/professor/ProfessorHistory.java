@@ -35,10 +35,10 @@ public class ProfessorHistory extends CreatedAt {
     private EnumProfessorStatus newStatus;
 
     // 전임교수, 시간강사, 조교수, 명예교수
-    @Column(name = "old_position", nullable = false, length = 20)
+    @Column(name = "old_position", length = 20)
     private EnumProfessorPosition oldPosition;
 
-    @Column(name = "new_position", nullable = false, length = 20)
+    @Column(name = "new_position", length = 20)
     private EnumProfessorPosition newPosition;
 
     @Column(name = "start_date")

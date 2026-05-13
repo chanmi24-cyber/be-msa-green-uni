@@ -1,17 +1,14 @@
 package com.green.member.application.member;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumChangeType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumMajorType;
-import com.green.common.kafka.KafkaEvent;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
+import com.green.member.application.OutboxService;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
 import com.green.member.application.member.model.MemberProfileRes;
@@ -25,7 +22,6 @@ import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
-import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
@@ -52,10 +48,8 @@ public class MemberService {
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
     private final MyFileUtil myFileUtil;
-    private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
-    private final MemberHistoryRepository memberHistoryRepository;
     private final MemberHistoryService memberHistoryService;
+    private final OutboxService outboxService;
 
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
@@ -236,8 +230,9 @@ public class MemberService {
                     .memberCode(memberCode)
                     .email(req.getEmail())
                     .eventType(EventType.E_UPDATED)
+                    .updateType("EMAIL")
                     .build();
-            saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+            outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
             // StudentEvent Outbox 저장
             if (role == EnumMemberRole.STUDENT) {
@@ -247,8 +242,7 @@ public class MemberService {
                         .eventType(EventType.E_UPDATED)
                         .updateType("EMAIL")
                         .build();
-
-                saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
+                outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
             }
         }
 
@@ -275,41 +269,8 @@ public class MemberService {
             if (req.getLabRoom() != null && !req.getLabRoom().equals(oldLabRoom)) before.put("labRoom", oldLabRoom);
             if (req.getLabTel() != null && !req.getLabTel().equals(oldLabTel)) before.put("labTel", oldLabTel);
         }
-
         memberHistoryService.save(memberCode, memberCode, before);
 
     }
 
-
-    private void saveToOutbox(String topic, Long aggregateId, KafkaEvent event) {
-        log.info("saveToOutbox 호출됨 - topic: {}, aggregateId: {}", topic, aggregateId);
-        try {
-            String payload = objectMapper.writeValueAsString(event);
-            Outbox outbox = Outbox.builder()
-                    .topic(topic)
-                    .aggregateId(aggregateId)
-                    .eventType(event.getEventType().name())
-                    .payload(payload)
-                    .build();
-            outboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Outbox 직렬화 실패", e);
-        }
-    }
-
-    private void saveMemberHistory(Long memberCode, Long updatorCode, Map<String, Object> beforeData) {
-        if (beforeData.isEmpty()) return;
-        try {
-            String json = objectMapper.writeValueAsString(beforeData);
-            MemberHistory history = MemberHistory.builder()
-                    .member(memberRepository.getReferenceById(memberCode))
-                    .changeType(EnumChangeType.UPDATE)
-                    .beforeData(json)
-                    .updatorCode(updatorCode)
-                    .build();
-            memberHistoryRepository.save(history);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("히스토리 직렬화 실패", e);
-        }
-    }
 }

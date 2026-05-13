@@ -1,11 +1,19 @@
 package com.green.member.application.admin;
 
+import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
+import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
-import com.green.member.application.admin.model.AdminCreateReq;
+import com.green.member.application.admin.model.*;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
+import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.StatusUpdateProfessorReq;
+import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,4 +65,61 @@ public class AdminController {
                 .data(res)
                 .build();
     }
+
+    // 관리자 계정 정보 수정
+    @PatchMapping("/admins/{memberCode}")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminMemberUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateAdmin(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("관리자 계정 정보 수정 성공")
+                .build();
+    }
+    // 교수 계정 정보 수정
+    @PatchMapping("/professors/{memberCode}")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminProfessorUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateProfessor(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("교수 계정 정보 수정 성공")
+                .build();
+    }
+    // 학생 계정 정보 수정
+    @PatchMapping("/students/{memberCode}")
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminStudentUpdateReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateStudent(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("학생 계정 정보 수정 성공")
+                .build();
+    }
+
+    // 관리자 계정 상태 변경
+    @PatchMapping("/admins/{memberCode}/status")
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateAdminReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateAdminStatus(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("관리자 계정 상태 변경 및 이력 기록")
+                .build();
+    }
+    // 교수 계정 상태 변경
+    @PatchMapping("/professors/{memberCode}/status")
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateProfessorReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateProfessorStatus(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("교수 계정 상태 변경 및 이력 기록")
+                .build();
+    }
+    // 학생 계정 상태 변경
+    @PatchMapping("/students/{memberCode}/status")
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateStudentReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateStudentStatus(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("학생 계정 상태 변경 및 이력 기록")
+                .build();
+    }
+
 }
