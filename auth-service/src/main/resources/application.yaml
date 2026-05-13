@@ -49,6 +49,5 @@ spring:
           starttls:
             enable: true        # 보안 연결(TLS) 사용 (필수)
             required: true
-          connectiontimeout: 5000
           timeout: 5000
-          writetimeout: 5000
+
