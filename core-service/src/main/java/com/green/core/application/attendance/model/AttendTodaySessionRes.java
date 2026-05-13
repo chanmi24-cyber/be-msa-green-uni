@@ -10,5 +10,5 @@ import java.time.LocalDate;
 public class AttendTodaySessionRes {
     private Long sessionId;
     private LocalDate classDate;
-    private Boolean isActive; // true=출석진행중, false=출석완료
+    private Boolean isActive;
 }

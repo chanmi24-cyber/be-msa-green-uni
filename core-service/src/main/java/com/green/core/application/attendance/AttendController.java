@@ -2,6 +2,7 @@ package com.green.core.application.attendance;
 
 import com.green.common.model.ResultResponse;
 import com.green.core.application.attendance.model.AttendActiveSessionRes;
+import com.green.core.application.attendance.model.AttendTodaySessionRes;
 import com.green.core.application.attendance.model.AttendLectureRes;
 import com.green.core.application.attendance.model.AttendProListRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
@@ -20,7 +21,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -45,6 +49,12 @@ public class AttendController {
     @GetMapping("my-lectures/{lectureId}")
     public ResponseEntity<ResultResponse<AttendLectureRes>> getProfessorLecture(@PathVariable Long lectureId) {
         return ResponseEntity.ok(new ResultResponse<>("강의 정보 조회 성공", attendService.getProfessorLecture(lectureId)));
+    }
+
+    // ── 오늘 세션 조회 (활성·종료 무관 — QR 페이지 진입 시 세션 상태 복구) ──────
+    @GetMapping("{lectureId}/sessions/today")
+    public ResponseEntity<ResultResponse<AttendTodaySessionRes>> getTodaySession(@PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("오늘 세션 조회", attendService.getTodaySession(lectureId).orElse(null)));
     }
 
     // ── 활성 세션 조회 (페이지 재진입 시 기존 세션 복구) ────────────────────────
@@ -80,11 +90,8 @@ public class AttendController {
           // UUID 랜덤 생성 → DB INSERT → 저장된 토큰 반환
           QrToken qrToken = attendService.createAndSaveToken(sessionId);
 
-          emitter.send(
-              SseEmitter.event()
-                  .data("{\"token\":\"" + qrToken.getToken() + "\","
-                      + "\"expiresAt\":\"" + qrToken.getExpiresAt() + "\"}")
-          );
+          // QR 코드에 인코딩할 토큰 UUID만 전송 (JSON 전체를 보내면 학생 스캔 시 UUID 파싱 불가)
+          emitter.send(SseEmitter.event().data(qrToken.getToken()));
 
           log.info("QR 토큰 DB 저장 및 전송 완료 - sessionId: {}", sessionId);
 
@@ -141,13 +148,29 @@ public class AttendController {
         return ResponseEntity.ok(new ResultResponse<>("출석부 조회 성공", attendService.getRoster(lectureId, sessionId)));
     }
 
-    // ── 출석 상태 단건 수정 ──────────────────────────────────────────────────────
-    @PatchMapping("{lectureId}/attendances/{attendId}")
-    public ResponseEntity<ResultResponse<Void>> updateAttendStatus(
+    // ── 출석 기록 날짜 목록 조회 (달력 연두색 하이라이트용) ────────────────────────
+    @GetMapping("{lectureId}/dates")
+    public ResponseEntity<ResultResponse<List<String>>> getRecordedDates(@PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("출석 기록 날짜 조회 성공", attendService.getRecordedDates(lectureId)));
+    }
+
+    // ── ATTD-05 날짜별 출석부 조회 (GET /{lectureId}?attendDate=YYYY-MM-DD) ──────────
+    // attendDate 생략 시 오늘 날짜 기본값 적용
+    @GetMapping("{lectureId}")
+    public ResponseEntity<ResultResponse<List<AttendProListRes>>> getRosterByDate(
             @PathVariable Long lectureId,
-            @PathVariable Long attendId,
-            @RequestBody AttendStatusUpdateReq req) {
-        attendService.updateAttendStatus(lectureId, attendId, req);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate attendDate) {
+        if (attendDate == null) attendDate = LocalDate.now();
+        return ResponseEntity.ok(new ResultResponse<>("날짜별 출석부 조회 성공", attendService.getRosterByDate(lectureId, attendDate)));
+    }
+
+    // ── ATTD-06 출석 상태 일괄 수정 (PATCH /{lectureId}) ─────────────────────────────
+    @PatchMapping("{lectureId}")
+    public ResponseEntity<ResultResponse<Void>> updateAttendStatuses(
+            @PathVariable Long lectureId,
+            @RequestBody List<AttendStatusUpdateReq> reqs) {
+        attendService.updateAttendStatuses(lectureId, reqs);
         return ResponseEntity.ok(new ResultResponse<>("출석 상태가 수정되었습니다.", null));
     }
+
 }
