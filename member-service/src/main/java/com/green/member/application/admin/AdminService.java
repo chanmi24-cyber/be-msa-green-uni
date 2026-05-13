@@ -1,6 +1,5 @@
 package com.green.member.application.admin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.*;
@@ -10,20 +9,19 @@ import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.OutboxService;
 import com.green.member.application.admin.model.*;
-import com.green.member.application.member.MemberHistoryRepository;
 import com.green.member.application.member.MemberHistoryService;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateReq;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
-import com.green.member.application.member.model.MemberUpdateReq;
+import com.green.member.application.professor.ProfessorHistoryRepository;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentCreateReq;
@@ -31,8 +29,8 @@ import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
-import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
+import com.green.member.entity.professor.ProfessorHistory;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
@@ -45,7 +43,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -58,13 +55,12 @@ public class AdminService {
     private final StudentMajorRepository studentMajorRepository;
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
-    private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
     private final MyFileUtil myFileUtil;
     private final MemberService memberService;
     private final OutboxService outboxService;
     private final MemberHistoryService memberHistoryService;
     private final AdminHistoryRepository adminHistoryRepository;
+    private final ProfessorHistoryRepository professorHistoryRepository;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -388,16 +384,13 @@ public class AdminService {
         // 상태 변경
         admin.updateStatus(req.getStatus());
 
-        // 퇴사의 경우 exitDate 자동 세팅
-        if (newStatus == EnumAdminStatus.RETIREMENT) {
-            Member member = memberRepository.findById(memberCode).orElseThrow();
-            member.setExitDate(LocalDate.now());
-        }
-
         // changeType 결정
         String changeType;
         if (newStatus == EnumAdminStatus.RETIREMENT) {
             changeType = "퇴사";
+            // 퇴사의 경우 exitDate 자동 세팅
+            Member member = memberRepository.findById(memberCode).orElseThrow();
+            member.setExitDate(LocalDate.now());
         } else if (oldStatus == EnumAdminStatus.EMPLOYMENT && newStatus == EnumAdminStatus.ABSENCE) {
             changeType = "휴직";
         } else if (oldStatus == EnumAdminStatus.ABSENCE && newStatus == EnumAdminStatus.EMPLOYMENT) {
@@ -429,6 +422,50 @@ public class AdminService {
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
         }
+    }
 
+    public void updateProfessorStatus(Long memberCode, Long updaterCode, StatusUpdateProfessorReq req){
+        Professor professor = professorRepository.findById(memberCode).orElseThrow();
+        EnumProfessorStatus oldStatus = professor.getStatus();
+        EnumProfessorStatus newStatus = req.getStatus();
+        EnumProfessorPosition oldPosition = professor.getPosition();
+        EnumProfessorPosition newPosition = req.getPosition();
+
+        // 상태 변경
+        professor.updateStatusAndPosition(req.getStatus(), req.getPosition());
+
+        // changeType 결정
+        String changeType;
+        if (newStatus == EnumProfessorStatus.RETIREMENT) {
+            changeType = "퇴임";
+            // exitDate 자동 세팅
+            Member member = memberRepository.findById(memberCode).orElseThrow();
+            member.setExitDate(LocalDate.now());
+        } else if (oldStatus == EnumProfessorStatus.EMPLOYMENT && newStatus == EnumProfessorStatus.ABSENCE) {
+            changeType = "휴직";
+        } else if (oldStatus == EnumProfessorStatus.ABSENCE && newStatus == EnumProfessorStatus.EMPLOYMENT) {
+            changeType = "복직";
+        } else if (newStatus == EnumProfessorStatus.SABBATICAL) {
+            changeType = "안식년";
+        } else if (oldStatus == EnumProfessorStatus.SABBATICAL && newStatus == EnumProfessorStatus.EMPLOYMENT) {
+            changeType = "안식년종료";
+        } else {
+            changeType = "상태변경";
+        }
+
+        // ProfessorHistory 저장
+        ProfessorHistory history = ProfessorHistory.builder()
+                .professor(professor)
+                .changeType(changeType)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .oldPosition(oldPosition)
+                .newPosition(newPosition)
+                .startDate(req.getStartDate())
+                .endDate(req.getEndDate())
+                .reason(req.getReason())
+                .updatorCode(updaterCode)
+                .build();
+        professorHistoryRepository.save(history);
     }
 }

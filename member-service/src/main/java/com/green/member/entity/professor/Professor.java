@@ -59,4 +59,9 @@ public class Professor extends UpdatedAt {
         if(degree != null) this.degree = degree;
         if(majorId != null) this.majorId = majorId;
     }
+
+    public void updateStatusAndPosition(EnumProfessorStatus status, EnumProfessorPosition position){
+        if(status != null) this.status = status;
+        if(position != null) this.position = position;
+    }
 }
