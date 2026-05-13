@@ -12,6 +12,7 @@ import com.green.member.application.admin.model.AdminProfileRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
+import com.green.member.application.professor.ProfessorService;
 import com.green.member.application.professor.model.ProfessorProfileRes;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
@@ -43,56 +44,22 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository memberRepository;
-    private final MajorCacheRepository majorCacheRepository;
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
     private final MyFileUtil myFileUtil;
     private final MemberHistoryService memberHistoryService;
     private final OutboxService outboxService;
     private final StudentService studentService;
+    private final ProfessorService professorService;
 
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
             case STUDENT   -> studentService.findStudent(memberCode, role);
-            case PROFESSOR -> findProfessor(memberCode, role);
+            case PROFESSOR -> professorService.findProfessor(memberCode, role);
             case ADMIN     -> findAdmin(memberCode, role);
         };
         return memberProfile;
-    }
-    // 교수 정보 조회
-    public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
-        Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
-        log.info("professorInfo: {}", professorInfo);
-
-        MajorCache majorCache = majorCacheRepository.findById(professorInfo.getMajorId()).orElseThrow();
-
-        return ProfessorProfileRes.builder()
-                .memberCode(memberInfo.getMemberCode())
-                .role(role.getCode())
-                // 기본 정보
-                .name(memberInfo.getName())
-                .email(memberInfo.getEmail())
-                .address(memberInfo.getAddress())
-                .pic(memberInfo.getPic())
-                .birth(memberInfo.getBirth())
-                .tel(memberInfo.getTel())
-                .emergencyTel(memberInfo.getEmergencyTel())
-                .postcode(memberInfo.getPostcode())
-                .detailAddress(memberInfo.getDetailAddress())
-                .entryDate(memberInfo.getEntryDate())
-                .exitDate(memberInfo.getExitDate())
-                // 학사 정보
-                .degree(professorInfo.getDegree().getCode())
-                .position(professorInfo.getPosition().getCode())
-                .majorName(majorCache.getName())
-                .collegeName(majorCache.getCollegeName())
-                .labBuilding(professorInfo.getLabBuilding().getCode())
-                .labRoom(professorInfo.getLabRoom())
-                .labTel(professorInfo.getLabTel())
-                .status(professorInfo.getStatus().getCode())
-                .build();
     }
     // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){

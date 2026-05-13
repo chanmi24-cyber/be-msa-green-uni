@@ -18,7 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/student")
 public class StudentController {
-    private final MemberService memberService;
     private final StudentService studentService;
 
     @GetMapping("/history")
@@ -26,7 +25,7 @@ public class StudentController {
         MemberDto loginMember = MemberContext.get();
         List<StudentHistoryRes> res = studentService.findStudentHistory( loginMember.memberCode() );
         return ResultResponse.builder()
-                .message("회원 프로파일 조회")
+                .message("학생 상태 변경 이력 조회")
                 .data(res)
                 .build();
     }

@@ -2,14 +2,9 @@ package com.green.member.application.student;
 
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
-import com.green.member.application.OutboxService;
-import com.green.member.application.admin.AdminRepository;
-import com.green.member.application.member.MemberHistoryService;
 import com.green.member.application.member.MemberRepository;
-import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.student.model.StudentHistoryRes;
 import com.green.member.application.student.model.StudentProfileRes;
-import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.student.Student;
@@ -29,13 +24,7 @@ public class StudentService {
     private final MajorCacheRepository majorCacheRepository;
     private final StudentRepository studentRepository;
     private final StudentMajorRepository studentMajorRepository;
-    private final ProfessorRepository professorRepository;
-    private final AdminRepository adminRepository;
-    private final MyFileUtil myFileUtil;
-    private final MemberHistoryService memberHistoryService;
-    private final OutboxService outboxService;
     private final StudentHistoryRepository studentHistoryRepository;
-
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
