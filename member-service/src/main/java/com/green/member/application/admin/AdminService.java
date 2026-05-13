@@ -1,6 +1,5 @@
 package com.green.member.application.admin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.*;
 import com.green.common.exception.AuthErrorCode;
@@ -9,7 +8,6 @@ import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.OutboxService;
 import com.green.member.application.admin.model.*;
 import com.green.member.application.member.MemberHistoryService;
@@ -22,8 +20,10 @@ import com.green.member.application.professor.ProfessorHistoryRepository;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
+import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
+import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
@@ -32,6 +32,7 @@ import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.professor.ProfessorHistory;
 import com.green.member.entity.student.Student;
+import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumProfessorPosition;
@@ -61,6 +62,7 @@ public class AdminService {
     private final MemberHistoryService memberHistoryService;
     private final AdminHistoryRepository adminHistoryRepository;
     private final ProfessorHistoryRepository professorHistoryRepository;
+    private final StudentHistoryRepository studentHistoryRepository;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -467,5 +469,60 @@ public class AdminService {
                 .updatorCode(updaterCode)
                 .build();
         professorHistoryRepository.save(history);
+    }
+
+    public void updateStudentStatus(Long memberCode, Long updaterCode, StatusUpdateStudentReq req){
+        Student student = studentRepository.findById(memberCode).orElseThrow();
+        EnumStudentStatus oldStatus = student.getStatus();
+        EnumStudentStatus newStatus = req.getStatus();
+
+        // 상태 변경
+        student.updateStatus(req.getStatus());
+
+        // 퇴학, 자최, 졸업의 경우 exitDate 자동 세팅
+        if(newStatus == EnumStudentStatus.EXPULSION || newStatus == EnumStudentStatus.QUIT || newStatus == EnumStudentStatus.GRADUATION){
+            Member member = memberRepository.findById(memberCode).orElseThrow();
+            member.setExitDate(LocalDate.now());
+        }
+
+        // changeType 결정
+        String changeType;
+        if (newStatus == EnumStudentStatus.EXPULSION) {
+            changeType = "퇴학";
+        } else if (newStatus == EnumStudentStatus.ABSENCE) {
+            changeType = "휴학";
+        } else if (oldStatus == EnumStudentStatus.ABSENCE && newStatus == EnumStudentStatus.ENROLLED) {
+            changeType = "복학";
+        } else if (newStatus == EnumStudentStatus.QUIT) {
+            changeType = "자퇴";
+        } else if (newStatus == EnumStudentStatus.GRADUATION) {
+            changeType = "졸업";
+        } else {
+            changeType = "상태변경";
+        }
+
+        // StudentHistory 저장
+        StudentHistory history = StudentHistory.builder()
+                .student(student)
+                .changeType(changeType)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .startDate(req.getStartDate())
+                .endDate(req.getEndDate())
+                .reason(req.getReason())
+                .updatorCode(updaterCode)
+                .build();
+        studentHistoryRepository.save(history);
+
+        // 퇴학이면 로그인 불가 처리
+        if (newStatus == EnumStudentStatus.EXPULSION) {
+            AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                    .memberCode(memberCode)
+                    .isActive(false)
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("DEACTIVATE")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
+        }
     }
 }

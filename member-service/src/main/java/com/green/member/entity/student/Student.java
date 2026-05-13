@@ -6,8 +6,6 @@ import com.green.member.entity.member.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
-
 @Entity
 @Table(name = "student")
 @Getter
@@ -51,5 +49,9 @@ public class Student extends UpdatedAt {
         if(isTransfer != null) this.isTransfer = isTransfer;
         if(isMultiChild != null) this.isMultiChild = isMultiChild;
         if(isVeteran != null) this.isVeteran = isVeteran;
+    }
+
+    public void updateStatus(EnumStudentStatus status){
+        if(status != null) this.status = status;
     }
 }
