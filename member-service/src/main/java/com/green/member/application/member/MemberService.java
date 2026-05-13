@@ -230,6 +230,7 @@ public class MemberService {
                     .memberCode(memberCode)
                     .email(req.getEmail())
                     .eventType(EventType.E_UPDATED)
+                    .updateType("EMAIL")
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 

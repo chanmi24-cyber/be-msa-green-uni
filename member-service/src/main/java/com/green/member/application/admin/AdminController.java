@@ -6,10 +6,7 @@ import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
-import com.green.member.application.admin.model.AdminCreateReq;
-import com.green.member.application.admin.model.AdminMemberUpdateReq;
-import com.green.member.application.admin.model.AdminProfessorUpdateReq;
-import com.green.member.application.admin.model.AdminStudentUpdateReq;
+import com.green.member.application.admin.model.*;
 import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
@@ -94,4 +91,15 @@ public class AdminController {
                 .message("학생 계정 정보 수정 성공")
                 .build();
     }
+
+    // 관리자 계정 상태 변경
+    @PatchMapping("/admins/{memberCode}/status")
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateAdminReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.updateAdminStatus(memberCode, loginMember.memberCode(), req);
+        return ResultResponse.builder()
+                .message("관리자 계정 상태 변경 및 이력 기록")
+                .build();
+    }
+
 }

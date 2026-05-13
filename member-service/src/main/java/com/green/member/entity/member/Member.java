@@ -71,6 +71,10 @@ public class Member extends CreatedUpdatedAt {
         if(name != null) this.name = name;
         if(birth != null) this.birth = birth;
     }
+
+    public void setExitDate(LocalDate now){
+        this.exitDate = now;
+    }
 }
 
 

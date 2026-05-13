@@ -13,10 +13,7 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.member.application.OutboxService;
-import com.green.member.application.admin.model.AdminCreateReq;
-import com.green.member.application.admin.model.AdminMemberUpdateReq;
-import com.green.member.application.admin.model.AdminProfessorUpdateReq;
-import com.green.member.application.admin.model.AdminStudentUpdateReq;
+import com.green.member.application.admin.model.*;
 import com.green.member.application.member.MemberHistoryRepository;
 import com.green.member.application.member.MemberHistoryService;
 import com.green.member.application.member.MemberRepository;
@@ -32,6 +29,7 @@ import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
+import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
@@ -66,6 +64,7 @@ public class AdminService {
     private final MemberService memberService;
     private final OutboxService outboxService;
     private final MemberHistoryService memberHistoryService;
+    private final AdminHistoryRepository adminHistoryRepository;
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
@@ -379,5 +378,57 @@ public class AdminService {
         if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
 
         memberHistoryService.save(memberCode, updaterCode, before);
+    }
+
+    public void updateAdminStatus(Long memberCode, Long updaterCode, StatusUpdateAdminReq req){
+        Admin admin = adminRepository.findById(memberCode).orElseThrow();
+        EnumAdminStatus oldStatus = admin.getStatus();
+        EnumAdminStatus newStatus = req.getStatus();
+
+        // 상태 변경
+        admin.updateStatus(req.getStatus());
+
+        // 퇴사의 경우 exitDate 자동 세팅
+        if (newStatus == EnumAdminStatus.RETIREMENT) {
+            Member member = memberRepository.findById(memberCode).orElseThrow();
+            member.setExitDate(LocalDate.now());
+        }
+
+        // changeType 결정
+        String changeType;
+        if (newStatus == EnumAdminStatus.RETIREMENT) {
+            changeType = "퇴사";
+        } else if (oldStatus == EnumAdminStatus.EMPLOYMENT && newStatus == EnumAdminStatus.ABSENCE) {
+            changeType = "휴직";
+        } else if (oldStatus == EnumAdminStatus.ABSENCE && newStatus == EnumAdminStatus.EMPLOYMENT) {
+            changeType = "복직";
+        } else {
+            changeType = "상태변경";
+        }
+
+        // AdminHistory 저장
+        AdminHistory history = AdminHistory.builder()
+                .admin(admin)
+                .changeType(changeType)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .startDate(req.getStartDate())
+                .endDate(req.getEndDate())
+                .reason(req.getReason())
+                .updatorCode(updaterCode)
+                .build();
+        adminHistoryRepository.save(history);
+
+        // 퇴사면 isActive = false 처리 (Kafka)
+        if (newStatus == EnumAdminStatus.RETIREMENT) {
+            AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                    .memberCode(memberCode)
+                    .isActive(false)
+                    .eventType(EventType.E_UPDATED)
+                    .updateType("DEACTIVATE")
+                    .build();
+            outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
+        }
+
     }
 }
