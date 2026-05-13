@@ -28,22 +28,6 @@ public class SchedulePeriodValidator {
         }
     }
 
-    // 수강신청 기간 체크
-    public void checkCourseRegistration() {
-        boolean isActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_REGISTRATION_PERIOD);
-    }
-
-    // 수강정정 기간 체크
-    public void checkCourseModification() {
-        boolean isActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_MODIFICATION_PERIOD);
-    }
-
     // 성적입력 기간 체크
     public void checkGradeInput() {
         boolean isActive = scheduleCacheRepository
