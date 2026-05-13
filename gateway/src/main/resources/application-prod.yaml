@@ -1,0 +1,53 @@
+management:
+  endpoint:
+    gateway:
+      enabled: true
+
+spring:
+  application:
+    name: gateway
+  config:
+    import:
+      - optional:classpath:application-common.yaml
+      - optional:classpath:application-auth.yaml
+      - optional:file:.env[.properties]
+  cloud:
+    gateway:
+      # 4.0.x 버전 Servlet Gateway의 핵심 설정 프리픽스
+      server:
+        webmvc:
+          actuator:
+            enabled: true
+          cors: # cors 허용
+            configurations:
+              '[/**]':
+                allowed-origins: [ "https://ta.greenart.ne-kr" ]
+                allowed-methods: [ "*" ]
+                allowed-headers: [ "*" ]
+                allow-credentials: true
+                max-age: 3600
+
+          # 라우팅 설정
+          routes:
+            - id: auth-service
+              uri: http://auth-service:80
+              predicates:
+                - Path=/api/auth/**, /api/code
+
+            - id: member-service
+              uri: http://member-service:80
+              predicates:
+                - Path=/api/member/**, /api/member/**
+
+            - id: core-service
+              uri: http://core-service:80
+              predicates:
+                - Path=/api/core/**
+
+            - id: academic-service
+              uri: http://academic-service:80
+              predicates:
+                - Path=/api/academic/**
+
+server:
+  port: 8080
