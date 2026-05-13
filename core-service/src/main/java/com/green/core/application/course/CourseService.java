@@ -5,6 +5,7 @@ import com.green.common.enumcode.EnumBuilding;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.course.model.*;
+import com.green.core.application.lecture.repository.LectureExcludedMajorRepository;
 import com.green.core.application.lecture.repository.LectureRepository;
 import com.green.core.application.lecture.repository.LectureScheduleRepository;
 import com.green.core.entity.cache.ProfessorCache;
@@ -42,6 +43,7 @@ public class CourseService {
     private final HttpServletRequest request;
     private final ProfessorCacheRepository professorCacheRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
+    private final LectureExcludedMajorRepository lectureExcludedMajorRepository;
 
     // API-ENRL-06: 수강 신청 페이지 활성화 제어
     @Transactional(readOnly = true)
@@ -211,27 +213,48 @@ public class CourseService {
 
         log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
                 student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
-        // 학과 조건 확인 (전공과목만 학과 제한, 교양은 무관)
-        boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
-        if (isMajorSubject) {
-            Long lectureMajorId = lecture.getMajor().getMajorId();
-            boolean isMajorMatch = lectureMajorId.equals(student.getMajorId())
-                    || studentCacheRepository.countMinorByStudentCodeAndMajorId(
-                    studentCode, lectureMajorId) > 0;
+        // ② createCourse() 내부 — 기존 학과/학년 조건 블록 전체를 아래로 교체
 
-            if (!isMajorMatch) {
+        // 전공 여부 판단
+        boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
+
+        if (isMajorSubject) {
+            // 전공 과목
+            Long lectureMajorId = lecture.getMajor().getMajorId();
+
+            boolean isMyMajor = lectureMajorId.equals(student.getMajorId());
+            boolean isMyMinor = studentCacheRepository
+                    .countMinorByStudentCodeAndMajorId(studentCode, lectureMajorId) > 0;
+
+            if (!isMyMajor && !isMyMinor) {
                 throw new BusinessException(CourseErrorCode.MAJOR_NOT_MATCHED);
+            }
+
+            // 학년 조건: 부전공이면 스킵, 아니면 학생 학년 >= 강의 학년
+            boolean isMinorSubject = isMyMinor && !isMyMajor;
+            if (!isMinorSubject) {
+                if (student.getAcademicYear() < lecture.getAcademicYear()) {
+                    // 상위 학년 강의는 수강 불가, 하위/동일 학년은 허용
+                    throw new BusinessException(CourseErrorCode.ACADEMIC_YEAR_NOT_MATCHED);
+                }
+            }
+
+        } else {
+            // GENERAL_ELECTIVE : 키워드 매칭 학과 차단
+            if (lecture.getLectureType().name().equals("GENERAL_ELECTIVE")) {
+                boolean isExcluded = lectureExcludedMajorRepository
+                        .existsByLectureIdAndMajorIdOrMinorId(
+                                req.getLectureId(),
+                                student.getMajorId(),
+                                student.getMinorId()
+                        );
+
+                if (isExcluded) {
+                    throw new BusinessException(CourseErrorCode.LIBERAL_ARTS_MAJOR_RESTRICTED);
+                }
             }
         }
 
-        // 학년 조건 - 부전공 과목이면 스킵
-        boolean isMinorSubject = isMajorSubject
-                && studentCacheRepository.countMinorByStudentCodeAndMajorId(
-                studentCode, lecture.getMajor().getMajorId()) > 0;
-
-        if (!isMinorSubject && !lecture.getAcademicYear().equals(student.getAcademicYear())) {
-            throw new BusinessException(CourseErrorCode.ACADEMIC_YEAR_NOT_MATCHED);
-        }
         log.info("4. 학과/학년 조건 확인 완료");
 
         // 이미 신청된 강의 확인
