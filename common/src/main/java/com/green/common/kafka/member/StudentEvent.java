@@ -29,4 +29,5 @@ public class StudentEvent implements Serializable, KafkaEvent {
     private Boolean isMultiChild;
     private Boolean isVeteran;
     private EventType eventType;
+    private String updateType;
 }
