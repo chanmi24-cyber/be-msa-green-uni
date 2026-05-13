@@ -1,16 +1,11 @@
 package com.green.member.application.admin;
 
 import com.green.common.auth.MemberContext;
-import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.exception.AuthErrorCode;
-import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.*;
-import com.green.member.application.member.MemberService;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
-import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
@@ -20,12 +15,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
     private final AdminService adminService;
+
+    @GetMapping("/history")
+    public ResultResponse<?> findHistory(){
+        MemberDto loginMember = MemberContext.get();
+        List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("관리자 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
 
     @PostMapping("/students")
     public ResultResponse<?> createStudent(@RequestPart StudentCreateReq req,

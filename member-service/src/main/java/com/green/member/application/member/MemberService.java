@@ -2,7 +2,6 @@ package com.green.member.application.member;
 
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.enumcode.EnumMajorType;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
@@ -13,21 +12,11 @@ import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.ProfessorService;
-import com.green.member.application.professor.model.ProfessorProfileRes;
-import com.green.member.application.student.StudentHistoryRepository;
-import com.green.member.application.student.StudentMajorRepository;
-import com.green.member.application.student.StudentRepository;
 import com.green.member.application.student.StudentService;
-import com.green.member.application.student.model.StudentHistoryRes;
-import com.green.member.application.student.model.StudentProfileRes;
 import com.green.member.configuration.MyFileUtil;
-import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
-import com.green.member.entity.student.Student;
-import com.green.member.entity.student.StudentMajor;
-import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -45,12 +33,12 @@ import java.util.Map;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final ProfessorRepository professorRepository;
-    private final AdminRepository adminRepository;
     private final MyFileUtil myFileUtil;
     private final MemberHistoryService memberHistoryService;
     private final OutboxService outboxService;
     private final StudentService studentService;
     private final ProfessorService professorService;
+    private final AdminRepository adminRepository;
 
     // 내 정보 조회
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
@@ -61,6 +49,7 @@ public class MemberService {
         };
         return memberProfile;
     }
+
     // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);

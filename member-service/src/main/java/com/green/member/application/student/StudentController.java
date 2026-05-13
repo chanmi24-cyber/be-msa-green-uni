@@ -3,7 +3,6 @@ package com.green.member.application.student;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
-import com.green.member.application.member.MemberService;
 import com.green.member.application.student.model.StudentHistoryRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

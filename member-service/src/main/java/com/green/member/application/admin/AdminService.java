@@ -45,6 +45,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -558,5 +559,24 @@ public class AdminService {
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
         }
+    }
+
+    // 관리자 상태 변경 이력 조회
+    public List<AdminHistoryRes> findStatusHistory(Long memberCode){
+        return adminHistoryRepository.findByAdmin_MemberCode(memberCode)
+                .stream()
+                .map( h -> {
+                    AdminHistoryRes res = new AdminHistoryRes();
+                    res.setChangeType(h.getChangeType());
+                    res.setOldStatus(h.getOldStatus());
+                    res.setNewStatus(h.getNewStatus());
+                    res.setStartDate(h.getStartDate());
+                    res.setEndDate(h.getEndDate());
+                    res.setReason(h.getReason());
+                    res.setCreatedAt(h.getCreatedAt());
+                    return res;
+                })
+                .toList()
+                ;
     }
 }
