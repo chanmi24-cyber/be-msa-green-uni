@@ -54,4 +54,16 @@ public class Professor extends UpdatedAt {
         if (labRoom != null) this.labRoom = labRoom;
         if (labTel != null) this.labTel = labTel;
     }
+
+    public void updateByAdmin(EnumProfessorDegree degree, Long majorId){
+        if(degree != null) this.degree = degree;
+        if(majorId != null) this.majorId = majorId;
+    }
+
+    public void updateStatus(EnumProfessorStatus status){
+        if(status != null) this.status = status;
+    }
+    public void updatePosition(EnumProfessorPosition position){
+        if(position != null) this.position = position;
+    }
 }
