@@ -40,7 +40,7 @@ spec:
     environment {
         REGISTRY = "harbor.greenart.n-e.kr"
         PROJECT  = "greenuni"
-        SERVICES = "auth-service,member-service, core-service, academic-service, gateway"
+        SERVICES = "auth-service,member-service,core-service,academic-service,gateway"
     }
 
     stages {
