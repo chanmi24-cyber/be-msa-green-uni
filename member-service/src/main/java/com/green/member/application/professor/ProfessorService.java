@@ -28,7 +28,6 @@ public class ProfessorService {
     private final ProfessorHistoryRepository professorHistoryRepository;
 
     // 교수 정보 조회
-    @Transactional(readOnly = true)
     public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
@@ -56,7 +55,7 @@ public class ProfessorService {
                 .position(professorInfo.getPosition().getCode())
                 .majorName(majorCache.getName())
                 .collegeName(majorCache.getCollegeName())
-                .labBuilding(professorInfo.getLabBuilding().getCode())
+                .labBuilding(professorInfo.getLabBuilding() != null ? professorInfo.getLabBuilding().getCode() : null)
                 .labRoom(professorInfo.getLabRoom())
                 .labTel(professorInfo.getLabTel())
                 .status(professorInfo.getStatus().getCode())
@@ -66,7 +65,7 @@ public class ProfessorService {
     // 교수 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<ProfessorHistoryRes> findStatusHistory(Long memberCode){
-        return professorHistoryRepository.findByProfessor_MemberCode(memberCode)
+        return professorHistoryRepository.findByProfessor_MemberCodeOrderByCreatedAtDesc(memberCode)
                 .stream()
                 .map( h -> {
                     ProfessorHistoryRes res = new ProfessorHistoryRes();

@@ -570,7 +570,7 @@ public class AdminService {
     // 관리자 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<AdminHistoryRes> findStatusHistory(Long memberCode){
-        return adminHistoryRepository.findByAdmin_MemberCode(memberCode)
+        return adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode)
                 .stream()
                 .map( h -> {
                     AdminHistoryRes res = new AdminHistoryRes();

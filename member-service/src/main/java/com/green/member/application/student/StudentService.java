@@ -31,7 +31,6 @@ public class StudentService {
     private final StudentHistoryRepository studentHistoryRepository;
 
     // 학생 정보 조회
-    @Transactional(readOnly = true)
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Student studentInfo = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
@@ -83,7 +82,7 @@ public class StudentService {
     // 학생 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<StudentHistoryRes> findStudentHistory(Long memberCode){
-        return studentHistoryRepository.findByStudent_MemberCode(memberCode)
+        return studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode)
                 .stream()
                 .map( h -> {
                     StudentHistoryRes res = new StudentHistoryRes();
