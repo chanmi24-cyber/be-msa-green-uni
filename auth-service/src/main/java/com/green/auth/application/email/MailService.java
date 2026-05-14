@@ -26,13 +26,13 @@ public class MailService {
             throw new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND);
         }
         String verifyCode = String.format("%05d", (int)(Math.random() * 90000) + 10000);
-        redisService.save("EMAIL-VERIFY:" + req.getEmail(), verifyCode, 300);
+        redisService.save("EMAIL-VERIFY-CODE:" + req.getEmail().trim().toLowerCase(), verifyCode, 300);
 
         emailSender.sendHtmlMail(req.getEmail(), "[그린대학교] 비밀번호 재설정 인증코드", "인증코드: " + verifyCode);
     }
 
     public void checkVerifyCode(EmailVerifyReq req) {
-        String savedCode = redisService.get("EMAIL-VERIFY:" + req.getEmail().trim().toLowerCase(), String.class);
+        String savedCode = redisService.get("EMAIL-VERIFY:" + req.getEmail(), String.class);
 
         if (savedCode == null) {
             throw new BusinessException(EmailErrorCode.EXPIRED_VERIFY_CODE);

@@ -99,7 +99,7 @@ public class AuthService {
     // 이메일 인증 비밀번호 변경
     @Transactional
     public void resetPassword(PasswordResetReq req){
-        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail() ) ){
+        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail().trim().toLowerCase() ) ){
             throw new BusinessException(EmailErrorCode.NOT_VERIFIED_EMAIL);
         }
         AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
