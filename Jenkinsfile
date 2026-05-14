@@ -34,16 +34,27 @@ spec:
         booleanParam(name: 'FORCE_MEMBER', defaultValue: false, description: 'Member-Service를 강제로 빌드합니다.')
         booleanParam(name: 'FORCE_CORE', defaultValue: false, description: 'Core-Service를 강제로 빌드합니다.')
         booleanParam(name: 'FORCE_ACADEMIC', defaultValue: false, description: 'Academic-Service를 강제로 빌드합니다.')
-        booleanParam(name: 'FORCE_GATEWAY', defaultValue: false, description: 'Gateway-Service를 강제로 빌드합니다.')
+        booleanParam(name: 'FORCE_GATEWAY', defaultValue: false, description: 'Gateway를 강제로 빌드합니다.')
     }
 
     environment {
         REGISTRY = "harbor.greenart.n-e.kr"
         PROJECT  = "greenuni"
-        SERVICES = "auth-service,member-service, core-service, academic-service, gateway-service"
+        SERVICES = "auth-service,member-service,core-service,academic-service,gateway"
     }
 
     stages {
+
+        stage('Prepare Common') {
+            steps {
+                container('gradle') {
+                    sh "chmod +x gradlew"
+                    // common 모듈을 먼저 빌드하여 이후 병렬 빌드에서 참조할 수 있게 함
+                    sh "./gradlew :common:clean :common:build -x test"
+                }
+            }
+        }
+
         stage('Parallel Gradle Build') {
             steps {
                 script {
@@ -56,7 +67,7 @@ spec:
                             buildTasks[serviceName] = {
                                 container('gradle') {
                                     sh "chmod +x gradlew"
-                                    sh "./gradlew :${serviceName}:clean :${serviceName}:build -x test"
+                                    sh "./gradlew :${serviceName}:build -x test"
                                     echo "--- [${serviceName}] 빌드 결과물 확인 ---"
                                     sh "ls -lh ${serviceName}/build/libs/"
                                 }
@@ -95,7 +106,7 @@ def shouldBuild(String serviceName) {
         'member-service': 'member',
         'core-service': 'core',
         'academic-service': 'academic',
-        'gateway-service': 'gateway'
+        'gateway': 'gateway'
     ]
 
     // 1. 강제 빌드 파라미터 체크
