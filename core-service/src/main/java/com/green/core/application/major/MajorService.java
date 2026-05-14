@@ -4,13 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumBuilding;
+import com.green.common.enumcode.EnumChangeType;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.MajorEvent;
+import com.green.common.model.MemberDto;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
+import com.green.core.entity.major.MajorHistory;
 import com.green.core.enumcode.EnumMajorStatus;
 import com.green.core.exception.MajorErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
@@ -33,6 +36,7 @@ public class MajorService {
     private final CollegeRepository collegeRepository;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final MajorHistoryRepository majorHistoryRepository;
 
     //유효성 검사
     private void validateRequiredFields(MajorCreateUpdateReq req) {
@@ -114,7 +118,7 @@ public class MajorService {
 
     // API-DEPT-01: 학과 수정
     @Transactional
-    public void editMajor(Long majorId, MajorCreateUpdateReq req) {
+    public void editMajor(MemberDto memberDto, Long majorId, MajorCreateUpdateReq req) {
         validateRequiredFields(req);
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
@@ -137,6 +141,27 @@ public class MajorService {
                 .eventType(EventType.E_UPDATED)
                 .build();
         saveToOutbox(event);
+
+        // 히스토리저장용 - 수정 전 데이터 JSON으로 저장
+        try {
+            String beforeData = String.format(
+                    "{\"lectureId\":%d,\"lectureName\":\"%s\",\"active\":\"%s\"}",
+                    major.getMajorId(),
+                    major.getName(),
+                    major.getActive()
+            );
+
+            MajorHistory history = MajorHistory.builder()
+                    .major(major)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("학과 수정")
+                    .updatorCode(memberDto.memberCode())
+                    .build();
+            majorHistoryRepository.save(history);
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
     }
 
     // API-DEPT-03: 관리자 전체 목록 조회
