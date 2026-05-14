@@ -14,14 +14,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 public class EmailSender {
     private final JavaMailSender mailSender;
 
-    public void sendMail(String to, String subject, String content) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(content);
-        mailSender.send(message);
-    }
-
     public void sendHtmlMail(String to, String subject, String authCode) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
