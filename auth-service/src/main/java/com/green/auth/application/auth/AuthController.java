@@ -9,6 +9,7 @@ import com.green.common.model.JwtMember;
 import com.green.common.model.ResultResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -81,7 +82,7 @@ public class AuthController {
 
     // 이메일 인증 비밀번호 변경
     @PatchMapping("/passwords/reset")
-    public ResultResponse<?> resetPassword(@RequestBody PasswordResetReq req){
+    public ResultResponse<?> resetPassword(@RequestBody @Valid PasswordResetReq req){
         authService.resetPassword( req );
         return ResultResponse.builder()
                 .message("비밀번호 변경이 완료되었습니다")
