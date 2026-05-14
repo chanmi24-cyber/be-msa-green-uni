@@ -33,4 +33,11 @@ public class LectureEvaluation{
 
     @Column(name = "created_at") // null = 미완료
     private LocalDateTime createdAt;
+
+    public void submit(Integer score, String comment) {
+        this.score = score;
+        this.comment = comment;
+        this.createdAt = LocalDateTime.now();
+    }
+
 }
