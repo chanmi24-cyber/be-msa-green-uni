@@ -41,6 +41,7 @@ public class MemberService {
     private final AdminRepository adminRepository;
 
     // 내 정보 조회
+    @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
             case STUDENT   -> studentService.findStudent(memberCode, role);
@@ -51,6 +52,7 @@ public class MemberService {
     }
 
     // 관리자 정보 조회
+    @Transactional(readOnly = true)
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();

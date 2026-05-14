@@ -13,6 +13,7 @@ import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class StudentService {
     private final StudentHistoryRepository studentHistoryRepository;
 
     // 학생 정보 조회
+    @Transactional(readOnly = true)
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         log.info("memberInfo : {}", memberInfo);
@@ -79,6 +81,7 @@ public class StudentService {
     }
 
     // 학생 상태 변경 이력 조회
+    @Transactional(readOnly = true)
     public List<StudentHistoryRes> findStudentHistory(Long memberCode){
         return studentHistoryRepository.findByStudent_MemberCode(memberCode)
                 .stream()

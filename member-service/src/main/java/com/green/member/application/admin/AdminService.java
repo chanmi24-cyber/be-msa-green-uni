@@ -253,6 +253,7 @@ public class AdminService {
     }
 
     // 학생 계정 개인 정보 수정
+    @Transactional
     public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req) {
 
         // 공통 필드 업데이트
@@ -319,6 +320,7 @@ public class AdminService {
     }
 
     // 교수 계정 정보 수정
+    @Transactional
     public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req) {
 
         // 공통 필드 업데이트
@@ -359,6 +361,7 @@ public class AdminService {
     }
 
     // 관리자 계정 정보 수정
+    @Transactional
     public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
         Member member = memberRepository.findById(memberCode).orElseThrow();
 
@@ -565,6 +568,7 @@ public class AdminService {
     }
 
     // 관리자 상태 변경 이력 조회
+    @Transactional(readOnly = true)
     public List<AdminHistoryRes> findStatusHistory(Long memberCode){
         return adminHistoryRepository.findByAdmin_MemberCode(memberCode)
                 .stream()

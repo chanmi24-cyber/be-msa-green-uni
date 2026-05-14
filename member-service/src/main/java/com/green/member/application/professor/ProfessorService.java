@@ -11,6 +11,7 @@ import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class ProfessorService {
     private final ProfessorHistoryRepository professorHistoryRepository;
 
     // 교수 정보 조회
+    @Transactional(readOnly = true)
     public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
@@ -59,6 +61,7 @@ public class ProfessorService {
     }
 
     // 교수 상태 변경 이력 조회
+    @Transactional(readOnly = true)
     public List<ProfessorHistoryRes> findStatusHistory(Long memberCode){
         return professorHistoryRepository.findByProfessor_MemberCode(memberCode)
                 .stream()
