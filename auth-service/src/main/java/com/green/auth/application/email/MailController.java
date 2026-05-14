@@ -22,7 +22,7 @@ public class MailController {
     public ResultResponse<?> sendVerifyCode(@RequestBody EmailSendReq req) throws MessagingException {
         mailService.sendVerifyCode(req);
         return ResultResponse.builder()
-                .message("인증코드 발송 완료")
+                .message("인증코드가 발송 되었습니다")
                 .build();
     }
 

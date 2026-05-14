@@ -56,7 +56,6 @@ public class AuthController {
         jwtTokenManager.logOut(req, res);
         return ResultResponse.builder()
                 .message("로그아웃 되었습니다.")
-                .data(1)
                 .build();
     }
 
@@ -67,7 +66,6 @@ public class AuthController {
         jwtTokenManager.reissue(req, res);
         return ResultResponse.builder()
                 .message("Access Token 재발행")
-                .data(1)
                 .build();
     }
 
@@ -77,19 +75,7 @@ public class AuthController {
         MemberDto loginMember = MemberContext.get();
         authService.updatePassword( loginMember.memberCode(), req );
         return ResultResponse.builder()
-                .message("회원 비밀번호 변경")
-                .data(1)
-                .build();
-    }
-
-    // 최초 회원 비밀번호 변경
-    @PatchMapping("/passwords/first")
-    public ResultResponse<?> updateFirstPassword(@RequestBody PasswordUpdateReq req){
-        MemberDto loginMember = MemberContext.get();
-        authService.updateFirstPassword( loginMember.memberCode(), req );
-        return ResultResponse.builder()
-                .message("최초 로그인 회원 비밀번호 변경")
-                .data(1)
+                .message("비밀번호 변경이 완료되었습니다")
                 .build();
     }
 
@@ -99,17 +85,6 @@ public class AuthController {
         authService.resetPassword( req );
         return ResultResponse.builder()
                 .message("비밀번호 변경이 완료되었습니다")
-                .data(1)
-                .build();
-    }
-
-    // 회원 이메일 변경
-    @PatchMapping("/my/emails")
-    public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){
-        MemberDto loginMember = MemberContext.get();
-        authService.updateEmail( loginMember.memberCode(), req.getEmail() );
-        return ResultResponse.builder()
-                .message("회원 이메일 변경")
                 .data(1)
                 .build();
     }

@@ -105,12 +105,18 @@ public class AuthService {
         AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        // 변경할 비밀번호 암호화
+        // 기존 비밀번호와 동일 여부 검사
+        if(passwordEncoder.matches(req.getNewPassword(), authMember.getPassword()) ){
+            throw new BusinessException(AuthErrorCode.SAME_AS_CURRENT_PASSWORD);
+        }
+
+        // 변경 비밀번호 암호화
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
 
         redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
 
+        // 한번도 비밀번호를 변경하지 않았던 경우라면, 최초로그인 false 전환
         if(authMember.getIsFirstLogin() == true){
             authMember.updateFirstLogin();
         }
