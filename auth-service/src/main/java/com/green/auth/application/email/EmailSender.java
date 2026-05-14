@@ -44,10 +44,7 @@ public class EmailSender {
                     <h1 style="color:#3e9e7e; margin: 0; font-size: 24px;">그린대학교</h1>
                     <p style="color: #666; margin: 10px 0 0 0; font-size: 18px; font-weight: 200;">본인 확인 인증코드</p>
                 </div>
-                <div style="padding: 40px 30px; text-align: center;">
-                    <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 30px;">
-                        아래 인증 코드를 입력해주세요.
-                    </p>
+                <div style="padding: 30px 10px; text-align: center;">
                     <div style="background-color: #f8f9fa; border: 1px dashed #3e9e7e; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
                         <span style="font-size: 32px; font-weight: bold; color: #3e9e7e; letter-spacing: 5px; line-height: 1;">%s</span>
                     </div>

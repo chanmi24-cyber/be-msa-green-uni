@@ -23,7 +23,6 @@ public class MailController {
         mailService.sendVerifyCode(req);
         return ResultResponse.builder()
                 .message("인증코드 발송 완료")
-                .data(null)
                 .build();
     }
 
@@ -31,8 +30,7 @@ public class MailController {
     public ResultResponse<?> checkVerifyCode(@RequestBody EmailVerifyReq req) {
         mailService.checkVerifyCode(req);
         return ResultResponse.builder()
-                .message("인증코드 확인 완료")
-                .data(null)
+                .message("본인 인증이 완료되었습니다")
                 .build();
     }
 }
