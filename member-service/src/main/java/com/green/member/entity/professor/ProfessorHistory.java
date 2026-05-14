@@ -1,7 +1,9 @@
 package com.green.member.entity.professor;
 import com.green.common.entity.CreatedAt;
+import com.green.member.enumcode.NullableProfessorStatusConverter;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;
+import com.green.member.enumcode.NullableProfessorPositionConverter;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,17 +30,21 @@ public class ProfessorHistory extends CreatedAt {
     @Column(name = "change_type", nullable = false, length = 20)
     private String changeType;
 
+    @Convert(converter = NullableProfessorStatusConverter.class)
     @Column(name = "old_status", length = 20)
     private EnumProfessorStatus oldStatus;
 
+    @Convert(converter = NullableProfessorStatusConverter.class)
     @Column(name = "new_status", length = 20)
     private EnumProfessorStatus newStatus;
 
     // 전임교수, 시간강사, 조교수, 명예교수
-    @Column(name = "old_position", nullable = false, length = 20)
+    @Convert(converter = NullableProfessorPositionConverter.class)
+    @Column(name = "old_position", length = 20)
     private EnumProfessorPosition oldPosition;
 
-    @Column(name = "new_position", nullable = false, length = 20)
+    @Convert(converter = NullableProfessorPositionConverter.class)
+    @Column(name = "new_position", length = 20)
     private EnumProfessorPosition newPosition;
 
     @Column(name = "start_date")

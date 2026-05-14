@@ -5,6 +5,7 @@ import com.green.common.enumcode.EnumBuilding;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.course.model.*;
+import com.green.core.application.lecture.repository.LectureExcludedMajorRepository;
 import com.green.core.application.lecture.repository.LectureRepository;
 import com.green.core.application.lecture.repository.LectureScheduleRepository;
 import com.green.core.entity.cache.ProfessorCache;
@@ -13,6 +14,7 @@ import com.green.core.entity.course.Course;
 import com.green.core.entity.grade.Grade;
 import com.green.core.entity.lecture.Lecture;
 import com.green.core.entity.lecture.LectureSchedule;
+import com.green.core.exception.CourseErrorCode;
 import com.green.core.repository.GradeRepository;
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.ScheduleCacheRepository;
@@ -21,10 +23,8 @@ import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,6 +43,7 @@ public class CourseService {
     private final HttpServletRequest request;
     private final ProfessorCacheRepository professorCacheRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
+    private final LectureExcludedMajorRepository lectureExcludedMajorRepository;
 
     // API-ENRL-06: 수강 신청 페이지 활성화 제어
     @Transactional(readOnly = true)
@@ -173,6 +174,7 @@ public class CourseService {
                             .credit(l.getCredit())
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
+                            .isAttended(0) // 수강신청 기간 중 항상 취소 가능
                             .build();
                 })
                 .toList();
@@ -199,31 +201,60 @@ public class CourseService {
 
         // 학생 정보 조회 (status 체크는 인터셉터에서 처리됨)
         StudentCache student = studentCacheRepository.findById(studentCode)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "학생 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(CourseErrorCode.STUDENT_NOT_FOUND));
 
         // 강의 조회 (APPROVED 상태만)
         Lecture lecture = lectureRepository.findById(req.getLectureId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+                .orElseThrow(() -> new BusinessException(CourseErrorCode.LECTURE_NOT_FOUND));
         if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "수강 신청 가능한 강의가 아닙니다.");
+            throw new BusinessException(CourseErrorCode.LECTURE_NOT_APPROVED);
         }
         log.info("3. 강의 조회 완료 - lectureId: {}", req.getLectureId());
 
-        // 학과 조건 확인 (전공과목만 학과 제한, 교양은 무관)
+        log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
+                student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
+        // ② createCourse() 내부 — 기존 학과/학년 조건 블록 전체를 아래로 교체
+
+        // 전공 여부 판단
         boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
+
         if (isMajorSubject) {
+            // 전공 과목
             Long lectureMajorId = lecture.getMajor().getMajorId();
-            boolean isMajorMatch = lectureMajorId.equals(student.getMajorId())
-                    || lectureMajorId.equals(student.getMinorId());
-            if (!isMajorMatch) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "신청 대상 학과가 아닙니다.");
+
+            boolean isMyMajor = lectureMajorId.equals(student.getMajorId());
+            boolean isMyMinor = studentCacheRepository
+                    .countMinorByStudentCodeAndMajorId(studentCode, lectureMajorId) > 0;
+
+            if (!isMyMajor && !isMyMinor) {
+                throw new BusinessException(CourseErrorCode.MAJOR_NOT_MATCHED);
+            }
+
+            // 학년 조건: 부전공이면 스킵, 아니면 학생 학년 >= 강의 학년
+            boolean isMinorSubject = isMyMinor && !isMyMajor;
+            if (!isMinorSubject) {
+                if (student.getAcademicYear() < lecture.getAcademicYear()) {
+                    // 상위 학년 강의는 수강 불가, 하위/동일 학년은 허용
+                    throw new BusinessException(CourseErrorCode.ACADEMIC_YEAR_NOT_MATCHED);
+                }
+            }
+
+        } else {
+            // GENERAL_ELECTIVE : 키워드 매칭 학과 차단
+            if (lecture.getLectureType().name().equals("GENERAL_ELECTIVE")) {
+                boolean isExcluded = lectureExcludedMajorRepository
+                        .existsByLectureIdAndMajorIdOrMinorId(
+                                req.getLectureId(),
+                                student.getMajorId(),
+                                student.getMinorId()
+                        );
+
+                if (isExcluded) {
+                    throw new BusinessException(CourseErrorCode.LIBERAL_ARTS_MAJOR_RESTRICTED);
+                }
             }
         }
 
-        // 학년 조건 확인
-        if (!lecture.getAcademicYear().equals(student.getAcademicYear())) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "신청 대상 학년이 아닙니다.");
-        }
         log.info("4. 학과/학년 조건 확인 완료");
 
         // 이미 신청된 강의 확인
@@ -231,7 +262,7 @@ public class CourseService {
                 .existsByStudentCodeAndLecture_LectureIdAndYearAndSemester(
                         studentCode, req.getLectureId(), currentYear, currentSemester);
         if (alreadyEnrolled) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 신청된 강의입니다.");
+            throw new BusinessException(CourseErrorCode.COURSE_ALREADY_ENROLLED);
         }
         log.info("5. 중복 신청 확인 완료");
 
@@ -245,9 +276,8 @@ public class CourseService {
                     newSchedule.getStartPeriod(),
                     newSchedule.getEndPeriod());
             if (timeConflict) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        newSchedule.getDayOfWeek() + "요일 " + newSchedule.getStartPeriod()
-                                + "교시 시간표가 중복됩니다.");
+                throw new BusinessException(CourseErrorCode.COURSE_SCHEDULE_CONFLICT);
+
             }
         }
         log.info("6. 시간표 중복 확인 완료");
@@ -256,7 +286,7 @@ public class CourseService {
         int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
                 req.getLectureId(), currentYear, currentSemester);
         if (enrolledCount >= lecture.getMaxStd()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "수강 정원이 초과되었습니다.");
+            throw new BusinessException(CourseErrorCode.COURSE_CAPACITY_EXCEEDED);
         }
         log.info("7. 수강 정원 확인 완료 - 현재 {}/{}명", enrolledCount, lecture.getMaxStd());
 
@@ -265,8 +295,7 @@ public class CourseService {
                 studentCode, currentYear, currentSemester);
         int newCredits = lecture.getCredit();
         if (currentCredits + newCredits > 18) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "최대 신청 학점(18학점)을 초과합니다. 현재 신청 학점: " + currentCredits);
+            throw new BusinessException(CourseErrorCode.CREDIT_LIMIT_EXCEEDED);
         }
         log.info("8. 최대 학점 확인 완료 - 현재 {}학점 + 신규 {}학점", currentCredits, newCredits);
 
@@ -309,7 +338,7 @@ public class CourseService {
         Course course = courseRepository
                 .findByStudentCodeAndLecture_LectureIdAndYearAndSemester(
                         studentCode, lectureId, currentYear, currentSemester)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "수강 신청한 강의가 아닙니다."));
+                .orElseThrow(() -> new BusinessException(CourseErrorCode.COURSE_NOT_FOUND));
 
         // Course 삭제 시 Grade도 cascade로 함께 삭제됨 (Course 엔티티 @OneToOne cascade = ALL)
         courseRepository.delete(course);

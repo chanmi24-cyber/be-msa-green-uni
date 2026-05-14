@@ -119,5 +119,11 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
         authMember.updateEmail(email);
     }
-
+    // 회원 로그인 상태 변경
+    @Transactional
+    public void deactivate(long memberCode){
+        AuthMember authMember = authMemberRepository.findById(memberCode)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+        authMember.deactivate();
+    }
 }

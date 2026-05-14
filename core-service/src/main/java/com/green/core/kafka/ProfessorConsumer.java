@@ -25,7 +25,7 @@ public class ProfessorConsumer {
         log.info("ProfessorEvent consumed: {}", event.getMemberCode());
         try {
             EventType type = event.getEventType();
-            if (type == EventType.E_CREATED || type == EventType.E_UPDATED) {
+            if (type == EventType.E_CREATED) {
                 ProfessorCache cache = ProfessorCache.builder()
                         .memberCode(event.getMemberCode())
                         .name(event.getName())
@@ -34,10 +34,21 @@ public class ProfessorConsumer {
                         .status(EnumProfessorStatus.from(event.getStatus()))
                         .build();
                 professorCacheRepository.save(cache);
-                log.info("professorCache 저장 완료: {}", event.getMemberCode());
-            } else if (type == EventType.E_DELETED) {
-                professorCacheRepository.deleteById(event.getMemberCode());
-                log.info("삭제 완료: {}", event.getMemberCode());
+
+            } else if (type == EventType.E_UPDATED) {
+                if ("PROFILE".equals(event.getUpdateType())) {
+                    professorCacheRepository.updateDegreeAndMajorAndName(
+                            event.getMemberCode(),
+                            EnumProfessorDegree.from(event.getDegree()),
+                            event.getMajorId(),
+                            event.getName()
+                    );
+                } else if ("STATUS".equals(event.getUpdateType())) {
+                    professorCacheRepository.updateStatus(
+                            event.getMemberCode(),
+                            EnumProfessorStatus.from(event.getStatus())
+                    );
+                }
             }
         } catch (Exception e) {
             log.error("Kafka 메시지 처리 중 오류 발생: ", e);
