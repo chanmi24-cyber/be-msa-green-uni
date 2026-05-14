@@ -31,4 +31,8 @@ public class StudentMajor extends CreatedUpdatedAt {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }

@@ -19,5 +19,7 @@ public class AuthMemberEvent implements Serializable, KafkaEvent {
     private String email;
     private String password;
     private String role;
+    private Boolean isActive;
     private EventType eventType;
+    private String updateType;
 }

@@ -29,7 +29,11 @@ public class AuthMemberConsumer {
                     .role(EnumMemberRole.from(event.getRole()))
                     .build());
         } else if (type == EventType.E_UPDATED) {
-            authService.updateEmail(event.getMemberCode(), event.getEmail());
+            if ("EMAIL".equals(event.getUpdateType())) {
+                authService.updateEmail(event.getMemberCode(), event.getEmail());
+            } else if ("DEACTIVATE".equals(event.getUpdateType())) {
+                authService.deactivate(event.getMemberCode());
+            }
         }
     }
 }
