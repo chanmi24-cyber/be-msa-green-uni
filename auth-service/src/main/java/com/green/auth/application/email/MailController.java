@@ -3,6 +3,7 @@ package com.green.auth.application.email;
 import com.green.auth.application.email.model.EmailSendReq;
 import com.green.auth.application.email.model.EmailVerifyReq;
 import com.green.common.model.ResultResponse;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +19,7 @@ public class MailController {
     private final MailService mailService;
 
     @PostMapping
-    public ResultResponse<?> sendVerifyCode(@RequestBody EmailSendReq req) {
+    public ResultResponse<?> sendVerifyCode(@RequestBody EmailSendReq req) throws MessagingException {
         mailService.sendVerifyCode(req);
         return ResultResponse.builder()
                 .message("인증코드 발송 완료")
