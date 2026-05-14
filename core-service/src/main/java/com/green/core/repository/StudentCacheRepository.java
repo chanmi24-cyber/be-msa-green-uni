@@ -13,13 +13,11 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
     void updateEmail(@Param("memberCode") Long memberCode, @Param("email") String email);
 
     @Query(value = """
-        SELECT COUNT(*)
-        FROM student_major_cache
-        WHERE student_code = :studentCode
-          AND major_id = :majorId
-          AND type = 'MINOR'
-          AND is_active = 1
-        """, nativeQuery = true)
+    SELECT COUNT(*)
+    FROM student_cache
+    WHERE member_code = :studentCode
+      AND minor_id = :majorId
+    """, nativeQuery = true)
     int countMinorByStudentCodeAndMajorId(
             @Param("studentCode") Long studentCode,
             @Param("majorId") Long majorId);
