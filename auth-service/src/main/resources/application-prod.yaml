@@ -13,6 +13,7 @@ spring:
       - optional:classpath:application-common.yaml
       - optional:classpath:application-jpa.yaml
       - optional:classpath:application-auth.yaml
+      - optional:classpath:application-redis-prod.yaml
       - optional:file:.env[.properties]
   application:
     name: auth-service
