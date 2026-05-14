@@ -121,7 +121,7 @@ public class MajorService {
     public void editMajor(MemberDto memberDto, Long majorId, MajorCreateUpdateReq req) {
         validateRequiredFields(req);
         Major major = majorRepository.findById(majorId)
-                .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
