@@ -285,6 +285,7 @@ public class AdminService {
         StudentMajor currentPrimaryMajor = studentMajorRepository
                 .findByStudent_MemberCodeAndTypeAndIsActiveTrue(memberCode, EnumMajorType.PRIMARY)
                 .orElseThrow();
+        boolean majorChanged = false;
         Long currentMajorId = currentPrimaryMajor.getMajorId();
         if (req.getMajorId() != null && !req.getMajorId().equals(currentMajorId)) {
             currentPrimaryMajor.deactivate();
@@ -296,6 +297,7 @@ public class AdminService {
             studentMajorRepository.save(newPrimaryMajor);
             before.put("majorId", currentMajorId);
             currentMajorId = req.getMajorId();
+            majorChanged = true;
         }
         memberHistoryService.save(memberCode, updaterCode, before);
 
@@ -304,11 +306,11 @@ public class AdminService {
         boolean transferChanged = req.getIsTransfer() != null && !req.getIsTransfer().equals(oldIsTransfer);
         boolean multiChildChanged = req.getIsMultiChild() != null && !req.getIsMultiChild().equals(oldIsMultiChild);
         boolean veteranChanged = req.getIsVeteran() != null && !req.getIsVeteran().equals(oldIsVeteran);
-        if (nameChanged || transferChanged || multiChildChanged || veteranChanged) {
+        if (nameChanged || transferChanged || multiChildChanged || veteranChanged || majorChanged) {
             StudentEvent studentEvent = StudentEvent.builder()
                     .memberCode(member.getMemberCode())
                     .name(member.getName())
-                    .majorId(currentMajorId)  // 새 majorId
+                    .majorId(currentMajorId)
                     .isTransfer(student.getIsTransfer())
                     .isMultiChild(student.getIsMultiChild())
                     .isVeteran(student.getIsVeteran())
@@ -384,7 +386,7 @@ public class AdminService {
 
     @Transactional
     public void updateAdminStatus(Long memberCode, Long updaterCode, StatusUpdateAdminReq req){
-        Admin admin = adminRepository.findById(memberCode).orElseThrow();
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         EnumAdminStatus oldStatus = admin.getStatus();
         EnumAdminStatus newStatus = req.getStatus();
 
@@ -433,7 +435,7 @@ public class AdminService {
 
     @Transactional
     public void updateProfessorStatus(Long memberCode, Long updaterCode, StatusUpdateProfessorReq req){
-        Professor professor = professorRepository.findById(memberCode).orElseThrow();
+        Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
         EnumProfessorStatus oldStatus = professor.getStatus();
         EnumProfessorStatus newStatus = req.getStatus();
         EnumProfessorPosition oldPosition = professor.getPosition();
@@ -499,12 +501,23 @@ public class AdminService {
                     .updatorCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
+
+            // 퇴임이면 로그인 불가 처리
+            if (newStatus == EnumProfessorStatus.RETIREMENT) {
+                AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                        .memberCode(memberCode)
+                        .isActive(false)
+                        .eventType(EventType.E_UPDATED)
+                        .updateType("DEACTIVATE")
+                        .build();
+                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
+            }
         }
     }
 
     @Transactional
     public void updateStudentStatus(Long memberCode, Long updaterCode, StatusUpdateStudentReq req){
-        Student student = studentRepository.findById(memberCode).orElseThrow();
+        Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         EnumStudentStatus oldStatus = student.getStatus();
         EnumStudentStatus newStatus = req.getStatus();
 
