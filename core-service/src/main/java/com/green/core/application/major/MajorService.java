@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumBuilding;
+import com.green.common.exception.BusinessException;
 import com.green.common.kafka.MajorEvent;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
@@ -11,13 +12,12 @@ import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumMajorStatus;
+import com.green.core.exception.MajorErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -38,35 +38,35 @@ public class MajorService {
     private void validateRequiredFields(MajorCreateUpdateReq req) {
         // 1. 학과명 (공백 제외)
         if (req.getName() == null || req.getName().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학과명을 입력해주세요.");
+            throw new BusinessException(MajorErrorCode.MAJOR_NAME_REQUIRED);
         }
         // 2. 소속대학 ID
         if (req.getCollegeId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "소속대학을 선택해주세요.");
+            throw new BusinessException(MajorErrorCode.COLLEGE_ID_REQUIRED);
         }
         // 3. 건물 선택 (EnumBuilding)
         if (req.getMajorBuilding() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "건물을 선택해주세요.");
+            throw new BusinessException(MajorErrorCode.BUILDING_REQUIRED);
         }
         // 4. 호수 (공백 제외)
         if (req.getRoom() == null || req.getRoom().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "호수를 입력해주세요.");
+            throw new BusinessException(MajorErrorCode.ROOM_REQUIRED);
         }
         // 5. 전화번호 (공백 제외)
         if (req.getTel() == null || req.getTel().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "전화번호를 입력해주세요.");
+            throw new BusinessException(MajorErrorCode.TEL_REQUIRED);
         }
         // 6. 수업연한
         if (req.getCourseDuration() == null || req.getCourseDuration() < 4) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수업연한을 4년 이상으로 입력해주세요.");
+            throw new BusinessException(MajorErrorCode.COURSE_DURATION_INVALID);
         }
         // 7. 입학정원
         if (req.getCapacity() == null || req.getCapacity() < 30) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "입학정원을 30명 이상으로 입력해주세요.");
+            throw new BusinessException(MajorErrorCode.CAPACITY_INVALID);
         }
         // 8. 개설일
         if (req.getFoundedDate() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "개설일을 선택해주세요.");
+            throw new BusinessException(MajorErrorCode.FOUNDED_DATE_REQUIRED);
         }
     }
 
@@ -75,7 +75,7 @@ public class MajorService {
     public Long createMajor(MajorCreateUpdateReq req) {
         validateRequiredFields(req);
         College college = collegeRepository.findById(req.getCollegeId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
         log.info("1. college 조회 완료: {}", college.getName());
 
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
@@ -117,13 +117,13 @@ public class MajorService {
     public void editMajor(Long majorId, MajorCreateUpdateReq req) {
         validateRequiredFields(req);
         Major major = majorRepository.findById(majorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
 
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
 
         College college = collegeRepository.findById(req.getCollegeId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 단과대입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
@@ -178,7 +178,7 @@ public class MajorService {
     // API-DEPT-05: 학과 상세 조회
     public MajorDetailRes getMajor(Long majorId) {
         Major major = majorRepository.findById(majorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         return MajorDetailRes.builder()
                 .majorId(major.getMajorId())
@@ -202,24 +202,24 @@ public class MajorService {
         boolean nameDup = majorId == null
                 ? majorRepository.existsByName(name)
                 : majorRepository.existsByNameAndMajorIdNot(name, majorId);
-        if (nameDup) throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 존재하는 학과명입니다.");
+        if (nameDup) throw new BusinessException(MajorErrorCode.MAJOR_NAME_DUPLICATED);
 
         boolean telDup = majorId == null
                 ? majorRepository.existsByTel(tel)
                 : majorRepository.existsByTelAndMajorIdNot(tel, majorId);
-        if (telDup) throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다.");
+        if (telDup) throw new BusinessException(MajorErrorCode.TEL_DUPLICATED);
 
         if (professorCode != null) {
             boolean profDup = majorId == null
                     ? majorRepository.existsByProfessorCode(professorCode)
                     : majorRepository.existsByProfessorCodeAndMajorIdNot(professorCode, majorId);
-            if (profDup) throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 다른 학과의 학과장으로 임명된 교수입니다.");
+            if (profDup) throw new BusinessException(MajorErrorCode.CHAIR_PROFESSOR_DUPLICATED);
         }
 
         boolean buildingRoomDup = majorId == null
                 ? majorRepository.existsByMajorBuildingAndRoom(majorBuilding, room)
                 : majorRepository.existsByMajorBuildingAndRoomAndMajorIdNot(majorBuilding, room, majorId);
-        if (buildingRoomDup) throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 학과 사무실입니다.");
+        if (buildingRoomDup) throw new BusinessException(MajorErrorCode.OFFICE_ROOM_DUPLICATED);
     }
 
     private void saveToOutbox(MajorEvent event) {

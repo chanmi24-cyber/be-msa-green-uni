@@ -1,0 +1,44 @@
+constants:
+  api:
+    prefix: /api/auth
+  enum:
+    scan-package: com.green.common
+
+server:
+  port: 8080
+
+spring:
+  config:
+    import:
+      - optional:classpath:application-common.yaml
+      - optional:classpath:application-jpa.yaml
+      - optional:classpath:application-auth.yaml
+      - optional:file:.env[.properties]
+  application:
+    name: auth-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_AUTH}?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  kafka:
+    bootstrap-servers: kafka.infra.svc.cluster.local:9092
+    consumer:
+      group-id: auth-service-group
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.green.common.model,com.green.common.kafka"
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

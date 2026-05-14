@@ -3,13 +3,9 @@ package com.green.auth.application.auth;
 import com.green.auth.application.auth.model.AuthMemberCreateReq;
 import com.green.auth.application.auth.model.AuthMemberCreateRes;
 import com.green.auth.application.auth.model.AuthMemberDeleteRes;
-import com.green.common.auth.MemberContext;
-import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
-import com.green.common.security.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j

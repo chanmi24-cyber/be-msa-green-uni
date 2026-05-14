@@ -9,6 +9,7 @@ import com.green.common.model.JwtMember;
 import com.green.common.model.ResultResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -56,7 +57,6 @@ public class AuthController {
         jwtTokenManager.logOut(req, res);
         return ResultResponse.builder()
                 .message("로그아웃 되었습니다.")
-                .data(1)
                 .build();
     }
 
@@ -67,7 +67,6 @@ public class AuthController {
         jwtTokenManager.reissue(req, res);
         return ResultResponse.builder()
                 .message("Access Token 재발행")
-                .data(1)
                 .build();
     }
 
@@ -77,39 +76,16 @@ public class AuthController {
         MemberDto loginMember = MemberContext.get();
         authService.updatePassword( loginMember.memberCode(), req );
         return ResultResponse.builder()
-                .message("회원 비밀번호 변경")
-                .data(1)
-                .build();
-    }
-
-    // 최초 회원 비밀번호 변경
-    @PatchMapping("/passwords/first")
-    public ResultResponse<?> updateFirstPassword(@RequestBody PasswordUpdateReq req){
-        MemberDto loginMember = MemberContext.get();
-        authService.updateFirstPassword( loginMember.memberCode(), req );
-        return ResultResponse.builder()
-                .message("최초 로그인 회원 비밀번호 변경")
-                .data(1)
+                .message("비밀번호 변경이 완료되었습니다")
                 .build();
     }
 
     // 이메일 인증 비밀번호 변경
     @PatchMapping("/passwords/reset")
-    public ResultResponse<?> resetPassword(@RequestBody PasswordResetReq req){
+    public ResultResponse<?> resetPassword(@RequestBody @Valid PasswordResetReq req){
         authService.resetPassword( req );
         return ResultResponse.builder()
-                .message("비밀번호 초기화")
-                .data(1)
-                .build();
-    }
-
-    // 회원 이메일 변경
-    @PatchMapping("/my/emails")
-    public ResultResponse<?> updateEmail(@RequestBody EmailUpdateReq req){
-        MemberDto loginMember = MemberContext.get();
-        authService.updateEmail( loginMember.memberCode(), req.getEmail() );
-        return ResultResponse.builder()
-                .message("회원 이메일 변경")
+                .message("비밀번호 변경이 완료되었습니다")
                 .data(1)
                 .build();
     }
