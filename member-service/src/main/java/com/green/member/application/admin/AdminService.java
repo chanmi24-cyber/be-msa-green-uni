@@ -379,6 +379,7 @@ public class AdminService {
         memberHistoryService.save(memberCode, updaterCode, before);
     }
 
+    @Transactional
     public void updateAdminStatus(Long memberCode, Long updaterCode, StatusUpdateAdminReq req){
         Admin admin = adminRepository.findById(memberCode).orElseThrow();
         EnumAdminStatus oldStatus = admin.getStatus();
@@ -427,6 +428,7 @@ public class AdminService {
         }
     }
 
+    @Transactional
     public void updateProfessorStatus(Long memberCode, Long updaterCode, StatusUpdateProfessorReq req){
         Professor professor = professorRepository.findById(memberCode).orElseThrow();
         EnumProfessorStatus oldStatus = professor.getStatus();
@@ -497,6 +499,7 @@ public class AdminService {
         }
     }
 
+    @Transactional
     public void updateStudentStatus(Long memberCode, Long updaterCode, StatusUpdateStudentReq req){
         Student student = studentRepository.findById(memberCode).orElseThrow();
         EnumStudentStatus oldStatus = student.getStatus();
@@ -549,8 +552,8 @@ public class AdminService {
                     .build();
             outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
 
-        // 퇴학이면 로그인 불가 처리
-        if (newStatus == EnumStudentStatus.EXPULSION) {
+        // 자퇴/퇴학이면 로그인 불가 처리
+        if (newStatus == EnumStudentStatus.EXPULSION || newStatus == EnumStudentStatus.QUIT) {
             AuthMemberEvent authEvent = AuthMemberEvent.builder()
                     .memberCode(memberCode)
                     .isActive(false)
