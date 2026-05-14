@@ -2,7 +2,7 @@ package com.green.member.application.admin;
 
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.*;
-import com.green.common.exception.AuthErrorCode;
+import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
@@ -248,7 +248,7 @@ public class AdminService {
             case '1' -> EnumMemberRole.STUDENT;
             case '2' -> EnumMemberRole.PROFESSOR;
             case '3' -> EnumMemberRole.ADMIN;
-            default -> throw new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND);
+            default -> throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
         };
     }
 
@@ -257,13 +257,13 @@ public class AdminService {
     public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req) {
 
         // 공통 필드 업데이트
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+        Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
         member.updateCommonByAdmin( req.getName(),req.getBirth() );
 
         // 학생 필드 업데이트
-        Student student = studentRepository.findById(memberCode).orElseThrow();
+        Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         Boolean oldIsTransfer = student.getIsTransfer();
         Boolean oldIsMultiChild = student.getIsMultiChild();
         Boolean oldIsVeteran = student.getIsVeteran();
@@ -324,13 +324,13 @@ public class AdminService {
     public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req) {
 
         // 공통 필드 업데이트
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+        Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
         member.updateCommonByAdmin( req.getName(),req.getBirth() );
 
         // 교수 필드 업데이트
-        Professor professor = professorRepository.findById(memberCode).orElseThrow();
+        Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
         EnumProfessorDegree oldDegree = professor.getDegree();
         Long oldMajorId = professor.getMajorId();
         professor.updateByAdmin( req.getDegree(), req.getMajorId() );
@@ -363,7 +363,7 @@ public class AdminService {
     // 관리자 계정 정보 수정
     @Transactional
     public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+        Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
@@ -396,7 +396,7 @@ public class AdminService {
         if (newStatus == EnumAdminStatus.RETIREMENT) {
             changeType = "퇴사";
             // 퇴사의 경우 exitDate 자동 세팅
-            Member member = memberRepository.findById(memberCode).orElseThrow();
+            Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
             member.setExitDate(LocalDate.now());
         } else if (oldStatus == EnumAdminStatus.EMPLOYMENT && newStatus == EnumAdminStatus.ABSENCE) {
             changeType = "휴직";
@@ -447,7 +447,7 @@ public class AdminService {
             if (newStatus == EnumProfessorStatus.RETIREMENT) {
                 changeType = "퇴임";
                 // exitDate 자동 세팅
-                Member member = memberRepository.findById(memberCode).orElseThrow();
+                Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
                 member.setExitDate(LocalDate.now());
             } else if (oldStatus == EnumProfessorStatus.EMPLOYMENT && newStatus == EnumProfessorStatus.ABSENCE) {
                 changeType = "휴직";
@@ -511,9 +511,9 @@ public class AdminService {
         // 상태 변경
         student.updateStatus(req.getStatus());
 
-        // 퇴학, 자최, 졸업의 경우 exitDate 자동 세팅
+        // 퇴학, 자퇴, 졸업의 경우 exitDate 자동 세팅
         if(newStatus == EnumStudentStatus.EXPULSION || newStatus == EnumStudentStatus.QUIT || newStatus == EnumStudentStatus.GRADUATION){
-            Member member = memberRepository.findById(memberCode).orElseThrow();
+            Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
             member.setExitDate(LocalDate.now());
         }
 

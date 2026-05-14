@@ -1,12 +1,15 @@
 package com.green.member.application.professor;
 
 import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.professor.model.ProfessorHistoryRes;
 import com.green.member.application.professor.model.ProfessorProfileRes;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
+import com.green.member.exception.MemberErrorCode;
 import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,11 +30,11 @@ public class ProfessorService {
     // 교수 정보 조회
     @Transactional(readOnly = true)
     public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
-        Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+        Professor professorInfo = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
         log.info("professorInfo: {}", professorInfo);
 
-        MajorCache majorCache = majorCacheRepository.findById(professorInfo.getMajorId()).orElseThrow();
+        MajorCache majorCache = majorCacheRepository.findById(professorInfo.getMajorId()).orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
 
         return ProfessorProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
