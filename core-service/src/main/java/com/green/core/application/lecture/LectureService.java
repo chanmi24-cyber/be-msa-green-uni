@@ -246,4 +246,6 @@ public class LectureService {
         lecture.delete();
     }
 
+
+
 }
