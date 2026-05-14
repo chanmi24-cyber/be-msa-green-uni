@@ -110,6 +110,10 @@ public class AuthService {
         authMember.updatePassword( hashedPw );
 
         redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
+
+        if(authMember.getIsFirstLogin() == true){
+            authMember.updateFirstLogin();
+        }
     }
 
     // 회원 이메일 변경

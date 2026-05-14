@@ -98,7 +98,7 @@ public class AuthController {
     public ResultResponse<?> resetPassword(@RequestBody PasswordResetReq req){
         authService.resetPassword( req );
         return ResultResponse.builder()
-                .message("비밀번호 초기화")
+                .message("비밀번호 변경이 완료되었습니다")
                 .data(1)
                 .build();
     }
