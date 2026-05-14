@@ -34,7 +34,7 @@ public class AuthService {
 
         // 계정 상태 검증
         if (!loginMember.getIsActive()) {
-            throw new BusinessException(AuthErrorCode.ACCOUNT_TERMINATED);
+            throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
         }
         return loginMember;
     }
