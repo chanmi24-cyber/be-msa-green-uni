@@ -1,6 +1,7 @@
 package com.green.member.application.admin;
 
 import com.green.common.constants.EventType;
+import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
@@ -315,7 +316,7 @@ public class AdminService {
                     .isMultiChild(student.getIsMultiChild())
                     .isVeteran(student.getIsVeteran())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("PROFILE")
+                    .updateType(UpdateType.PROFILE)
                     .build();
             outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
         }
@@ -356,7 +357,7 @@ public class AdminService {
                     .degree(professor.getDegree().getCode())
                     .majorId(professor.getMajorId())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("PROFILE")
+                    .updateType(UpdateType.PROFILE)
                     .build();
             outboxService.saveToOutbox(MemberTopic.PROFESSOR, member.getMemberCode(), professorEvent);
         }
@@ -427,7 +428,7 @@ public class AdminService {
                     .memberCode(memberCode)
                     .isActive(false)
                     .eventType(EventType.E_UPDATED)
-                    .updateType("DEACTIVATE")
+                    .updateType(UpdateType.DEACTIVATE)
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
         }
@@ -481,7 +482,7 @@ public class AdminService {
                     .memberCode(professor.getMemberCode())
                     .status(professor.getStatus().getCode())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("STATUS")
+                    .updateType(UpdateType.STATUS)
                     .build();
             outboxService.saveToOutbox(MemberTopic.PROFESSOR, professor.getMemberCode(), professorEvent);
         }
@@ -508,7 +509,7 @@ public class AdminService {
                         .memberCode(memberCode)
                         .isActive(false)
                         .eventType(EventType.E_UPDATED)
-                        .updateType("DEACTIVATE")
+                        .updateType(UpdateType.DEACTIVATE)
                         .build();
                 outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
             }
@@ -564,7 +565,7 @@ public class AdminService {
                     .memberCode(student.getMemberCode())
                     .status(student.getStatus().getCode())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("STATUS")
+                    .updateType(UpdateType.STATUS)
                     .build();
             outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
 
@@ -574,7 +575,7 @@ public class AdminService {
                     .memberCode(memberCode)
                     .isActive(false)
                     .eventType(EventType.E_UPDATED)
-                    .updateType("DEACTIVATE")
+                    .updateType(UpdateType.DEACTIVATE)
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
         }

@@ -1,12 +1,12 @@
 package com.green.auth.application.auth.model;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
 public class LoginReq {
-    @NotNull
+    @NotBlank
     private Long memberCode;
-    @NotNull
+    @NotBlank
     private String password;
 }
