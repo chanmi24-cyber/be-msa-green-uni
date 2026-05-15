@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,4 +18,6 @@ public class EvalListRes {
     private Integer year;
     private Integer semester;
     private Integer totalCount;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

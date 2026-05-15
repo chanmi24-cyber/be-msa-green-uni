@@ -12,10 +12,13 @@
         pc.name AS pro_name,
         l.year,
         l.semester,
+        ep.start_date,
+        ep.end_date,
         (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_count
         FROM course c
         JOIN lecture l ON c.lecture_id = l.lecture_id
         JOIN professor_cache pc ON l.member_code = pc.member_code
+        LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
         <if test="year != null">AND l.year = #{year}</if>
@@ -30,6 +33,8 @@
         pc.name AS pro_name,
         l.year,
         l.semester,
+        ep.start_date,
+        ep.end_date,
         (SELECT COUNT(*) FROM course c WHERE c.lecture_id = l.lecture_id) AS total_count
         FROM lecture l
         JOIN professor_cache pc ON l.member_code = pc.member_code
