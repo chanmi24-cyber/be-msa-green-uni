@@ -21,20 +21,18 @@ public class AuthService {
     private final RedisService redisService;
 
     // 로그인
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthMember login(LoginReq req) {
         // 회원 조회
         AuthMember loginMember = authMemberRepository.findById(req.getMemberCode())
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
-
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+        // 로그인 가능 상태 검증
+        if (!loginMember.getIsActive()) {
+            throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
+        }
         // 비밀번호 검증 (존재 여부 및 비밀번호 일치 확인)
         if (!passwordEncoder.matches(req.getPassword(), loginMember.getPassword())) {
             throw new BusinessException(AuthErrorCode.LOGIN_FAIL);
-        }
-
-        // 계정 상태 검증
-        if (!loginMember.getIsActive()) {
-            throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
         }
         return loginMember;
     }
