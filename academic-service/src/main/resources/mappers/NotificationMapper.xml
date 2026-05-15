@@ -3,7 +3,7 @@
 
 <mapper namespace="com.green.academic.application.notification.NotificationMapper">
 
-    <!-- NOTI-01 알림 목록 조회 -->
+    <!-- NOTI-01 알림 목록 조회 (개인 알림 + 역할 기반 공통 알림) -->
     <select id="findNotifications">
         SELECT
         n.noti_id,
@@ -15,7 +15,7 @@
         n.type,
         COUNT(*) OVER() AS total_count
         FROM notification n
-        WHERE n.member_code = #{memberCode}
+        WHERE (n.member_code = #{memberCode} OR n.target_role = #{role})
         <if test="req.isRead != null">
             AND n.is_read = #{req.isRead}
         </if>

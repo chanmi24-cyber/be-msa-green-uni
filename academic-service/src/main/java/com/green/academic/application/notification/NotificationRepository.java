@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     long countByMemberCodeAndIsReadFalse(Long memberCode);
 
+    @Query("SELECT COUNT(n) FROM Notification n WHERE (n.memberCode = :memberCode OR n.targetRole = :targetRole) AND n.isRead = false")
+    long countUnreadByMemberCodeOrRole(@Param("memberCode") Long memberCode, @Param("targetRole") String targetRole);
+
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberCode = :memberCode")
     void readAllByMemberCode(@Param("memberCode") Long memberCode);
