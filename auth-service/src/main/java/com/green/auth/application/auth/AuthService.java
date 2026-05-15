@@ -21,20 +21,18 @@ public class AuthService {
     private final RedisService redisService;
 
     // 로그인
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthMember login(LoginReq req) {
         // 회원 조회
         AuthMember loginMember = authMemberRepository.findById(req.getMemberCode())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
-
+        // 로그인 가능 상태 검증
+        if (!loginMember.getIsActive()) {
+            throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
+        }
         // 비밀번호 검증 (존재 여부 및 비밀번호 일치 확인)
         if (!passwordEncoder.matches(req.getPassword(), loginMember.getPassword())) {
             throw new BusinessException(AuthErrorCode.LOGIN_FAIL);
-        }
-
-        // 계정 상태 검증
-        if (!loginMember.getIsActive()) {
-            throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
         }
         return loginMember;
     }
@@ -57,32 +55,22 @@ public class AuthService {
                 .build();
     }
 
-    // 계정 비활성화
-    @Transactional
-    public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
-        AuthMember authMember = authMemberRepository.findById(memberCode)
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
-
-        authMember.deactivate(); // isActive -> false
-        redisService.deleteAllByMemberCode(memberCode);
-
-        return AuthMemberDeleteRes.builder()
-                .memberCode(memberCode)
-                .build();
-    }
-
     // 회원 비밀번호 변경
     @Transactional
     public AuthMember updatePassword(long memberCode, PasswordUpdateReq req){
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        // 비밀번호 검증
+        // 기존 비밀번호 일치 검증
         if(!passwordEncoder.matches( req.getOldPassword(), authMember.getPassword() ) ){
             throw new BusinessException(AuthErrorCode.WRONG_PASSWORD);
         }
+        // 기존 비밀번호와 동일 여부 검사
+        if(passwordEncoder.matches(req.getNewPassword(), authMember.getPassword()) ){
+            throw new BusinessException(AuthErrorCode.SAME_AS_CURRENT_PASSWORD);
+        }
 
-        // 변경할 비밀번호 암호화
+        // 변경할 비밀번호 암호화후 저장
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
 
@@ -99,10 +87,11 @@ public class AuthService {
     // 이메일 인증 비밀번호 변경
     @Transactional
     public void resetPassword(PasswordResetReq req){
-        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail().trim().toLowerCase() ) ){
+        String email = req.getEmail().trim().toLowerCase();
+        if( !redisService.hasKey( "EMAIL-VERIFIED:" + email ) ){
             throw new BusinessException(EmailErrorCode.NOT_VERIFIED_EMAIL);
         }
-        AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
+        AuthMember authMember = authMemberRepository.findByEmail( req.getEmail() )
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
         // 기존 비밀번호와 동일 여부 검사
@@ -114,14 +103,20 @@ public class AuthService {
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
 
-        redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
+        redisService.delete("EMAIL-VERIFIED:" + email );
 
         // 한번도 비밀번호를 변경하지 않았던 경우라면, 최초로그인 false 전환
-        if(authMember.getIsFirstLogin() == true){
+        if(authMember.getIsFirstLogin()){
             authMember.updateFirstLogin();
         }
     }
 
+    // 현재 기기 제외 다른 기기 세션 삭제
+    public void deleteOtherSessions(long memberCode, String deviceId){
+        redisService.deleteAllByMemberCodeExcept(memberCode, deviceId);
+    }
+
+    // Kafka Consumer
     // 회원 이메일 변경
     @Transactional
     public void updateEmail(long memberCode, String email){

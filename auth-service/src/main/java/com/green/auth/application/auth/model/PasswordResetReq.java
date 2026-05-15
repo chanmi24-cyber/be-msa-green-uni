@@ -3,9 +3,9 @@ package com.green.auth.application.auth.model;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 public class PasswordResetReq {
     @Email
     private String email;
