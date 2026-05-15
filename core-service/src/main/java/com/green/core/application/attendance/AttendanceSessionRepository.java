@@ -16,9 +16,12 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
 
     Optional<AttendanceSession> findByLecture_LectureIdAndClassDate(Long lectureId, java.time.LocalDate classDate);
 
-    //활성 세션 전체 조회 추가
     @Query("SELECT s FROM AttendanceSession s JOIN FETCH s.lecture WHERE s.isActive = true")
     List<AttendanceSession> findAllActiveWithLecture();
+
+    // [추가] 시작 후 15분이 지난 활성 세션 조회 — 스케줄러 자동 종료용
+    @Query("SELECT s FROM AttendanceSession s JOIN FETCH s.lecture WHERE s.isActive = true AND s.startedAt < :cutoff")
+    List<AttendanceSession> findAllActiveStartedBefore(@org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
 
     List<AttendanceSession> findByLecture_LectureIdOrderByClassDateDesc(Long lectureId);
 }
