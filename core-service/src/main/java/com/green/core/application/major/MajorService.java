@@ -4,18 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumBuilding;
+import com.green.common.enumcode.EnumChangeType;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.MajorEvent;
+import com.green.common.model.MemberDto;
 import com.green.common.outbox.Outbox;
 import com.green.common.outbox.OutboxRepository;
 import com.green.core.application.major.model.*;
 import com.green.core.entity.major.College;
 import com.green.core.entity.major.Major;
+import com.green.core.entity.major.MajorHistory;
 import com.green.core.enumcode.EnumMajorStatus;
 import com.green.core.exception.MajorErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +37,9 @@ public class MajorService {
     private final CollegeRepository collegeRepository;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final MajorHistoryRepository majorHistoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     //유효성 검사
     private void validateRequiredFields(MajorCreateUpdateReq req) {
@@ -103,6 +110,7 @@ public class MajorService {
                 .majorId(major.getMajorId())
                 .name(major.getName())
                 .collegeName(college.getName())
+                .active(major.getActive().name())
                 .eventType(EventType.E_CREATED)
                 .build();
 
@@ -114,10 +122,10 @@ public class MajorService {
 
     // API-DEPT-01: 학과 수정
     @Transactional
-    public void editMajor(Long majorId, MajorCreateUpdateReq req) {
+    public void editMajor(MemberDto memberDto, Long majorId, MajorCreateUpdateReq req) {
         validateRequiredFields(req);
         Major major = majorRepository.findById(majorId)
-                .orElseThrow(() -> new BusinessException(MajorErrorCode.COLLEGE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
@@ -134,9 +142,31 @@ public class MajorService {
                 .majorId(major.getMajorId())
                 .name(req.getName())
                 .collegeName(college.getName())
+                .active(major.getActive().name())
                 .eventType(EventType.E_UPDATED)
                 .build();
         saveToOutbox(event);
+
+        // 히스토리저장용 - 수정 전 데이터 JSON으로 저장
+        try {
+            String beforeData = String.format(
+                    "{\"lectureId\":%d,\"lectureName\":\"%s\",\"active\":\"%s\"}",
+                    major.getMajorId(),
+                    major.getName(),
+                    major.getActive()
+            );
+
+            MajorHistory history = MajorHistory.builder()
+                    .major(major)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("학과 수정")
+                    .updatorCode(memberDto.memberCode())
+                    .build();
+            majorHistoryRepository.save(history);
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
     }
 
     // API-DEPT-03: 관리자 전체 목록 조회
@@ -224,7 +254,9 @@ public class MajorService {
 
     private void saveToOutbox(MajorEvent event) {
         try {
+            log.info("saveToOutbox 시작 - majorId: {}", event.getMajorId());
             String payload = objectMapper.writeValueAsString(event);
+            log.info("payload: {}", payload);
             Outbox outbox = Outbox.builder()
                     .topic("major-events")
                     .aggregateId(event.getMajorId())
@@ -232,8 +264,15 @@ public class MajorService {
                     .payload(payload)
                     .build();
             outboxRepository.save(outbox);
+            outboxRepository.flush(); // 추가
+            log.info("Outbox ID: {}", outbox.getId()); // ID가 찍히는지 확인
+            log.info("outbox 저장 완료");
         } catch (JsonProcessingException e) {
+            log.error("Outbox 직렬화 실패", e);
             throw new RuntimeException("Outbox 직렬화 실패", e);
+        } catch (Exception e) {
+            log.error("Outbox 저장 중 알 수 없는 오류", e); // 추가 - 이게 핵심
+            throw e;
         }
     }
 
