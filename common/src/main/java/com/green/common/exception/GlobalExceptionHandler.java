@@ -13,9 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -110,6 +112,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("BusinessException: {}", ex.getMessage());
         return ResponseEntity.status(ex.getErrorCode().getHttpStatus())
                 .body(new ResultResponse<>(ex.getMessage(), null));
+    }
+
+    // 필수 헤더 누락 (e.g. X-Device-Id 없이 요청)
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ResultResponse<String>> handleMissingRequestHeader(MissingRequestHeaderException ex) {
+        String message = "필수 헤더가 누락되었습니다: " + ex.getHeaderName();
+        log.warn("MissingRequestHeaderException: {}", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResultResponse<>(message, null));
+    }
+
+    // 헤더/파라미터 타입 불일치 (e.g. X-Device-Id에 mobile/pc 외 값)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResultResponse<String>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "잘못된 값입니다: " + ex.getName() + " = " + ex.getValue();
+        log.warn("MethodArgumentTypeMismatchException: {}", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResultResponse<>(message, null));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

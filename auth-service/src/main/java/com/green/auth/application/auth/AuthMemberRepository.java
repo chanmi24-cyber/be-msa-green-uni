@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface AuthMemberRepository extends JpaRepository<AuthMember, Long> {
+    AuthMember findByMemberCodeAndEmail(Long memberCode, String email);
     boolean existsByMemberCodeAndEmail(Long memberCode, String email);
     boolean existsByEmail(String email);
     Optional<AuthMember> findByEmail(String email);

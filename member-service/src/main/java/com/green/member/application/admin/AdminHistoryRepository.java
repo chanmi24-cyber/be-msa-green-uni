@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface AdminHistoryRepository extends JpaRepository<AdminHistory, Long> {
-    List<AdminHistory> findByAdmin_MemberCode(Long memberCode);
+    List<AdminHistory> findByAdmin_MemberCodeOrderByCreatedAtDesc(Long memberCode);
 }
