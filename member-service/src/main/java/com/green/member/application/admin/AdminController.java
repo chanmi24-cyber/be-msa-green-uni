@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -30,6 +31,15 @@ public class AdminController {
         List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    @GetMapping("/students")
+    public ResultResponse<?> findStudentList( StudentListReq req ){
+        StudentListPageRes res = adminService.findStudents( req );
+        return ResultResponse.builder()
+                .message("학생 목록 조회 성공")
                 .data(res)
                 .build();
     }

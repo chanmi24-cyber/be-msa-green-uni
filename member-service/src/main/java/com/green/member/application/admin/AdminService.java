@@ -43,6 +43,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -65,6 +69,47 @@ public class AdminService {
     private final AdminHistoryRepository adminHistoryRepository;
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
+
+    // 학생 목록 조회
+    @Transactional(readOnly = true)
+    public StudentListPageRes findStudents(StudentListReq req) {
+        int page = req.getPage() != null ? req.getPage() - 1 : 0;
+        int size = req.getSize() != null ? req.getSize() : 20;
+        String status = req.getStatus() != null ? req.getStatus().getCode() : null;
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<StudentListDto> result = studentRepository.findStudentList(
+                status,
+                req.getCollege(),
+                req.getAcademicYear(),
+                req.getMajorName(),
+                req.getMemberName(),
+                pageable
+        );
+
+        List<StudentListRes> students = result.getContent().stream()
+                .map(dto -> {
+                    StudentListRes res = new StudentListRes();
+                    res.setMemberCode(dto.getMemberCode());
+                    res.setName(dto.getName());
+                    res.setEmail(dto.getEmail());
+                    res.setTel(dto.getTel());
+                    res.setStatus(EnumStudentStatus.from(dto.getStatus()));
+                    res.setCollege(dto.getCollege());
+                    res.setMajorName(dto.getMajorName());
+                    res.setMinorName(dto.getMinorName());
+                    res.setAcademicYear(dto.getAcademicYear());
+                    res.setSemester(dto.getSemester());
+                    return res;
+                })
+                .toList();
+
+        return StudentListPageRes.builder()
+                .totalCount(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .students(students)
+                .build();
+    }
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
