@@ -3,6 +3,9 @@ package com.green.auth.application.auth;
 import com.green.auth.application.auth.enumcode.DeviceType;
 import com.green.auth.application.auth.model.*;
 import com.green.common.auth.MemberContext;
+import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.BusinessException;
+import com.green.common.exception.AuthErrorCode;
 import com.green.common.model.MemberDto;
 import com.green.common.security.JwtTokenManager;
 import com.green.auth.entity.AuthMember;
@@ -28,6 +31,10 @@ public class AuthController {
                                    @RequestHeader("X-Device-Id") DeviceType deviceType) {
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
+        // 관리자가 로그인 불가
+        if (loginMember.getRole() == EnumMemberRole.ADMIN) {
+            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ROLE);
+        }
         // 토큰에 담을 유저 정보 세팅
         JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceType.name() );
         // AT/RT 생성 후 쿠키와 Redis에 저장

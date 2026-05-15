@@ -25,7 +25,7 @@ public class AuthService {
     public AuthMember login(LoginReq req) {
         // 회원 조회
         AuthMember loginMember = authMemberRepository.findById(req.getMemberCode())
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.LOGIN_FAIL));
         // 로그인 가능 상태 검증
         if (!loginMember.getIsActive()) {
             throw new BusinessException(AuthErrorCode.INACTIVE_ACCOUNT);
