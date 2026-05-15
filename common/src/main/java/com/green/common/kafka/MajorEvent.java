@@ -1,5 +1,6 @@
 package com.green.common.kafka;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.green.common.constants.EventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,9 +13,11 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MajorEvent implements Serializable {
     private Long majorId;
     private String name;
     private String collegeName;
+    private String active;
     private EventType eventType;
 }

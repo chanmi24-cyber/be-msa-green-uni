@@ -20,4 +20,7 @@ public class MajorCache {
 
     @Column(name = "college_name", nullable = false, length = 50)
     private String collegeName;
+
+    @Column(name = "active", nullable = false, length = 20)
+    private String active;
 }

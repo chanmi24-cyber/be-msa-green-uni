@@ -19,6 +19,7 @@ import com.green.core.exception.MajorErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,8 @@ public class MajorService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
     private final MajorHistoryRepository majorHistoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     //유효성 검사
     private void validateRequiredFields(MajorCreateUpdateReq req) {
@@ -107,6 +110,7 @@ public class MajorService {
                 .majorId(major.getMajorId())
                 .name(major.getName())
                 .collegeName(college.getName())
+                .active(major.getActive().name())
                 .eventType(EventType.E_CREATED)
                 .build();
 
@@ -138,6 +142,7 @@ public class MajorService {
                 .majorId(major.getMajorId())
                 .name(req.getName())
                 .collegeName(college.getName())
+                .active(major.getActive().name())
                 .eventType(EventType.E_UPDATED)
                 .build();
         saveToOutbox(event);
@@ -249,7 +254,9 @@ public class MajorService {
 
     private void saveToOutbox(MajorEvent event) {
         try {
+            log.info("saveToOutbox 시작 - majorId: {}", event.getMajorId());
             String payload = objectMapper.writeValueAsString(event);
+            log.info("payload: {}", payload);
             Outbox outbox = Outbox.builder()
                     .topic("major-events")
                     .aggregateId(event.getMajorId())
@@ -257,8 +264,15 @@ public class MajorService {
                     .payload(payload)
                     .build();
             outboxRepository.save(outbox);
+            outboxRepository.flush(); // 추가
+            log.info("Outbox ID: {}", outbox.getId()); // ID가 찍히는지 확인
+            log.info("outbox 저장 완료");
         } catch (JsonProcessingException e) {
+            log.error("Outbox 직렬화 실패", e);
             throw new RuntimeException("Outbox 직렬화 실패", e);
+        } catch (Exception e) {
+            log.error("Outbox 저장 중 알 수 없는 오류", e); // 추가 - 이게 핵심
+            throw e;
         }
     }
 
