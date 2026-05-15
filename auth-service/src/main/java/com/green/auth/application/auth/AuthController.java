@@ -23,27 +23,21 @@ public class AuthController {
 
     // 로그인
     @PostMapping("/login")
-    public ResultResponse<?> login(HttpServletResponse res, @RequestBody LoginReq req,
-                                   @RequestHeader(value = "X-Device-Id", defaultValue = "pc") String deviceId) {
-        log.info("req: {}", req);
-
+    public ResultResponse<?> login(HttpServletResponse res, @RequestBody @Valid LoginReq req,
+                                   @RequestHeader("X-Device-Id") DeviceType deviceType) {
         // DB에 저장된 회원 조회
         AuthMember loginMember = authService.login( req );
-
         // 토큰에 담을 유저 정보 세팅
-        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceId );
+        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceType.name() );
         // AT/RT 생성 후 쿠키와 Redis에 저장
         jwtTokenManager.issue(res, jwtMember);
-
         LoginRes resultData = LoginRes.builder()
                 .memberCode( loginMember.getMemberCode( ))
                 .deviceId( jwtMember.getDeviceId() )
                 .role(loginMember.getRole().getCode())
                 .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();
-
         log.info("loginRes: {}", resultData);
-
         return ResultResponse.builder()
                 .message("로그인 성공")
                 .data(resultData)
