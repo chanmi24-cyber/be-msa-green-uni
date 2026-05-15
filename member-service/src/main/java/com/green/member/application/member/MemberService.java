@@ -1,7 +1,10 @@
 package com.green.member.application.member;
 
 import com.green.common.constants.EventType;
+import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
@@ -17,6 +20,7 @@ import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
+import com.green.member.exception.MemberErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,6 +45,7 @@ public class MemberService {
     private final AdminRepository adminRepository;
 
     // 내 정보 조회
+    @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
             case STUDENT   -> studentService.findStudent(memberCode, role);
@@ -53,9 +58,9 @@ public class MemberService {
     // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         log.info("memberInfo: {}", memberInfo);
-        Admin adminInfo = adminRepository.findById(memberCode).orElseThrow();
+        Admin adminInfo = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         log.info("adminInfo: {}", adminInfo);
 
         return AdminProfileRes.builder()
@@ -82,7 +87,7 @@ public class MemberService {
     @Transactional
     public void updateMyProfile(Long memberCode, EnumMemberRole role,
                                 MemberUpdateReq req, MultipartFile pic) {
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+        Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         // 사진 처리
         String savedPicFileName = null;
@@ -135,7 +140,7 @@ public class MemberService {
                     .memberCode(memberCode)
                     .email(req.getEmail())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("EMAIL")
+                    .updateType(UpdateType.EMAIL)
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
@@ -145,7 +150,7 @@ public class MemberService {
                         .memberCode(member.getMemberCode())
                         .email(req.getEmail())
                         .eventType(EventType.E_UPDATED)
-                        .updateType("EMAIL")
+                        .updateType(UpdateType.EMAIL)
                         .build();
                 outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
             }
@@ -163,7 +168,7 @@ public class MemberService {
 
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
-            Professor professor = professorRepository.findById(memberCode).orElseThrow();
+            Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
             String oldLabBuilding = professor.getLabBuilding() != null ? professor.getLabBuilding().getCode() : null;
             String oldLabRoom = professor.getLabRoom();
             String oldLabTel = professor.getLabTel();
