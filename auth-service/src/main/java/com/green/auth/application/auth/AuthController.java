@@ -76,6 +76,9 @@ public class AuthController {
     @PatchMapping("/passwords")
     public ResultResponse<?> updatePassword(@RequestBody @Valid PasswordUpdateReq req){
         MemberDto loginMember = MemberContext.get();
+        if (loginMember == null) {
+            throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
+        }
         authService.updatePassword( loginMember.memberCode(), req );
         authService.deleteOtherSessions( loginMember.memberCode(), loginMember.deviceId() ); // 현재 기기 제외 세션 무효화
         return ResultResponse.builder()
@@ -87,6 +90,9 @@ public class AuthController {
     @PatchMapping("/passwords/first")
     public ResultResponse<?> updateFirstPassword(@RequestBody @Valid PasswordUpdateReq req){
         MemberDto loginMember = MemberContext.get();
+        if (loginMember == null) {
+            throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
+        }
         authService.updateFirstPassword( loginMember.memberCode(), req );
         // 세션 삭제 없음
         return ResultResponse.builder()
