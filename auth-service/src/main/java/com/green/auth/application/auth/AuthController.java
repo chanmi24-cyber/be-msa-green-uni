@@ -33,7 +33,7 @@ public class AuthController {
         AuthMember loginMember = authService.login( req );
         // 관리자가 로그인 불가
         if (loginMember.getRole() == EnumMemberRole.ADMIN) {
-            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ROLE);
+            throw new BusinessException(AuthErrorCode.LOGIN_UNAUTHORIZED_ROLE);
         }
         // 토큰에 담을 유저 정보 세팅
         JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceType.name() );
