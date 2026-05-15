@@ -66,11 +66,23 @@ public class AuthController {
 
     // 회원 비밀번호 변경
     @PatchMapping("/passwords")
-    public ResultResponse<?> updatePassword(@RequestBody PasswordUpdateReq req){
+    public ResultResponse<?> updatePassword(@RequestBody @Valid PasswordUpdateReq req){
         MemberDto loginMember = MemberContext.get();
         authService.updatePassword( loginMember.memberCode(), req );
+        authService.deleteOtherSessions( loginMember.memberCode(), loginMember.deviceId() ); // 현재 기기 제외 세션 무효화
         return ResultResponse.builder()
                 .message("비밀번호 변경이 완료되었습니다")
+                .build();
+    }
+
+    // 최초 회원 비밀번호 변경
+    @PatchMapping("/passwords/first")
+    public ResultResponse<?> updateFirstPassword(@RequestBody @Valid PasswordUpdateReq req){
+        MemberDto loginMember = MemberContext.get();
+        authService.updateFirstPassword( loginMember.memberCode(), req );
+        // 세션 삭제 없음
+        return ResultResponse.builder()
+                .message("최초 로그인 회원 비밀번호 변경")
                 .build();
     }
 
@@ -80,7 +92,6 @@ public class AuthController {
         authService.resetPassword( req );
         return ResultResponse.builder()
                 .message("비밀번호 변경이 완료되었습니다")
-                .data(1)
                 .build();
     }
 }

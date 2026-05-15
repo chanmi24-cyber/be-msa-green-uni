@@ -55,32 +55,22 @@ public class AuthService {
                 .build();
     }
 
-    // 계정 비활성화
-    @Transactional
-    public AuthMemberDeleteRes deleteAuthMember(Long memberCode) {
-        AuthMember authMember = authMemberRepository.findById(memberCode)
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
-
-        authMember.deactivate(); // isActive -> false
-        redisService.deleteAllByMemberCode(memberCode);
-
-        return AuthMemberDeleteRes.builder()
-                .memberCode(memberCode)
-                .build();
-    }
-
     // 회원 비밀번호 변경
     @Transactional
     public AuthMember updatePassword(long memberCode, PasswordUpdateReq req){
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
-        // 비밀번호 검증
+        // 기존 비밀번호 일치 검증
         if(!passwordEncoder.matches( req.getOldPassword(), authMember.getPassword() ) ){
             throw new BusinessException(AuthErrorCode.WRONG_PASSWORD);
         }
+        // 기존 비밀번호와 동일 여부 검사
+        if(passwordEncoder.matches(req.getNewPassword(), authMember.getPassword()) ){
+            throw new BusinessException(AuthErrorCode.SAME_AS_CURRENT_PASSWORD);
+        }
 
-        // 변경할 비밀번호 암호화
+        // 변경할 비밀번호 암호화후 저장
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
 
@@ -118,6 +108,16 @@ public class AuthService {
         if(authMember.getIsFirstLogin() == true){
             authMember.updateFirstLogin();
         }
+    }
+
+    // 모든 세션 삭제
+    public void deleteAllSessions(long memberCode){
+        redisService.deleteAllByMemberCode(memberCode);
+    }
+
+    // 현재 기기 제외 다른 기기 세션 삭제
+    public void deleteOtherSessions(long memberCode, String deviceId){
+        redisService.deleteAllByMemberCodeExcept(memberCode, deviceId);
     }
 
     // 회원 이메일 변경

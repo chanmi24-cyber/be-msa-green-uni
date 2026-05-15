@@ -1,9 +1,12 @@
 package com.green.auth.application.auth.model;
 
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
 
-@Data
+@Getter
 public class PasswordUpdateReq {
+    @NotBlank
     private String oldPassword;
+    @NotBlank
     private String newPassword;
 }
