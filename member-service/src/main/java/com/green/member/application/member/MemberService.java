@@ -1,6 +1,7 @@
 package com.green.member.application.member;
 
 import com.green.common.constants.EventType;
+import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.BusinessException;
@@ -139,7 +140,7 @@ public class MemberService {
                     .memberCode(memberCode)
                     .email(req.getEmail())
                     .eventType(EventType.E_UPDATED)
-                    .updateType("EMAIL")
+                    .updateType(UpdateType.EMAIL)
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
@@ -149,7 +150,7 @@ public class MemberService {
                         .memberCode(member.getMemberCode())
                         .email(req.getEmail())
                         .eventType(EventType.E_UPDATED)
-                        .updateType("EMAIL")
+                        .updateType(UpdateType.EMAIL)
                         .build();
                 outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
             }

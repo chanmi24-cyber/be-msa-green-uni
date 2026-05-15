@@ -1,5 +1,6 @@
 package com.green.auth.application.auth;
 
+import com.green.auth.application.auth.enumcode.DeviceType;
 import com.green.auth.application.auth.model.*;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
