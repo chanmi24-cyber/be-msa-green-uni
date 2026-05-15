@@ -30,6 +30,7 @@ public class MajorEventConsumer {
                         .majorId(event.getMajorId())
                         .name(event.getName())
                         .collegeName(event.getCollegeName())
+                        .active(event.getActive())
                         .build();
                 majorCacheRepository.save(cache);
                 log.info("MajorCache 정보저장 완료: {}", event.getMajorId());
