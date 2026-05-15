@@ -83,7 +83,7 @@ public class AuthController {
         authService.updateFirstPassword( loginMember.memberCode(), req );
         // 세션 삭제 없음
         return ResultResponse.builder()
-                .message("최초 로그인 회원 비밀번호 변경")
+                .message("비밀번호 변경이 완료되었습니다")
                 .build();
     }
 
