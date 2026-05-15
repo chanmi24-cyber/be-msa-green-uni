@@ -1,15 +1,19 @@
 package com.green.auth.application.auth;
 
-import com.green.auth.application.auth.model.AuthMemberCreateReq;
-import com.green.auth.application.auth.model.AuthMemberCreateRes;
-import com.green.auth.application.auth.model.AuthMemberDeleteRes;
-import com.green.common.auth.MemberContext;
-import com.green.common.model.MemberDto;
+import com.green.auth.application.auth.enumcode.DeviceType;
+import com.green.auth.application.auth.model.LoginReq;
+import com.green.auth.application.auth.model.LoginRes;
+import com.green.auth.entity.AuthMember;
+import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
+import com.green.common.model.JwtMember;
 import com.green.common.model.ResultResponse;
 import com.green.common.security.JwtTokenManager;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -18,23 +22,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin")
 public class AdminAuthController {
     private final AuthService authService;
+    private final JwtTokenManager jwtTokenManager;
 
-    @PostMapping("/accounts")
-    public ResultResponse<?> createAccount(@RequestBody AuthMemberCreateReq req ) {
-        log.info("req: {}", req);
-        AuthMemberCreateRes res = authService.createAuthMember( req );
-        return ResultResponse.builder()
-                .message( "계정 생성 성공" )
-                .data( res )
+    // 로그인
+    @PostMapping("/login")
+    public ResultResponse<?> login(HttpServletResponse res, @RequestBody @Valid LoginReq req,
+                                   @RequestHeader("X-Device-Id") DeviceType deviceType) {
+        // DB에 저장된 회원 조회
+        AuthMember loginMember = authService.login( req );
+        // 학생/교수 로그인 불가
+        if (loginMember.getRole() != EnumMemberRole.ADMIN) {
+            throw new BusinessException(AuthErrorCode.LOGIN_UNAUTHORIZED_ROLE);
+        }
+        // 토큰에 담을 유저 정보 세팅
+        JwtMember jwtMember = new JwtMember( loginMember.getMemberCode(), loginMember.getRole().getCode(), deviceType.name() );
+        // AT/RT 생성 후 쿠키와 Redis에 저장
+        jwtTokenManager.issue(res, jwtMember);
+        LoginRes resultData = LoginRes.builder()
+                .memberCode( loginMember.getMemberCode( ))
+                .deviceId( jwtMember.getDeviceId() )
+                .role(loginMember.getRole().getCode())
+                .isFirstLogin(loginMember.getIsFirstLogin())
                 .build();
-    }
-
-    @DeleteMapping("/accounts/{memberCode}")
-    public ResultResponse<?> deleteAccount(@PathVariable Long memberCode){
-        AuthMemberDeleteRes res = authService.deleteAuthMember(memberCode);
+        log.info("loginRes: {}", resultData);
         return ResultResponse.builder()
-                .message( "계정 비활성화" )
-                .data( res )
+                .message("로그인 성공")
+                .data(resultData)
                 .build();
     }
 }

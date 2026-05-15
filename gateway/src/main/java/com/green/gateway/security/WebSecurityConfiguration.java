@@ -32,8 +32,7 @@ public class WebSecurityConfiguration {
                 .cors( cors -> cors.configurationSource(corsConfigurationSource()) )
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers("/api/academic/public/**").permitAll() // 비로그인 가능
+                        .requestMatchers("/api/academic/public/**", "/api/auth/**").permitAll() // 비로그인 가능
 
                         // 권한별 접근 제어
                         .requestMatchers("/api/*/admin/**").hasRole(EnumMemberRole.ADMIN.name())

@@ -49,3 +49,6 @@ spring:
           auth: true            # SMTP 인증 사용 (필수)
           starttls:
             enable: true        # 보안 연결(TLS) 사용 (필수)
+            required: true
+          timeout: 5000
+

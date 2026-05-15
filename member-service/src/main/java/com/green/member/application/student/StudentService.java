@@ -2,6 +2,8 @@ package com.green.member.application.student;
 
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.student.model.StudentHistoryRes;
 import com.green.member.application.student.model.StudentProfileRes;
@@ -9,10 +11,12 @@ import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentMajor;
+import com.green.member.exception.MemberErrorCode;
 import com.green.member.repository.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,12 +32,9 @@ public class StudentService {
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
-        log.info("memberInfo : {}", memberInfo);
-        Student studentInfo = studentRepository.findById(memberCode).orElseThrow();
-        log.info("studentInfo: {}", studentInfo);
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+        Student studentInfo = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         List<StudentMajor> majors = studentMajorRepository.findByStudent_MemberCodeAndIsActiveTrue(memberCode);
-        log.info("majors: {}", majors);
 
         StudentMajor mainMajor = majors.stream()
                 .filter(m -> m.getType() == EnumMajorType.PRIMARY)
@@ -43,10 +44,10 @@ public class StudentService {
                 .filter(m -> m.getType() == EnumMajorType.MINOR)
                 .findFirst()
                 .orElse(null);
-        MajorCache mainMajorCache = majorCacheRepository.findById(mainMajor.getMajorId()).orElseThrow();
+        MajorCache mainMajorCache = majorCacheRepository.findById(mainMajor.getMajorId()).orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
         String subMajorName = null;
         if (subMajor != null) {
-            MajorCache subMajorCache = majorCacheRepository.findById(subMajor.getMajorId()).orElseThrow();
+            MajorCache subMajorCache = majorCacheRepository.findById(subMajor.getMajorId()).orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
             subMajorName = subMajorCache.getName();
         }
 
@@ -79,8 +80,9 @@ public class StudentService {
     }
 
     // 학생 상태 변경 이력 조회
+    @Transactional(readOnly = true)
     public List<StudentHistoryRes> findStudentHistory(Long memberCode){
-        return studentHistoryRepository.findByStudent_MemberCode(memberCode)
+        return studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode)
                 .stream()
                 .map( h -> {
                     StudentHistoryRes res = new StudentHistoryRes();

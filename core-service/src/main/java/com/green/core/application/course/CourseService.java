@@ -213,7 +213,6 @@ public class CourseService {
 
         log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
                 student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
-        // ② createCourse() 내부 — 기존 학과/학년 조건 블록 전체를 아래로 교체
 
         // 전공 여부 판단
         boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
