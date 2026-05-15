@@ -22,12 +22,13 @@ public class NotificationService {
         if (req.getPage() != null && req.getSize() != null) {
             req.setStartIdx((req.getPage() - 1) * req.getSize());
         }
-        return notificationMapper.findNotifications(memberDto.memberCode(), req);
+        return notificationMapper.findNotifications(memberDto.memberCode(), memberDto.role().getCode(), req);
     }
 
     // NOTI-02 미읽음 알림 개수
     public UnreadCountRes getUnreadCount(MemberDto memberDto) {
-        long count = notificationRepository.countByMemberCodeAndIsReadFalse(memberDto.memberCode());
+        long count = notificationRepository.countUnreadByMemberCodeOrRole(
+                memberDto.memberCode(), memberDto.role().getCode());
         return UnreadCountRes.builder()
                 .unreadCount((int) count)
                 .build();

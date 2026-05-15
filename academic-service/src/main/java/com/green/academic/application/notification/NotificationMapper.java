@@ -12,5 +12,6 @@ import java.util.List;
 @Mapper
 public interface NotificationMapper {
     List<NotiListRes> findNotifications(@Param("memberCode") Long memberCode,
+                                        @Param("role") String role,
                                         @Param("req") NotiListReq req);
 }

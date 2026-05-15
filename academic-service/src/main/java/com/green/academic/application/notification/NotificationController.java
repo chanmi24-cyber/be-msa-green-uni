@@ -33,6 +33,39 @@ public class NotificationController {
         MemberDto memberDto = MemberContext.get();
         return ResultResponse.<UnreadCountRes>builder()
                 .message("미읽음 알림 개수 조회 성공")
+                .data(notificationService.getUnreadCount(memberDto))
                 .build();
+    }
+
+    // NOTI-03 알림 읽음 처리
+    @PostMapping("/{notificationId}/read")
+    public ResultResponse<Void> readNotification(@PathVariable Long notificationId) {
+        MemberDto memberDto = MemberContext.get();
+        notificationService.readNotification(memberDto, notificationId);
+        return ResultResponse.<Void>builder().message("읽음 처리 성공").build();
+    }
+
+    // NOTI-04 전체 읽음 처리
+    @PostMapping("/read-all")
+    public ResultResponse<Void> readAllNotifications() {
+        MemberDto memberDto = MemberContext.get();
+        notificationService.readAllNotifications(memberDto);
+        return ResultResponse.<Void>builder().message("전체 읽음 처리 성공").build();
+    }
+
+    // NOTI-05 알림 삭제
+    @DeleteMapping("/{notificationId}")
+    public ResultResponse<Void> deleteNotification(@PathVariable Long notificationId) {
+        MemberDto memberDto = MemberContext.get();
+        notificationService.deleteNotification(memberDto, notificationId);
+        return ResultResponse.<Void>builder().message("알림 삭제 성공").build();
+    }
+
+    // NOTI-06 전체 삭제
+    @DeleteMapping
+    public ResultResponse<Void> deleteAllNotifications() {
+        MemberDto memberDto = MemberContext.get();
+        notificationService.deleteAllNotifications(memberDto);
+        return ResultResponse.<Void>builder().message("전체 삭제 성공").build();
     }
 }
