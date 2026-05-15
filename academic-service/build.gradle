@@ -5,6 +5,9 @@ dependencies {
     // SQL 쿼리를 가독성 좋게(파라미터 포함) 로그로 남겨줍니다.
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 
+
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
+
     // JSON 처리를 위한 Jackson
     // jjwt-api: 인터페이스 및 핵심 API
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'

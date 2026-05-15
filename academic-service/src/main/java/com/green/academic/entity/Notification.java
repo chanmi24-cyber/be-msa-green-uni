@@ -49,4 +49,10 @@ public class Notification extends CreatedAt {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    public void read() {
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
+    }
+
 }
