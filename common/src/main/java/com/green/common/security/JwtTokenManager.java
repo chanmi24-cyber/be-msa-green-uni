@@ -46,10 +46,6 @@ public class JwtTokenManager { //인증처리 총괄
         setRefreshTokenInCookie(res, refreshToken); // 만들어진 RT 문자열을 쿠키에 담는 메소드 호출
     }
 
-//    public String generateRefreshToken(JwtMember jwtMember) {
-//        return jwtTokenProvider.generateRefreshToken(jwtMember);
-//    }
-
     // 만들어진 AT 문자열을 쿠키에 담기
     public void setAccessTokenInCookie(HttpServletResponse res, String accessToken){
         myCookieUtil.setCookie(res,

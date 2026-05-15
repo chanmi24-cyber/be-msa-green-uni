@@ -87,10 +87,11 @@ public class AuthService {
     // 이메일 인증 비밀번호 변경
     @Transactional
     public void resetPassword(PasswordResetReq req){
-        if( !redisService.hasKey( "EMAIL-VERIFIED:" + req.getEmail().trim().toLowerCase() ) ){
+        String email = req.getEmail().trim().toLowerCase();
+        if( !redisService.hasKey( "EMAIL-VERIFIED:" + email ) ){
             throw new BusinessException(EmailErrorCode.NOT_VERIFIED_EMAIL);
         }
-        AuthMember authMember = authMemberRepository.findByEmail(req.getEmail())
+        AuthMember authMember = authMemberRepository.findByEmail( req.getEmail() )
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
 
         // 기존 비밀번호와 동일 여부 검사
@@ -102,17 +103,12 @@ public class AuthService {
         String hashedPw = passwordEncoder.encode(req.getNewPassword());
         authMember.updatePassword( hashedPw );
 
-        redisService.delete("EMAIL-VERIFIED:" + req.getEmail());
+        redisService.delete("EMAIL-VERIFIED:" + email );
 
         // 한번도 비밀번호를 변경하지 않았던 경우라면, 최초로그인 false 전환
-        if(authMember.getIsFirstLogin() == true){
+        if(authMember.getIsFirstLogin()){
             authMember.updateFirstLogin();
         }
-    }
-
-    // 모든 세션 삭제
-    public void deleteAllSessions(long memberCode){
-        redisService.deleteAllByMemberCode(memberCode);
     }
 
     // 현재 기기 제외 다른 기기 세션 삭제
@@ -120,6 +116,7 @@ public class AuthService {
         redisService.deleteAllByMemberCodeExcept(memberCode, deviceId);
     }
 
+    // Kafka Consumer
     // 회원 이메일 변경
     @Transactional
     public void updateEmail(long memberCode, String email){
