@@ -21,6 +21,7 @@ public class MajorCacheService {
                         .majorId(major.getMajorId())
                         .name(major.getName())
                         .collegeName(major.getCollegeName())
+                        .active(major.getActive())
                         .build())
                 .toList();
     }

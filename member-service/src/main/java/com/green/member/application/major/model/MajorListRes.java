@@ -11,4 +11,5 @@ public class MajorListRes {
     private Long majorId;
     private String name;
     private String collegeName;
+    private String active;
 }

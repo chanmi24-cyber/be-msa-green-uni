@@ -29,7 +29,7 @@ public class Student extends UpdatedAt {
     @Column(name = "semester")
     private Integer semester;
 
-    @Column(name = "status", nullable = false, length = 10)
+    @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumStudentStatus status = EnumStudentStatus.UNREGISTERED;
 
