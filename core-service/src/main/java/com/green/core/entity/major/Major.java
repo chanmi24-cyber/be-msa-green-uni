@@ -1,7 +1,5 @@
 package com.green.core.entity.major;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.green.common.entity.CreatedUpdatedAt;
 import com.green.common.enumcode.EnumBuilding;
 import com.green.core.enumcode.EnumMajorStatus;
@@ -21,7 +19,7 @@ public class Major extends CreatedUpdatedAt {
 
     @Id @Tsid
     @Column(name = "major_id")
-    @JsonSerialize(using = ToStringSerializer.class)
+    //없앰
     private Long majorId;
 
     @Column(name = "name", nullable = false, length = 20)
