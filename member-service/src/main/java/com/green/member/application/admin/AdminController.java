@@ -9,14 +9,19 @@ import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
+import com.green.member.application.student.StudentBatchService;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.application.student.model.StudentListDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -26,6 +31,7 @@ import java.util.List;
 @RequestMapping("/admin")
 public class AdminController {
     private final AdminService adminService;
+    private final StudentBatchService studentBatchService;
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -62,6 +68,25 @@ public class AdminController {
         return ResultResponse.builder()
                 .message("관리자 목록 조회 성공")
                 .data(res)
+                .build();
+    }
+
+    // 학생 일괄 등록 템플릿 다운로드
+    @GetMapping("/students/batch/template")
+    public ResponseEntity<byte[]> downloadStudentTemplate() throws IOException {
+        byte[] template = studentBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"student_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
+
+    // 학생 일괄 등록
+    @PostMapping("/students/batch")
+    public ResultResponse<?> batchRegisterStudents(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("학생 일괄 등록 완료")
+                .data(studentBatchService.batchRegister(file))
                 .build();
     }
 

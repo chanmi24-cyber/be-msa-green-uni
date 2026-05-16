@@ -32,6 +32,9 @@ dependencies {
     // 실제 런타임에 DB와 통신할 때 필요합니다.
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    // Excel 파일 처리 (일괄 등록)
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
 }
 
 tasks.named('test') {
