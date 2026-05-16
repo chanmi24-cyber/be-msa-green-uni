@@ -3,6 +3,7 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
@@ -42,10 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -73,6 +70,11 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<StudentListDto> findStudents() {
         return studentRepository.findStudentList();
+    }
+    // 교수 목록 조회
+    @Transactional(readOnly = true)
+    public List<ProfessorListDto> findProfessors() {
+        return professorRepository.findProfessorList();
     }
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
