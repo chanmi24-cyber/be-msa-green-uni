@@ -13,11 +13,15 @@ import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
+import com.green.core.kafka.NotificationProducer;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.green.common.constants.EventType;
+import com.green.common.kafka.NotificationEvent;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +41,7 @@ public class LectureService {
     private final LectureMapper lectureMapper;
     private final LectureHistoryRepository lectureHistoryRepository;
     private final ObjectMapper objectMapper;
+    private final NotificationProducer notificationProducer;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -69,6 +74,30 @@ public class LectureService {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
 
+            // 수용인원 체크
+            if (req.getMaxStd() > classroom.getCapacity()) {
+                throw new BusinessException(LectureErrorCode.EXCEED_CLASSROOM_CAPACITY);
+            }
+
+            // 교수 시간 충돌 체크
+            long professorConflict = lectureScheduleRepository.countProfessorConflict(
+                    memberDto.memberCode(),
+                    s.getDayOfWeek(),
+                    s.getStartPeriod(),
+                    s.getEndPeriod(),
+                    req.getYear(),
+                    req.getSemester()
+            );
+            if (professorConflict > 0) {
+                throw new BusinessException(LectureErrorCode.PROFESSOR_SCHEDULE_CONFLICT);
+            }
+
+            // 날짜 순서 체크
+            if (req.getStartDate() != null && req.getEndDate() != null
+                    && req.getStartDate().isAfter(req.getEndDate())) {
+                throw new BusinessException(LectureErrorCode.INVALID_DATE_RANGE);
+            }
+
             LectureSchedule schedule = LectureSchedule.builder()
                     .lecture(lecture)
                     .classRoom(classroom)
@@ -87,18 +116,34 @@ public class LectureService {
         Lecture lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
 
-        // APPROVED면 승인, REJECTED면 반려
         if (req.getStatus() == EnumApprovalStatus.REJECTED) {
-            // 반려 사유 저장
             LectureRejection rejection = LectureRejection.builder()
                     .lecture(lecture)
                     .reason(req.getReason())
                     .updatorCode(memberDto.memberCode())
                     .build();
             lectureRejectionRepository.save(rejection);
+
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(lecture.getMemberCode())
+                    .type("LECTURE_REJECTED")
+                    .message("강의 '" + lecture.getLectureName() + "'이 반려되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+
+        } else if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(lecture.getMemberCode())
+                    .type("LECTURE_APPROVED")
+                    .message("강의 '" + lecture.getLectureName() + "'이 승인되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
         }
 
-        // 상태 변경 → Lecture에 메서드 있음.
         lecture.updateStatus(req.getStatus());
     }
 
@@ -131,9 +176,9 @@ public class LectureService {
 
         } else if (memberDto.role() == EnumMemberRole.PROFESSOR) {
             res = lectureMapper.findProAdmLectureDetail(lectureId);
-            // 본인 강의인지 체크
+            // 본인 강의가 아니면 → 403 대신 학생용으로 fallback
             if (res != null && !res.getMemberCode().equals(memberDto.memberCode())) {
-                throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+                res = lectureMapper.findStudentLectureDetail(lectureId);
             }
 
         } else { // ADMIN
@@ -245,5 +290,7 @@ public class LectureService {
         //삭제로직
         lecture.delete();
     }
+
+
 
 }

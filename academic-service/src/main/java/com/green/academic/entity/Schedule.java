@@ -49,6 +49,10 @@ public class Schedule extends CreatedUpdatedAt {
     @Builder.Default
     private Boolean isNotifiedStart = false;
 
+    @Column(name = "is_notified_three_days_before", nullable = false)
+    @Builder.Default
+    private Boolean isNotifiedThreeDaysBefore = false;
+
     @Column(name = "is_notified_end", nullable = false)
     @Builder.Default
     private Boolean isNotifiedEnd = false;
@@ -56,6 +60,10 @@ public class Schedule extends CreatedUpdatedAt {
     public void updateActive(boolean isActive) {
         this.isActive = isActive;
     }
+
+    public void markNotifiedStart() { this.isNotifiedStart = true; }
+    public void markNotifiedThreeDaysBefore() { this.isNotifiedThreeDaysBefore = true; }
+    public void markNotifiedEnd() { this.isNotifiedEnd = true; }
 
     public void update(String title, Integer semester, LocalDateTime startDate,
                        LocalDateTime endDate, EnumScheduleType type) {
