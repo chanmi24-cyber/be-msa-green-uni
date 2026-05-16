@@ -40,7 +40,8 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
 
-        if (!notification.getMemberCode().equals(memberDto.memberCode())) {
+        if (notification.getMemberCode() != null
+                && !notification.getMemberCode().equals(memberDto.memberCode())) {
             throw new IllegalArgumentException("본인 알림이 아닙니다.");
         }
 
@@ -59,7 +60,8 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
 
-        if (!notification.getMemberCode().equals(memberDto.memberCode())) {
+        if (notification.getMemberCode() != null
+                && !notification.getMemberCode().equals(memberDto.memberCode())) {
             throw new IllegalArgumentException("본인 알림이 아닙니다.");
         }
 
