@@ -74,6 +74,30 @@ public class LectureService {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
 
+            // 수용인원 체크
+            if (req.getMaxStd() > classroom.getCapacity()) {
+                throw new BusinessException(LectureErrorCode.EXCEED_CLASSROOM_CAPACITY);
+            }
+
+            // 교수 시간 충돌 체크
+            long professorConflict = lectureScheduleRepository.countProfessorConflict(
+                    memberDto.memberCode(),
+                    s.getDayOfWeek(),
+                    s.getStartPeriod(),
+                    s.getEndPeriod(),
+                    req.getYear(),
+                    req.getSemester()
+            );
+            if (professorConflict > 0) {
+                throw new BusinessException(LectureErrorCode.PROFESSOR_SCHEDULE_CONFLICT);
+            }
+
+            // 날짜 순서 체크
+            if (req.getStartDate() != null && req.getEndDate() != null
+                    && req.getStartDate().isAfter(req.getEndDate())) {
+                throw new BusinessException(LectureErrorCode.INVALID_DATE_RANGE);
+            }
+
             LectureSchedule schedule = LectureSchedule.builder()
                     .lecture(lecture)
                     .classRoom(classroom)
@@ -152,9 +176,9 @@ public class LectureService {
 
         } else if (memberDto.role() == EnumMemberRole.PROFESSOR) {
             res = lectureMapper.findProAdmLectureDetail(lectureId);
-            // 본인 강의인지 체크
+            // 본인 강의가 아니면 → 403 대신 학생용으로 fallback
             if (res != null && !res.getMemberCode().equals(memberDto.memberCode())) {
-                throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+                res = lectureMapper.findStudentLectureDetail(lectureId);
             }
 
         } else { // ADMIN
@@ -266,5 +290,7 @@ public class LectureService {
         //삭제로직
         lecture.delete();
     }
+
+
 
 }
