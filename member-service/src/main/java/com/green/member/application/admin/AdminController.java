@@ -10,6 +10,8 @@ import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
+import com.green.member.application.student.model.StudentListPageRes;
+import com.green.member.application.student.model.StudentListReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

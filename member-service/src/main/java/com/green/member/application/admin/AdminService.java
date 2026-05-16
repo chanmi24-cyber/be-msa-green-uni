@@ -3,6 +3,7 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
@@ -24,8 +25,6 @@ import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
-import com.green.member.application.student.model.StatusUpdateStudentReq;
-import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
@@ -73,14 +72,18 @@ public class AdminService {
     // 학생 목록 조회
     @Transactional(readOnly = true)
     public StudentListPageRes findStudents(StudentListReq req) {
-        int page = req.getPage() != null ? req.getPage() - 1 : 0;
-        int size = req.getSize() != null ? req.getSize() : 20;
         String status = req.getStatus() != null ? req.getStatus().getCode() : null;
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable;
+        if (req.getSize() == null) {
+            pageable = Pageable.unpaged();
+        } else {
+            int page = req.getPage() != null ? req.getPage() - 1 : 0;
+            pageable = PageRequest.of(page, req.getSize());
+        }
         Page<StudentListDto> result = studentRepository.findStudentList(
                 status,
-                req.getCollege(),
+                req.getCollegeId(),
                 req.getAcademicYear(),
                 req.getMajorName(),
                 req.getName(),
@@ -95,7 +98,7 @@ public class AdminService {
                     res.setEmail(dto.getEmail());
                     res.setTel(dto.getTel());
                     res.setStatus(EnumStudentStatus.from(dto.getStatus()));
-                    res.setCollege(dto.getCollege());
+                    res.setCollegeName(dto.getCollege());
                     res.setMajorName(dto.getMajorName());
                     res.setMinorName(dto.getMinorName());
                     res.setAcademicYear(dto.getAcademicYear());

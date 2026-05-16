@@ -1,4 +1,4 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.student.model;
 
 import com.green.common.enumcode.EnumStudentStatus;
 import lombok.Getter;
@@ -8,7 +8,7 @@ public class StudentListReq {
     private Integer page;
     private Integer size;
     private EnumStudentStatus status;
-    private String college;
+    private Long collegeId;
     private Integer academicYear;
     private String majorName;
     private String name;

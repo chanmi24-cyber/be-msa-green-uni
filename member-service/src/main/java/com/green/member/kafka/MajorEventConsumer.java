@@ -29,6 +29,7 @@ public class MajorEventConsumer {
                 MajorCache cache = MajorCache.builder()
                         .majorId(event.getMajorId())
                         .name(event.getName())
+                        .collegeId(event.getCollegeId())
                         .collegeName(event.getCollegeName())
                         .active(event.getActive())
                         .build();
