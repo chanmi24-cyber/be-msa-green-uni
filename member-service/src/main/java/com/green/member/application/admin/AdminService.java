@@ -83,7 +83,7 @@ public class AdminService {
                 req.getCollege(),
                 req.getAcademicYear(),
                 req.getMajorName(),
-                req.getMemberName(),
+                req.getName(),
                 pageable
         );
 
