@@ -3,6 +3,8 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
@@ -24,8 +26,6 @@ import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
-import com.green.member.application.student.model.StatusUpdateStudentReq;
-import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
@@ -65,6 +65,22 @@ public class AdminService {
     private final AdminHistoryRepository adminHistoryRepository;
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
+
+    // 학생 목록 조회
+    @Transactional(readOnly = true)
+    public List<StudentListDto> findStudents() {
+        return studentRepository.findStudentList();
+    }
+    // 교수 목록 조회
+    @Transactional(readOnly = true)
+    public List<ProfessorListDto> findProfessors() {
+        return professorRepository.findProfessorList();
+    }
+    // 관리자 목록 조회
+    @Transactional(readOnly = true)
+    public List<AdminListDto> findAdmins() {
+        return adminRepository.findAdminList();
+    }
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {

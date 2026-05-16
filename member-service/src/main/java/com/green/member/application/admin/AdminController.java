@@ -7,15 +7,18 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
+import com.green.member.application.student.model.StudentListDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -30,6 +33,34 @@ public class AdminController {
         List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    // 학생 회원 목록 조회
+    @GetMapping("/students")
+    public ResultResponse<?> findStudentList(){
+        List<StudentListDto> res = adminService.findStudents();
+        return ResultResponse.builder()
+                .message("학생 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 교수 회원 목록 조회
+    @GetMapping("/professors")
+    public ResultResponse<?> findProfessorList(){
+        List<ProfessorListDto> res = adminService.findProfessors();
+        return ResultResponse.builder()
+                .message("교수 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 관리자 회원 목록 조회
+    @GetMapping("/admins")
+    public ResultResponse<?> findAdminList(){
+        List<AdminListDto> res = adminService.findAdmins();
+        return ResultResponse.builder()
+                .message("관리자 목록 조회 성공")
                 .data(res)
                 .build();
     }
