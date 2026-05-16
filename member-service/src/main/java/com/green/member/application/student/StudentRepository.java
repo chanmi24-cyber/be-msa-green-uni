@@ -41,7 +41,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
               AND (:college IS NULL OR mc_p.college_name = :college)
               AND (:academicYear IS NULL OR s.academic_year = :academicYear)
               AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
-              AND (:memberName IS NULL OR m.name LIKE CONCAT('%', :memberName, '%'))
+              AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
             """,
         countQuery = """
             SELECT COUNT(*)
@@ -64,7 +64,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
               AND (:college IS NULL OR mc_p.college_name = :college)
               AND (:academicYear IS NULL OR s.academic_year = :academicYear)
               AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
-              AND (:memberName IS NULL OR m.name LIKE CONCAT('%', :memberName, '%'))
+              AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
             """,
         nativeQuery = true
     )
@@ -73,7 +73,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
         @Param("college") String college,
         @Param("academicYear") Integer academicYear,
         @Param("majorName") String majorName,
-        @Param("memberName") String memberName,
+        @Param("name") String name,
         Pageable pageable
     );
 }
