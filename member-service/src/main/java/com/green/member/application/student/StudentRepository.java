@@ -38,7 +38,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             LEFT JOIN major_cache mc_d
               ON mc_d.major_id = sm_d.major_id
             WHERE (:status IS NULL OR s.status = :status)
-              AND (:college IS NULL OR mc_p.college_name = :college)
+              AND (:collegeId IS NULL OR mc_p.college_id = :collegeId)
               AND (:academicYear IS NULL OR s.academic_year = :academicYear)
               AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
               AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
@@ -61,7 +61,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             LEFT JOIN major_cache mc_d
               ON mc_d.major_id = sm_d.major_id
             WHERE (:status IS NULL OR s.status = :status)
-              AND (:college IS NULL OR mc_p.college_name = :college)
+              AND (:collegeId IS NULL OR mc_p.college_id = :collegeId)
               AND (:academicYear IS NULL OR s.academic_year = :academicYear)
               AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
               AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
@@ -70,7 +70,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     )
     Page<StudentListDto> findStudentList(
         @Param("status") String status,
-        @Param("college") String college,
+        @Param("collegeId") Long collegeId,
         @Param("academicYear") Integer academicYear,
         @Param("majorName") String majorName,
         @Param("name") String name,

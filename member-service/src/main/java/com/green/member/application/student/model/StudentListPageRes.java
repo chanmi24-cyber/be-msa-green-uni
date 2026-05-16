@@ -1,4 +1,4 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.student.model;
 
 import lombok.Builder;
 import lombok.Getter;

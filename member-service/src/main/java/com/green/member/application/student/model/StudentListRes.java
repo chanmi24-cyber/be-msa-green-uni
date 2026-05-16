@@ -1,4 +1,4 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.student.model;
 
 import com.green.common.enumcode.EnumStudentStatus;
 import lombok.Data;
@@ -10,7 +10,7 @@ public class StudentListRes {
     private String email;
     private String tel;
     private EnumStudentStatus status;
-    private String college;
+    private String collegeName;
     private String majorName;
     private String minorName;
     private Integer academicYear;
