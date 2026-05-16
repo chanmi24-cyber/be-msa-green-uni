@@ -90,6 +90,9 @@ public class AdminService {
         // 입학 연도
         int entryYear = req.getEntryDate().getYear();
 
+        // 배치 등록 시 이전 행의 INSERT가 반영된 상태에서 순번을 계산하도록 명시적 플러시
+        memberRepository.flush();
+
         // 순번 조회
         int seq = switch (role) {
             case STUDENT   -> memberRepository.countStudentByEntryYear(entryYear);
