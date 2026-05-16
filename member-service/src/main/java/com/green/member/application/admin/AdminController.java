@@ -7,11 +7,11 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
-import com.green.member.application.student.model.StudentListPageRes;
-import com.green.member.application.student.model.StudentListReq;
+import com.green.member.application.student.model.StudentListDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -37,9 +37,19 @@ public class AdminController {
                 .build();
     }
 
+    // 학생 회원 목록 조회
     @GetMapping("/students")
     public ResultResponse<?> findStudentList(){
         List<StudentListDto> res = adminService.findStudents();
+        return ResultResponse.builder()
+                .message("학생 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 교수 회원 목록 조회
+    @GetMapping("/professors")
+    public ResultResponse<?> findProfessorList(){
+        List<ProfessorListDto> res = adminService.findProfessors();
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)

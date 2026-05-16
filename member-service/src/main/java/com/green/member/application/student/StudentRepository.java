@@ -1,12 +1,9 @@
 package com.green.member.application.student;
 
-import com.green.member.application.admin.model.StudentListDto;
+import com.green.member.application.student.model.StudentListDto;
 import com.green.member.entity.student.Student;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
