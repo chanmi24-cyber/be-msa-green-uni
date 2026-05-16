@@ -71,47 +71,8 @@ public class AdminService {
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
-    public StudentListPageRes findStudents(StudentListReq req) {
-        String status = req.getStatus() != null ? req.getStatus().getCode() : null;
-
-        Pageable pageable;
-        if (req.getSize() == null) {
-            pageable = Pageable.unpaged();
-        } else {
-            int page = req.getPage() != null ? req.getPage() - 1 : 0;
-            pageable = PageRequest.of(page, req.getSize());
-        }
-        Page<StudentListDto> result = studentRepository.findStudentList(
-                status,
-                req.getCollegeId(),
-                req.getAcademicYear(),
-                req.getMajorName(),
-                req.getName(),
-                pageable
-        );
-
-        List<StudentListRes> students = result.getContent().stream()
-                .map(dto -> {
-                    StudentListRes res = new StudentListRes();
-                    res.setMemberCode(dto.getMemberCode());
-                    res.setName(dto.getName());
-                    res.setEmail(dto.getEmail());
-                    res.setTel(dto.getTel());
-                    res.setStatus(EnumStudentStatus.from(dto.getStatus()));
-                    res.setCollegeName(dto.getCollege());
-                    res.setMajorName(dto.getMajorName());
-                    res.setMinorName(dto.getMinorName());
-                    res.setAcademicYear(dto.getAcademicYear());
-                    res.setSemester(dto.getSemester());
-                    return res;
-                })
-                .toList();
-
-        return StudentListPageRes.builder()
-                .totalCount(result.getTotalElements())
-                .totalPages(result.getTotalPages())
-                .students(students)
-                .build();
+    public List<StudentListDto> findStudents() {
+        return studentRepository.findStudentList();
     }
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성

@@ -38,8 +38,8 @@ public class AdminController {
     }
 
     @GetMapping("/students")
-    public ResultResponse<?> findStudentList( StudentListReq req ){
-        StudentListPageRes res = adminService.findStudents( req );
+    public ResultResponse<?> findStudentList(){
+        List<StudentListDto> res = adminService.findStudents();
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)

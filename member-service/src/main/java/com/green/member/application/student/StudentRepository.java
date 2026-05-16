@@ -8,10 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
     @Query(
-        value = """
+            value = """
             SELECT m.member_code   AS memberCode,
                    m.name          AS name,
                    m.email         AS email,
@@ -37,43 +39,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
              AND sm_d.is_active = true
             LEFT JOIN major_cache mc_d
               ON mc_d.major_id = sm_d.major_id
-            WHERE (:status IS NULL OR s.status = :status)
-              AND (:collegeId IS NULL OR mc_p.college_id = :collegeId)
-              AND (:academicYear IS NULL OR s.academic_year = :academicYear)
-              AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
-              AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
             """,
-        countQuery = """
-            SELECT COUNT(*)
-            FROM student s
-            JOIN member m
-              ON m.member_code = s.member_code
-            JOIN student_major sm_p
-              ON sm_p.student_code = s.member_code
-             AND sm_p.type = 'PRIMARY'
-             AND sm_p.is_active = true
-            JOIN major_cache mc_p
-              ON mc_p.major_id = sm_p.major_id
-            LEFT JOIN student_major sm_d
-              ON sm_d.student_code = s.member_code
-             AND sm_d.type = 'MINOR'
-             AND sm_d.is_active = true
-            LEFT JOIN major_cache mc_d
-              ON mc_d.major_id = sm_d.major_id
-            WHERE (:status IS NULL OR s.status = :status)
-              AND (:collegeId IS NULL OR mc_p.college_id = :collegeId)
-              AND (:academicYear IS NULL OR s.academic_year = :academicYear)
-              AND (:majorName IS NULL OR mc_p.name LIKE CONCAT('%', :majorName, '%'))
-              AND (:name IS NULL OR m.name LIKE CONCAT('%', :name, '%'))
-            """,
-        nativeQuery = true
+            nativeQuery = true
     )
-    Page<StudentListDto> findStudentList(
-        @Param("status") String status,
-        @Param("collegeId") Long collegeId,
-        @Param("academicYear") Integer academicYear,
-        @Param("majorName") String majorName,
-        @Param("name") String name,
-        Pageable pageable
-    );
+    List<StudentListDto> findStudentList();
 }
