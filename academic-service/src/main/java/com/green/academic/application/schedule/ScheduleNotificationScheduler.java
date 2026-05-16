@@ -21,7 +21,7 @@ public class ScheduleNotificationScheduler {
     private final ScheduleRepository scheduleRepository;
     private final AcademicNotificationProducer notificationProducer;
 
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void sendScheduleNotifications() {
         LocalDate today = LocalDate.now();
@@ -58,6 +58,13 @@ public class ScheduleNotificationScheduler {
                 notificationProducer.sendToRole(type.getCode() + "_START", message, targetRole, schedule.getScheduleId(), buildUrl(type));
             }
         }
+        // 관리자 알림
+        notificationProducer.sendToRole(
+                type.getCode() + "_START",
+                "[관리자] " + message,
+                EnumMemberRole.ADMIN,
+                schedule.getScheduleId(),
+                buildAdminUrl(type));
         schedule.markNotifiedStart();
     }
 
@@ -80,6 +87,15 @@ public class ScheduleNotificationScheduler {
                 notificationProducer.sendToRole(
                         schedule.getType().getCode() + "_3DAYS",
                         message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType()));
+                String adminThreeDaysMessage = buildAdminThreeDaysMessage(schedule.getType());
+                if (adminThreeDaysMessage != null) {
+                    notificationProducer.sendToRole(
+                            schedule.getType().getCode() + "_3DAYS",
+                            adminThreeDaysMessage,
+                            EnumMemberRole.ADMIN,
+                            schedule.getScheduleId(),
+                            buildAdminUrl(schedule.getType()));
+                }
                 schedule.markNotifiedThreeDaysBefore();
             }
         }
@@ -91,6 +107,15 @@ public class ScheduleNotificationScheduler {
                 notificationProducer.sendToRole(
                         schedule.getType().getCode() + "_LAST_DAY",
                         message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType()));
+                String adminLastDayMessage = buildAdminLastDayMessage(schedule.getType());
+                if (adminLastDayMessage != null) {
+                    notificationProducer.sendToRole(
+                            schedule.getType().getCode() + "_LAST_DAY",
+                            adminLastDayMessage,
+                            EnumMemberRole.ADMIN,
+                            schedule.getScheduleId(),
+                            buildAdminUrl(schedule.getType()));
+                }
                 schedule.markNotifiedEnd();
             }
         }
@@ -149,18 +174,54 @@ public class ScheduleNotificationScheduler {
         };
     }
 
+    private String buildAdminThreeDaysMessage(EnumScheduleType type) {
+        return switch (type) {
+            case GRADE_INPUT         -> "[관리자] 성적 입력 마감 3일 전입니다. 미입력 교수님을 확인해주세요.";
+            case TUITION_PAYMENT     -> "[관리자] 등록금 납부 마감 3일 전입니다. 미납 학생을 확인해주세요.";
+            case COURSE_REGISTRATION -> "[관리자] 수강신청 마감 3일 전입니다. 미신청 학생을 확인해주세요.";
+            case LECTURE_EVALUATION  -> "[관리자] 강의평가 마감 3일 전입니다. 미평가 학생을 확인해주세요.";
+            case COURSE_OPEN         -> "[관리자] 강의 개설 신청 마감 3일 전입니다. 개설이 안된 강의가 있는지 확인해주세요.";
+            case COURSE_MODIFICATION -> "[관리자] 수강정정 마감 3일 전입니다.";
+            case GRADE_APPEAL        -> "[관리자] 성적 이의신청 마감 3일 전입니다.";
+            case MAJOR_CHANGE        -> "[관리자] 전과 신청 마감 3일 전입니다.";
+            default -> null;
+        };
+    }
+
+    private String buildAdminLastDayMessage(EnumScheduleType type) {
+        return switch (type) {
+            case GRADE_INPUT         -> "[관리자] 성적 입력 마지막 날입니다. 미입력 교수님을 오늘까지 확인해주세요.";
+            case TUITION_PAYMENT     -> "[관리자] 등록금 납부 마지막 날입니다. 미납 학생을 오늘까지 확인해주세요.";
+            case COURSE_REGISTRATION -> "[관리자] 수강신청 마지막 날입니다. 미신청 학생을 오늘까지 확인해주세요.";
+            case LECTURE_EVALUATION  -> "[관리자] 강의평가 마지막 날입니다. 미평가 학생을 오늘까지 확인해주세요.";
+            case COURSE_OPEN         -> "[관리자] 강의 개설 신청 마지막 날입니다. 개설이 안된 강의가 있는지 오늘까지 확인해주세요.";
+            case COURSE_MODIFICATION -> "[관리자] 수강정정 마지막 날입니다.";
+            case GRADE_APPEAL        -> "[관리자] 성적 이의신청 마지막 날입니다.";
+            case MAJOR_CHANGE        -> "[관리자] 전과 신청 마지막 날입니다.";
+            default -> null;
+        };
+    }
+
     private String buildUrl(EnumScheduleType type) {
         return switch (type) {
-            case COURSE_REGISTRATION -> "/enrollment";
-            case COURSE_MODIFICATION -> "/enrollment/modification";
-            case GRADE_INPUT -> "/grades/input";
-            case GRADE_VIEW -> "/grades";
-            case GRADE_APPEAL -> "/grades/appeal";
-            case LECTURE_EVALUATION -> "/evaluations";
-            case TUITION_PAYMENT -> "/tuition";
-            case COURSE_OPEN -> "/lectures/open";
-            case MAJOR_CHANGE -> "/major/change";
-            case SEMESTER_START -> "/";
+            case COURSE_REGISTRATION -> "/api/core/student/courses";
+            case COURSE_MODIFICATION -> "/api/core/student/courses";
+            case GRADE_INPUT         -> "/";
+            case GRADE_VIEW          -> "/api/core/student/grades/my";
+            case GRADE_APPEAL        -> "/api/core/student/grades/appeal/my";
+            case LECTURE_EVALUATION  -> "/api/core/student/evaluations";
+            case TUITION_PAYMENT     -> "/api/core/student/tuitions/my";
+            case COURSE_OPEN         -> "/api/core/professor/lectures/my";
+            case MAJOR_CHANGE        -> "/api/member/student/my/status-requests";
+            case SEMESTER_START      -> "/";
+            default -> "/";
+        };
+    }
+
+    private String buildAdminUrl(EnumScheduleType type) {
+        return switch (type) {
+            case MAJOR_CHANGE    -> "/api/member/admin/status-requests";
+            case TUITION_PAYMENT -> "/api/core/admin/tuitions";
             default -> "/";
         };
     }

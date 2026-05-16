@@ -18,7 +18,7 @@ public enum EnumMemberRole implements EnumMapperType {
     @JsonCreator
     public static EnumMemberRole from(String value) {
         for (EnumMemberRole role : EnumMemberRole.values()) {
-            if (role.getCode().equalsIgnoreCase(value)) {
+            if (role.getCode().equalsIgnoreCase(value) || role.getValue().equalsIgnoreCase(value)) {
                 return role;
             }
         }

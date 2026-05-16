@@ -44,11 +44,6 @@ spring:
               predicates:
                 - Path=/api/core/**
 
-            - id: academic-service-ws
-              uri: ws://${SERVICE_HOST}:${ACADEMIC_PORT}
-              predicates:
-                - Path=/api/academic/ws/**
-
             - id: academic-service
               uri: http://${SERVICE_HOST}:${ACADEMIC_PORT}
               predicates:
