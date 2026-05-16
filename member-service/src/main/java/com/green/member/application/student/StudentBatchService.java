@@ -4,9 +4,12 @@ import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.admin.AdminService;
 import com.green.member.application.admin.model.FailRowRes;
 import com.green.member.application.admin.model.MemberBatchRes;
+import com.green.member.application.major.MajorCacheRepository;
 import com.green.member.application.student.model.StudentCreateReq;
+import com.green.member.entity.cache.MajorCache;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,22 +19,27 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class StudentBatchService {
     private final AdminService adminService;
+    private final MajorCacheRepository majorCacheRepository;
 
     private static final String[] HEADERS = {
         "이메일*", "이름*", "생년월일*(YYYY-MM-DD)", "전화번호*", "비상연락처",
-        "우편번호", "주소", "상세주소", "입학일*(YYYY-MM-DD)", "전공ID*",
+        "우편번호", "주소", "상세주소", "입학일*(YYYY-MM-DD)", "학과명*",
         "학년*", "학기*", "편입여부(Y/비워두기)", "다자녀여부(Y/비워두기)",
         "보훈여부(Y/비워두기)"
     };
 
+    static final String SAMPLE_EMAIL = "__sample__@example.com";
+
     private static final String[] SAMPLE_DATA = {
-        "student@example.com", "홍길동", "2000-01-15", "01012345678", "01087654321",
-        "06234", "서울특별시 강남구 테헤란로 123", "101호", "2024-03-01", "1",
+        SAMPLE_EMAIL, "홍길동", "2000-01-15", "01012345678", "01087654321",
+        "06234", "서울특별시 강남구 테헤란로 123", "101호", "2024-03-01", "",
         "1", "1", "", "", ""
     };
 
@@ -42,6 +50,8 @@ public class StudentBatchService {
     };
 
     public byte[] generateTemplate() throws IOException {
+        List<MajorCache> activeMajors = majorCacheRepository.findByActive("RUNNING");
+
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("학생 일괄 등록");
 
@@ -58,17 +68,37 @@ public class StudentBatchService {
             headerFont.setFontHeightInPoints((short) 11);
             headerStyle.setFont(headerFont);
 
-            // ── 샘플 데이터 스타일
-            CellStyle sampleStyle = workbook.createCellStyle();
-            sampleStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
-            sampleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            setBorder(sampleStyle);
+            DataFormat dataFormat = workbook.createDataFormat();
+
+            // ── 샘플 데이터 스타일 (기본)
             Font sampleFont = workbook.createFont();
             sampleFont.setItalic(true);
             sampleFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
             sampleFont.setFontName("맑은 고딕");
             sampleFont.setFontHeightInPoints((short) 10);
+
+            CellStyle sampleStyle = workbook.createCellStyle();
+            sampleStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
+            sampleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            setBorder(sampleStyle);
             sampleStyle.setFont(sampleFont);
+
+            // ── 샘플 + 텍스트 서식 (전화번호·우편번호용)
+            CellStyle sampleTextStyle = workbook.createCellStyle();
+            sampleTextStyle.cloneStyleFrom(sampleStyle);
+            sampleTextStyle.setDataFormat(dataFormat.getFormat("@"));
+
+            // ── 샘플 + 날짜 서식 (생년월일·입학일용)
+            CellStyle sampleDateStyle = workbook.createCellStyle();
+            sampleDateStyle.cloneStyleFrom(sampleStyle);
+            sampleDateStyle.setDataFormat(dataFormat.getFormat("YYYY-MM-DD"));
+
+            // ── 데이터 입력 열 서식 (사용자가 입력할 빈 셀에 적용)
+            CellStyle colTextStyle = workbook.createCellStyle();
+            colTextStyle.setDataFormat(dataFormat.getFormat("@"));
+
+            CellStyle colDateStyle = workbook.createCellStyle();
+            colDateStyle.setDataFormat(dataFormat.getFormat("YYYY-MM-DD"));
 
             // ── 헤더 행 (0행)
             Row headerRow = sheet.createRow(0);
@@ -79,13 +109,51 @@ public class StudentBatchService {
                 cell.setCellStyle(headerStyle);
             }
 
-            // ── 샘플 데이터 행
+            // ── 샘플 데이터 행 (열별 서식 적용)
             Row sampleRow = sheet.createRow(1);
             sampleRow.setHeightInPoints(18);
             for (int i = 0; i < SAMPLE_DATA.length; i++) {
                 Cell cell = sampleRow.createCell(i);
                 cell.setCellValue(SAMPLE_DATA[i]);
-                cell.setCellStyle(sampleStyle);
+                // 날짜 열: C(2), I(8) / 텍스트 열: D(3), E(4), F(5)
+                if (i == 2 || i == 8) {
+                    cell.setCellStyle(sampleDateStyle);
+                } else if (i == 3 || i == 4 || i == 5) {
+                    cell.setCellStyle(sampleTextStyle);
+                } else {
+                    cell.setCellStyle(sampleStyle);
+                }
+            }
+
+            // ── 열 기본 서식 (사용자 입력 셀에 자동 적용)
+            sheet.setDefaultColumnStyle(2, colDateStyle);  // 생년월일
+            sheet.setDefaultColumnStyle(3, colTextStyle);  // 전화번호
+            sheet.setDefaultColumnStyle(4, colTextStyle);  // 비상연락처
+            sheet.setDefaultColumnStyle(5, colTextStyle);  // 우편번호
+            sheet.setDefaultColumnStyle(8, colDateStyle);  // 입학일
+
+            // ── 학과명 드롭다운 (숨김 시트 + Named Range 방식)
+            if (!activeMajors.isEmpty()) {
+                Sheet majorSheet = workbook.createSheet("학과목록");
+                workbook.setSheetVisibility(
+                        workbook.getSheetIndex("학과목록"), SheetVisibility.VERY_HIDDEN);
+                for (int i = 0; i < activeMajors.size(); i++) {
+                    majorSheet.createRow(i).createCell(0)
+                            .setCellValue(activeMajors.get(i).getName());
+                }
+
+                Name namedRange = workbook.createName();
+                namedRange.setNameName("MajorList");
+                namedRange.setRefersToFormula("'학과목록'!$A$1:$A$" + activeMajors.size());
+
+                DataValidationHelper dvHelper = sheet.getDataValidationHelper();
+                DataValidationConstraint dvConstraint =
+                        dvHelper.createFormulaListConstraint("MajorList");
+                CellRangeAddressList addressList = new CellRangeAddressList(1, 1000, 9, 9);
+                DataValidation validation = dvHelper.createValidation(dvConstraint, addressList);
+                validation.setShowErrorBox(true);
+                validation.createErrorBox("입력 오류", "목록에서 학과명을 선택해주세요.");
+                sheet.addValidationData(validation);
             }
 
             // ── 열 너비 + 헤더 고정
@@ -114,6 +182,9 @@ public class StudentBatchService {
         List<StudentCreateReq> validRows = new ArrayList<>();
         List<FailRowRes> failList = new ArrayList<>();
 
+        Map<String, Long> majorNameToId = majorCacheRepository.findByActive("RUNNING").stream()
+                .collect(Collectors.toMap(MajorCache::getName, MajorCache::getMajorId));
+
         // ── 1단계: 파싱·검증만 (DB 접근 없음) ──────────────
         try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -125,9 +196,9 @@ public class StudentBatchService {
             int skippedCount = 0;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null || getString(row, 0).isEmpty()) { skippedCount++; continue; }
+                if (row == null || getString(row, 0).isEmpty() || SAMPLE_EMAIL.equals(getString(row, 0))) { skippedCount++; continue; }
                 try {
-                    validRows.add(parseRow(row));
+                    validRows.add(parseRow(row, majorNameToId));
                 } catch (Exception e) {
                     failList.add(FailRowRes.builder().row(i + 1).reason(e.getMessage()).build());
                 }
@@ -162,7 +233,7 @@ public class StudentBatchService {
                 .successCount(validRows.size()).failCount(0).failList(List.of()).build();
     }
 
-    private StudentCreateReq parseRow(Row row) {
+    private StudentCreateReq parseRow(Row row, Map<String, Long> majorNameToId) {
         StudentCreateReq req = new StudentCreateReq();
         req.setEmail(getString(row, 0));
         req.setName(getString(row, 1));
@@ -173,7 +244,13 @@ public class StudentBatchService {
         req.setAddress(getString(row, 6));
         req.setDetailAddress(getString(row, 7));
         req.setEntryDate(parseDate(getString(row, 8), "입학일"));
-        req.setMajorId(parseLong(getString(row, 9), "전공ID"));
+
+        String majorName = getString(row, 9);
+        if (majorName.isEmpty()) throw new IllegalArgumentException("학과명 필수");
+        Long majorId = majorNameToId.get(majorName);
+        if (majorId == null) throw new IllegalArgumentException("존재하지 않는 학과명: " + majorName);
+        req.setMajorId(majorId);
+
         req.setAcademicYear(parseInt(getString(row, 10), "학년"));
         req.setSemester(parseInt(getString(row, 11), "학기"));
         req.setIsTransfer(parseBoolean(getString(row, 12)));
@@ -191,7 +268,6 @@ public class StudentBatchService {
         if (req.getBirth() == null)                             throw new IllegalArgumentException("생년월일 오류 (YYYY-MM-DD)");
         if (req.getTel() == null || req.getTel().isEmpty())     throw new IllegalArgumentException("전화번호 필수");
         if (req.getEntryDate() == null)                         throw new IllegalArgumentException("입학일 오류 (YYYY-MM-DD)");
-        if (req.getMajorId() == null)                           throw new IllegalArgumentException("전공ID 필수");
         if (req.getAcademicYear() == null)                      throw new IllegalArgumentException("학년 필수");
         if (req.getSemester() == null)                          throw new IllegalArgumentException("학기 필수");
     }
@@ -231,16 +307,7 @@ public class StudentBatchService {
         }
     }
 
-    private Long parseLong(String value, String fieldName) {
-        if (value == null || value.isEmpty()) return null;
-        try {
-            return Long.parseLong(value);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(fieldName + " 숫자 형식 오류: " + value);
-        }
-    }
-
-    private Integer parseInt(String value, String fieldName) {
+private Integer parseInt(String value, String fieldName) {
         if (value == null || value.isEmpty()) return null;
         try {
             return Integer.parseInt(value);
