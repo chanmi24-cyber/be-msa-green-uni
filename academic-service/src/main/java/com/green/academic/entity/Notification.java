@@ -36,7 +36,7 @@ public class Notification extends CreatedAt {
     @Column(name = "ref_table_name", length = 15)
     private String refTableName; // @Enumerated 활용
 
-    @Column(name = "ref_id", nullable = false)
+    @Column(name = "ref_id")
     private Long refId;
 
     @Column(name = "is_notified", nullable = false)
@@ -49,4 +49,10 @@ public class Notification extends CreatedAt {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    public void read() {
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
+    }
+
 }
