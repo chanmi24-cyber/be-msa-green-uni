@@ -76,6 +76,11 @@ public class AdminService {
     public List<ProfessorListDto> findProfessors() {
         return professorRepository.findProfessorList();
     }
+    // 관리자 목록 조회
+    @Transactional(readOnly = true)
+    public List<AdminListDto> findAdmins() {
+        return adminRepository.findAdminList();
+    }
 
     // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {

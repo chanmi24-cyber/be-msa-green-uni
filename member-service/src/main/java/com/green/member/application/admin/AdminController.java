@@ -51,7 +51,16 @@ public class AdminController {
     public ResultResponse<?> findProfessorList(){
         List<ProfessorListDto> res = adminService.findProfessors();
         return ResultResponse.builder()
-                .message("학생 목록 조회 성공")
+                .message("교수 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 관리자 회원 목록 조회
+    @GetMapping("/admins")
+    public ResultResponse<?> findAdminList(){
+        List<AdminListDto> res = adminService.findAdmins();
+        return ResultResponse.builder()
+                .message("관리자 목록 조회 성공")
                 .data(res)
                 .build();
     }
