@@ -13,6 +13,7 @@ import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,12 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class StudentBatchService {
     private final AdminService adminService;
     private final MajorCacheRepository majorCacheRepository;
+
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+    private static final int MAX_ROW_COUNT = 500;
+    private static final Pattern EMAIL_PATTERN =  Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern TEL_PATTERN = Pattern.compile("^0\\d{9,10}$");
 
     private static final String[] HEADERS = {
         "이메일*", "이름*", "생년월일*(YYYY-MM-DD)", "전화번호*", "비상연락처",
@@ -174,7 +181,7 @@ public class StudentBatchService {
         style.setBorderRight(BorderStyle.THIN);
     }
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public MemberBatchRes batchRegister(MultipartFile file) throws IOException {
         validateFile(file);
 
@@ -188,6 +195,10 @@ public class StudentBatchService {
         try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
+            if (sheet.getLastRowNum() > MAX_ROW_COUNT) {
+                throw new IllegalArgumentException(
+                    "최대 " + MAX_ROW_COUNT + "행까지 등록할 수 있습니다. (현재: " + sheet.getLastRowNum() + "행)");
+            }
             if (sheet.getLastRowNum() < 1) {
                 throw new IllegalArgumentException("파일에 데이터 행이 없습니다. 2행부터 데이터를 입력하세요.");
             }
@@ -209,7 +220,7 @@ public class StudentBatchService {
             }
         }
 
-        // 검증 오류가 하나라도 있으면 저장 없이 반환 (DB 미접근이므로 롤백 불필요)
+        // 검증 오류가 하나라도 있으면 저장 없이 반환
         if (!failList.isEmpty()) {
             return MemberBatchRes.builder()
                     .successCount(0).failCount(failList.size()).failList(failList).build();
@@ -238,7 +249,11 @@ public class StudentBatchService {
         req.setName(getString(row, 1));
         req.setBirth(parseDate(getString(row, 2), "생년월일"));
         req.setTel(getString(row, 3));
-        req.setEmergencyTel(getString(row, 4));
+        String emergencyTel = getString(row, 4);
+        if (!emergencyTel.isEmpty() && !TEL_PATTERN.matcher(emergencyTel).matches()) {
+            throw new IllegalArgumentException("비상연락처 형식 오류 (숫자 10~11자리): " + emergencyTel);
+        }
+        req.setEmergencyTel(emergencyTel);
         req.setPostcode(getString(row, 5));
         req.setAddress(getString(row, 6));
         req.setDetailAddress(getString(row, 7));
@@ -247,7 +262,7 @@ public class StudentBatchService {
         String majorName = getString(row, 9);
         if (majorName.isEmpty()) throw new IllegalArgumentException("학과명 필수");
         Long majorId = majorNameToId.get(majorName);
-        if (majorId == null) throw new IllegalArgumentException("존재하지 않는 학과명: " + majorName);
+        if (majorId == null) throw new IllegalArgumentException("존재하지 않는 학과: " + majorName);
         req.setMajorId(majorId);
 
         req.setAcademicYear(1);
@@ -263,15 +278,20 @@ public class StudentBatchService {
 
     private void validateRequired(StudentCreateReq req) {
         if (req.getEmail() == null || req.getEmail().isEmpty()) throw new IllegalArgumentException("이메일 필수");
+        if (!EMAIL_PATTERN.matcher(req.getEmail()).matches())   throw new IllegalArgumentException("이메일 형식 오류: " + req.getEmail());
         if (req.getName() == null || req.getName().isEmpty())   throw new IllegalArgumentException("이름 필수");
         if (req.getBirth() == null)                             throw new IllegalArgumentException("생년월일 오류 (YYYY-MM-DD)");
         if (req.getTel() == null || req.getTel().isEmpty())     throw new IllegalArgumentException("전화번호 필수");
+        if (!TEL_PATTERN.matcher(req.getTel()).matches())       throw new IllegalArgumentException("전화번호 형식 오류 (숫자 10~11자리): " + req.getTel());
         if (req.getEntryDate() == null)                         throw new IllegalArgumentException("입학일 오류 (YYYY-MM-DD)");
     }
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어있습니다.");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("파일 크기는 5MB를 초과할 수 없습니다.");
         }
         String name = file.getOriginalFilename();
         if (name == null || !name.endsWith(".xlsx")) {
