@@ -6,6 +6,7 @@ import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.*;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
+import com.green.member.application.professor.ProfessorBatchService;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
@@ -32,6 +33,7 @@ import java.util.List;
 public class AdminController {
     private final AdminService adminService;
     private final StudentBatchService studentBatchService;
+    private final ProfessorBatchService professorBatchService;
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -80,6 +82,15 @@ public class AdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(template);
     }
+    // 교수 일괄 등록 템플릿 다운로드
+    @GetMapping("/professors/batch/template")
+    public ResponseEntity<byte[]> downloadProfessorTemplate() throws IOException {
+        byte[] template = professorBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"professor_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
 
     // 학생 일괄 등록
     @PostMapping("/students/batch")
@@ -87,6 +98,14 @@ public class AdminController {
         return ResultResponse.builder()
                 .message("학생 일괄 등록 완료")
                 .data(studentBatchService.batchRegister(file))
+                .build();
+    }
+    // 교수 일괄 등록
+    @PostMapping("/professors/batch")
+    public ResultResponse<?> batchRegisterProfessors(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("교수 일괄 등록 완료")
+                .data(professorBatchService.batchRegister(file))
                 .build();
     }
 
