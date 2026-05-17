@@ -14,9 +14,11 @@ import com.green.member.application.student.StudentBatchService;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.application.student.model.StudentListDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -103,6 +105,7 @@ public class AdminController {
     }
 
     // 학생 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/students/batch")
     public ResultResponse<?> batchRegisterStudents(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -111,6 +114,7 @@ public class AdminController {
                 .build();
     }
     // 교수 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/professors/batch")
     public ResultResponse<?> batchRegisterProfessors(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -119,6 +123,7 @@ public class AdminController {
                 .build();
     }
     // 관리자 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/admins/batch")
     public ResultResponse<?> batchRegisterAdmins(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -127,32 +132,39 @@ public class AdminController {
                 .build();
     }
 
+    // 학생 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/students")
-    public ResultResponse<?> createStudent(@RequestPart StudentCreateReq req,
+    public ResultResponse<?> createStudent(@RequestPart @Valid StudentCreateReq req,
                                            @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createStudent(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createStudent(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
-                .message("학생 정보 등록 성공")
+                .message("학생 정보 등록 성공했습니다")
                 .data(res)
                 .build();
     }
-
+    // 교수 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/professors")
-    public ResultResponse<?> createProfessor(@RequestPart ProfessorCreateReq req,
+    public ResultResponse<?> createProfessor(@RequestPart @Valid ProfessorCreateReq req,
                                              @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createProfessor(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createProfessor(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
-                .message("교수 정보 등록 성공")
+                .message("교수 정보 등록 성공했습니다")
                 .data(res)
                 .build();
     }
-
+    // 관리자 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/admins")
-    public ResultResponse<?> createAdmin(@RequestPart AdminCreateReq req,
+    public ResultResponse<?> createAdmin(@RequestPart @Valid AdminCreateReq req,
                                          @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createAdmin(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createAdmin(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
-                .message("관리자 정보 등록 성공")
+                .message("관리자 정보 등록 성공했습니다")
                 .data(res)
                 .build();
     }

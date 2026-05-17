@@ -1,5 +1,6 @@
 package com.green.member.application.student;
 
+import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.admin.AdminService;
 import com.green.member.application.admin.model.FailRowRes;
@@ -111,6 +112,6 @@ public class StudentBatchService extends MemberBatchService<StudentCreateReq> {
 
     @Override
     protected void save(StudentCreateReq req) {
-        adminService.createStudent(req, null);
+        adminService.createStudent(req, null, MemberContext.get().memberCode());
     }
 }
