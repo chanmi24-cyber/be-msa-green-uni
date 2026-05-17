@@ -31,8 +31,8 @@ public class StudentBatchService {
     private static final String[] HEADERS = {
         "이메일*", "이름*", "생년월일*(YYYY-MM-DD)", "전화번호*", "비상연락처",
         "우편번호", "주소", "상세주소", "입학일*(YYYY-MM-DD)", "학과명*",
-        "학년*", "학기*", "편입여부(Y/비워두기)", "다자녀여부(Y/비워두기)",
-        "보훈여부(Y/비워두기)"
+        "편입여부(Y)", "다자녀여부(Y)",
+        "보훈여부(Y)"
     };
 
     static final String SAMPLE_EMAIL = "__sample__@example.com";
@@ -40,13 +40,13 @@ public class StudentBatchService {
     private static final String[] SAMPLE_DATA = {
         SAMPLE_EMAIL, "홍길동", "2000-01-15", "01012345678", "01087654321",
         "06234", "서울특별시 강남구 테헤란로 123", "101호", "2024-03-01", "",
-        "1", "1", "", "", ""
+        "", "Y", ""
     };
 
     private static final int[] COL_WIDTHS = {
-        6000, 3000, 5000, 4500, 4500,
-        3500, 9000, 4000, 5000, 3000,
-        2500, 2500, 5000, 5000, 5000
+        6000, 3000, 6000, 4500, 4500,
+        3000, 9000, 5000, 6000, 5000,
+        3000, 3000, 3000
     };
 
     public byte[] generateTemplate() throws IOException {
@@ -57,7 +57,7 @@ public class StudentBatchService {
 
             // ── 헤더 스타일
             CellStyle headerStyle = workbook.createCellStyle();
-            headerStyle.setFillForegroundColor(IndexedColors.DARK_TEAL.getIndex());
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_GREEN.getIndex());
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
             setBorder(headerStyle);
@@ -65,7 +65,7 @@ public class StudentBatchService {
             headerFont.setBold(true);
             headerFont.setColor(IndexedColors.WHITE.getIndex());
             headerFont.setFontName("맑은 고딕");
-            headerFont.setFontHeightInPoints((short) 11);
+            headerFont.setFontHeightInPoints((short) 10);
             headerStyle.setFont(headerFont);
 
             DataFormat dataFormat = workbook.createDataFormat();
@@ -75,10 +75,10 @@ public class StudentBatchService {
             sampleFont.setItalic(true);
             sampleFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
             sampleFont.setFontName("맑은 고딕");
-            sampleFont.setFontHeightInPoints((short) 10);
+            sampleFont.setFontHeightInPoints((short) 9);
 
             CellStyle sampleStyle = workbook.createCellStyle();
-            sampleStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
+            sampleStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
             sampleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             setBorder(sampleStyle);
             sampleStyle.setFont(sampleFont);
@@ -93,46 +93,45 @@ public class StudentBatchService {
             sampleDateStyle.cloneStyleFrom(sampleStyle);
             sampleDateStyle.setDataFormat(dataFormat.getFormat("YYYY-MM-DD"));
 
-            // ── 데이터 입력 열 서식 (사용자가 입력할 빈 셀에 적용)
+            // ── 데이터 입력 열 서식
             CellStyle colTextStyle = workbook.createCellStyle();
             colTextStyle.setDataFormat(dataFormat.getFormat("@"));
 
             CellStyle colDateStyle = workbook.createCellStyle();
             colDateStyle.setDataFormat(dataFormat.getFormat("YYYY-MM-DD"));
 
-            // ── 헤더 행 (0행)
+            // ── 헤더 행
             Row headerRow = sheet.createRow(0);
-            headerRow.setHeightInPoints(22);
+            headerRow.setHeightInPoints(20);
             for (int i = 0; i < HEADERS.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(HEADERS[i]);
                 cell.setCellStyle(headerStyle);
             }
 
-            // ── 샘플 데이터 행 (열별 서식 적용)
+            // ── 샘플 데이터 행
             Row sampleRow = sheet.createRow(1);
             sampleRow.setHeightInPoints(18);
             for (int i = 0; i < SAMPLE_DATA.length; i++) {
                 Cell cell = sampleRow.createCell(i);
                 cell.setCellValue(SAMPLE_DATA[i]);
-                // 날짜 열: C(2), I(8) / 텍스트 열: D(3), E(4), F(5)
-                if (i == 2 || i == 8) {
+                if (i == 2 || i == 8) { // 날짜 열
                     cell.setCellStyle(sampleDateStyle);
-                } else if (i == 3 || i == 4 || i == 5) {
+                } else if (i == 3 || i == 4 || i == 5) { // 텍스트 열
                     cell.setCellStyle(sampleTextStyle);
                 } else {
                     cell.setCellStyle(sampleStyle);
                 }
             }
 
-            // ── 열 기본 서식 (사용자 입력 셀에 자동 적용)
+            // ── 열 기본 서식
             sheet.setDefaultColumnStyle(2, colDateStyle);  // 생년월일
             sheet.setDefaultColumnStyle(3, colTextStyle);  // 전화번호
             sheet.setDefaultColumnStyle(4, colTextStyle);  // 비상연락처
             sheet.setDefaultColumnStyle(5, colTextStyle);  // 우편번호
             sheet.setDefaultColumnStyle(8, colDateStyle);  // 입학일
 
-            // ── 학과명 드롭다운 (숨김 시트 + Named Range 방식)
+            // ── 학과명 드롭다운
             if (!activeMajors.isEmpty()) {
                 Sheet majorSheet = workbook.createSheet("학과목록");
                 workbook.setSheetVisibility(
@@ -185,7 +184,7 @@ public class StudentBatchService {
         Map<String, Long> majorNameToId = majorCacheRepository.findByActive("RUNNING").stream()
                 .collect(Collectors.toMap(MajorCache::getName, MajorCache::getMajorId));
 
-        // ── 1단계: 파싱·검증만 (DB 접근 없음) ──────────────
+        // ── 1단계: 파싱·검증만  ──────────────
         try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -223,7 +222,7 @@ public class StudentBatchService {
             } catch (org.springframework.dao.DataIntegrityViolationException e) {
                 String reason = e.getMessage() != null && e.getMessage().contains("Duplicate entry")
                         ? "이미 등록된 이메일 또는 전화번호"
-                        : "DB 저장 오류";
+                        : "데이터 저장 오류가 발생";
                 throw new IllegalStateException(
                     String.format("%d행 오류로 전체 등록이 취소되었습니다. (%s) 수정 후 전체 파일을 재업로드해주세요.", i + 2, reason));
             }
@@ -251,11 +250,11 @@ public class StudentBatchService {
         if (majorId == null) throw new IllegalArgumentException("존재하지 않는 학과명: " + majorName);
         req.setMajorId(majorId);
 
-        req.setAcademicYear(parseInt(getString(row, 10), "학년"));
-        req.setSemester(parseInt(getString(row, 11), "학기"));
-        req.setIsTransfer(parseBoolean(getString(row, 12)));
-        req.setIsMultiChild(parseBoolean(getString(row, 13)));
-        req.setIsVeteran(parseBoolean(getString(row, 14)));
+        req.setAcademicYear(1);
+        req.setSemester(1);
+        req.setIsTransfer(parseBoolean(getString(row, 10)));
+        req.setIsMultiChild(parseBoolean(getString(row, 11)));
+        req.setIsVeteran(parseBoolean(getString(row, 12)));
         req.setStatus(EnumStudentStatus.UNREGISTERED);
 
         validateRequired(req);
@@ -268,8 +267,6 @@ public class StudentBatchService {
         if (req.getBirth() == null)                             throw new IllegalArgumentException("생년월일 오류 (YYYY-MM-DD)");
         if (req.getTel() == null || req.getTel().isEmpty())     throw new IllegalArgumentException("전화번호 필수");
         if (req.getEntryDate() == null)                         throw new IllegalArgumentException("입학일 오류 (YYYY-MM-DD)");
-        if (req.getAcademicYear() == null)                      throw new IllegalArgumentException("학년 필수");
-        if (req.getSemester() == null)                          throw new IllegalArgumentException("학기 필수");
     }
 
     private void validateFile(MultipartFile file) {
@@ -304,15 +301,6 @@ public class StudentBatchService {
             return LocalDate.parse(value);
         } catch (Exception e) {
             throw new IllegalArgumentException(fieldName + " 형식 오류 (YYYY-MM-DD): " + value);
-        }
-    }
-
-private Integer parseInt(String value, String fieldName) {
-        if (value == null || value.isEmpty()) return null;
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(fieldName + " 숫자 형식 오류: " + value);
         }
     }
 
