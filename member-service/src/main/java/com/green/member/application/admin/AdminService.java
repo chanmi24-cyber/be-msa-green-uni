@@ -82,7 +82,7 @@ public class AdminService {
         return adminRepository.findAdminList();
     }
 
-    // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
+    // 회원 계정 등록. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
         // 파일 처리
         String savedPicFileName = pic == null ? null : myFileUtil.makeRandomFileName(pic);
@@ -92,6 +92,11 @@ public class AdminService {
 
         // 배치 등록 시 이전 행의 INSERT가 반영된 상태에서 순번을 계산하도록 명시적 플러시
         memberRepository.flush();
+
+        // 이미 등록된 이메일인지 검사
+        if( memberRepository.existsByEmail(req.getEmail()) ){
+            throw new BusinessException(MemberErrorCode.DUPLICATE_EMAIL);
+        }
 
         // 순번 조회
         int seq = switch (role) {
@@ -169,7 +174,7 @@ public class AdminService {
                 .isTransfer(req.getIsTransfer() != null ? req.getIsTransfer() : false)
                 .isMultiChild(req.getIsMultiChild() != null ? req.getIsMultiChild() : false)
                 .isVeteran(req.getIsVeteran() != null ? req.getIsVeteran() : false)
-                .status(req.getStatus() != null ? req.getStatus() : EnumStudentStatus.UNREGISTERED)
+                .status(req.getStatus())
                 .build();
 
         Student savedStudent = studentRepository.save(newStudent);
@@ -213,11 +218,11 @@ public class AdminService {
                 .member(member)
                 .majorId(req.getMajorId())
                 .degree(req.getDegree())
-                .position(req.getPosition() != null ? req.getPosition() : EnumProfessorPosition.PROFESSOR)
+                .position(req.getPosition())
                 .labBuilding(req.getLabBuilding())
                 .labRoom(req.getLabRoom())
                 .labTel(req.getLabTel())
-                .status(req.getStatus() != null ? req.getStatus() : EnumProfessorStatus.EMPLOYMENT)
+                .status(req.getStatus())
                 .build();
 
         Professor savedProfessor = professorRepository.save(newProfessor);
@@ -246,7 +251,7 @@ public class AdminService {
 
         Admin newAdmin = Admin.builder()
                 .member(member)
-                .status(req.getStatus() != null ? req.getStatus() : EnumAdminStatus.EMPLOYMENT)
+                .status(req.getStatus())
                 .build();
 
         adminRepository.save(newAdmin);
