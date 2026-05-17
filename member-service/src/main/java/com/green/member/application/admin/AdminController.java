@@ -34,6 +34,7 @@ public class AdminController {
     private final AdminService adminService;
     private final StudentBatchService studentBatchService;
     private final ProfessorBatchService professorBatchService;
+    private final AdminBatchService adminBatchService;
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -91,6 +92,15 @@ public class AdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(template);
     }
+    // 관리자 일괄 등록 템플릿 다운로드
+    @GetMapping("/admins/batch/template")
+    public ResponseEntity<byte[]> downloadAdminTemplate() throws IOException {
+        byte[] template = adminBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"admin_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
 
     // 학생 일괄 등록
     @PostMapping("/students/batch")
@@ -106,6 +116,14 @@ public class AdminController {
         return ResultResponse.builder()
                 .message("교수 일괄 등록 완료")
                 .data(professorBatchService.batchRegister(file))
+                .build();
+    }
+    // 관리자 일괄 등록
+    @PostMapping("/admins/batch")
+    public ResultResponse<?> batchRegisterAdmins(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("관리자 일괄 등록 완료")
+                .data(adminBatchService.batchRegister(file))
                 .build();
     }
 
