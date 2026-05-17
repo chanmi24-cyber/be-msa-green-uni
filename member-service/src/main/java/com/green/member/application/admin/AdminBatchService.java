@@ -1,5 +1,6 @@
 package com.green.member.application.admin;
 
+import com.green.common.auth.MemberContext;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.admin.model.FailRowRes;
 import com.green.member.application.member.MemberBatchService;
@@ -66,6 +67,6 @@ public class AdminBatchService extends MemberBatchService<AdminCreateReq> {
 
     @Override
     protected void save(AdminCreateReq req) {
-        adminService.createAdmin(req, null);
+        adminService.createAdmin(req, null, MemberContext.get().memberCode());
     }
 }

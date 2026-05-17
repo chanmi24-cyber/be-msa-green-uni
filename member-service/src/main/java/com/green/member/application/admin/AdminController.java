@@ -105,6 +105,7 @@ public class AdminController {
     }
 
     // 학생 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/students/batch")
     public ResultResponse<?> batchRegisterStudents(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -113,6 +114,7 @@ public class AdminController {
                 .build();
     }
     // 교수 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/professors/batch")
     public ResultResponse<?> batchRegisterProfessors(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -121,6 +123,7 @@ public class AdminController {
                 .build();
     }
     // 관리자 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/admins/batch")
     public ResultResponse<?> batchRegisterAdmins(@RequestParam("file") MultipartFile file) throws IOException {
         return ResultResponse.builder()
@@ -134,7 +137,8 @@ public class AdminController {
     @PostMapping("/students")
     public ResultResponse<?> createStudent(@RequestPart @Valid StudentCreateReq req,
                                            @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createStudent(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createStudent(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("학생 정보 등록 성공했습니다")
                 .data(res)
@@ -145,7 +149,8 @@ public class AdminController {
     @PostMapping("/professors")
     public ResultResponse<?> createProfessor(@RequestPart @Valid ProfessorCreateReq req,
                                              @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createProfessor(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createProfessor(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("교수 정보 등록 성공했습니다")
                 .data(res)
@@ -156,7 +161,8 @@ public class AdminController {
     @PostMapping("/admins")
     public ResultResponse<?> createAdmin(@RequestPart @Valid AdminCreateReq req,
                                          @RequestPart(required = false) MultipartFile pic) {
-        MemberCreateRes res = adminService.createAdmin(req, pic);
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createAdmin(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("관리자 정보 등록 성공했습니다")
                 .data(res)
