@@ -111,6 +111,6 @@ public class StudentBatchService extends MemberBatchService<StudentCreateReq> {
 
     @Override
     protected void save(StudentCreateReq req) {
-        adminService.createStudent(req, null);
+        adminService.createStudent(req, null, MemberContext.get().memberCode());
     }
 }

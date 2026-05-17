@@ -1,5 +1,6 @@
 package com.green.member.application.professor;
 
+import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumProfessorDegree;
 import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.member.application.admin.AdminService;
@@ -147,7 +148,7 @@ public class ProfessorBatchService extends MemberBatchService<ProfessorCreateReq
 
     @Override
     protected void save(ProfessorCreateReq req) {
-        adminService.createProfessor(req, null);
+        adminService.createProfessor(req, null, MemberContext.get().memberCode());
     }
 
     private EnumProfessorPosition parsePosition(String value) {
