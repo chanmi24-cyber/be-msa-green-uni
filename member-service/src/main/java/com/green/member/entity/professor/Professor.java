@@ -6,6 +6,8 @@ import com.green.member.entity.member.Member;
 import com.green.common.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;
+import com.green.member.enumcode.NullableBuildingConverter;
+import com.green.member.enumcode.NullableProfessorStatusConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,7 +38,8 @@ public class Professor extends UpdatedAt {
     @Builder.Default
     private EnumProfessorPosition position = EnumProfessorPosition.PROFESSOR;
 
-    @Column(name = "lab_building", nullable = false, length = 30)
+    @Convert(converter = NullableBuildingConverter.class)
+    @Column(name = "lab_building", length = 30)
     private EnumBuilding labBuilding;
 
     @Column(name = "lab_room", length = 20)
