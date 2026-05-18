@@ -1,6 +1,8 @@
 package com.green.core.entity.tuition;
 import com.green.common.entity.CreatedAt;
+import com.green.common.exception.BusinessException;
 import com.green.core.enumcode.EnumTuitionStatus;
+import com.green.core.exception.TuitionErrorCode;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,7 +56,34 @@ public class Tuition extends CreatedAt {
     @Column(name = "deadline", nullable = false)
     private LocalDateTime deadline;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumTuitionStatus status = EnumTuitionStatus.UNPAID;
+
+    public void requestPayment() {
+        if (this.status == EnumTuitionStatus.PAID) {
+            throw new BusinessException(TuitionErrorCode.ALREADY_PAID);
+        }
+        this.status = EnumTuitionStatus.PENDING;
+    }
+
+    public void completePayment(Long updatorCode) {
+        this.status = EnumTuitionStatus.PAID;
+        this.paidAt = LocalDateTime.now();
+        this.updatorCode = updatorCode;
+    }
+
+    public void updateStatus(EnumTuitionStatus status, Long updatorCode) {
+        this.status = status;
+        this.updatorCode = updatorCode;
+        if (status == EnumTuitionStatus.PAID) {
+            this.paidAt = LocalDateTime.now();
+        }
+    }
+
+    public void updateScholarshipDeduction(long totalDiscount, long finalAmount) {
+        this.totalDiscount = totalDiscount;
+        this.finalAmount = finalAmount;
+    }
 }
