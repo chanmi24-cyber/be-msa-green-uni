@@ -1,7 +1,6 @@
 package com.green.member.application.professor;
 
 import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.professor.model.ProfessorHistoryRes;
@@ -10,7 +9,7 @@ import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.exception.MemberErrorCode;
-import com.green.member.repository.MajorCacheRepository;
+import com.green.member.application.major.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

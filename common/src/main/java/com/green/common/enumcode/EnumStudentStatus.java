@@ -20,6 +20,7 @@ public enum EnumStudentStatus implements EnumMapperType {
 
     @JsonCreator
     public static EnumStudentStatus from(String value) {
+        if (value == null || value.isBlank()) return null;
         for (EnumStudentStatus status : EnumStudentStatus.values()) {
             if (status.getCode().equalsIgnoreCase(value)) {
                 return status;

@@ -30,7 +30,7 @@ public enum EnumBuilding implements EnumMapperType {
 
     @JsonCreator
     public static EnumBuilding from(String value) {
-        if (value == null) return null;
+        if (value == null || value.isBlank()) return null;
 
         for (EnumBuilding building : EnumBuilding.values()) {
             // 1. 한글 명칭("인문관")으로 비교
