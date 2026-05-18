@@ -27,6 +27,11 @@ spring:
                 allow-credentials: true
                 max-age: 3600
 
+          # 파일 업로드 크기 제한
+          http:
+            codec:
+              max-in-memory-size: 5MB
+
           # 라우팅 설정
           routes:
             - id: auth-service
