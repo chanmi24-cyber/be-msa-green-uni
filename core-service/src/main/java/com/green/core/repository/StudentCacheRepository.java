@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface StudentCacheRepository extends JpaRepository<StudentCache, Long> {
     @Modifying
     @Query("UPDATE StudentCache s SET s.email = :email WHERE s.memberCode = :memberCode")
@@ -37,4 +39,6 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
     @Query("UPDATE StudentCache s SET s.status = :status WHERE s.memberCode = :memberCode")
     void updateStatus(@Param("memberCode") Long memberCode,
                       @Param("status") EnumStudentStatus status);
+
+    List<StudentCache> findAllByStatus(EnumStudentStatus status);
 }
