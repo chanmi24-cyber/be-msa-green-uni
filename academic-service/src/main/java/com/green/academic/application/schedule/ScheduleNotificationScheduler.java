@@ -66,6 +66,7 @@ public class ScheduleNotificationScheduler {
                 schedule.getScheduleId(),
                 buildAdminUrl(type, schedule));
         schedule.markNotifiedStart();
+        scheduleRepository.save(schedule);
     }
 
     private void processDeadlineNotifications(Schedule schedule, LocalDate today, LocalDate startDate, LocalDate endDate) {
@@ -97,6 +98,7 @@ public class ScheduleNotificationScheduler {
                             buildAdminUrl(schedule.getType(), schedule));
                 }
                 schedule.markNotifiedThreeDaysBefore();
+                scheduleRepository.save(schedule);
             }
         }
 
@@ -117,6 +119,7 @@ public class ScheduleNotificationScheduler {
                             buildAdminUrl(schedule.getType(), schedule));
                 }
                 schedule.markNotifiedEnd();
+                scheduleRepository.save(schedule);
             }
         }
     }
