@@ -30,6 +30,10 @@ spring:
       hibernate:
         temp:
           use_jdbc_metadata_defaults: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   kafka:
     bootstrap-servers: localhost:9092
     # [발행] student, professor 이벤트를 Outbox에 담아 보냄

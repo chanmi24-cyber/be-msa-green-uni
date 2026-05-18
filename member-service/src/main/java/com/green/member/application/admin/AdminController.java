@@ -208,7 +208,7 @@ public class AdminController {
 
     // 관리자 계정 상태 변경
     @PatchMapping("/admins/{memberCode}/status")
-    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateAdminReq req) {
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody @Valid StatusUpdateAdminReq req) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateAdminStatus(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
@@ -217,7 +217,7 @@ public class AdminController {
     }
     // 교수 계정 상태 변경
     @PatchMapping("/professors/{memberCode}/status")
-    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateProfessorReq req) {
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody @Valid StatusUpdateProfessorReq req) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateProfessorStatus(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
@@ -226,7 +226,7 @@ public class AdminController {
     }
     // 학생 계정 상태 변경
     @PatchMapping("/students/{memberCode}/status")
-    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateStudentReq req) {
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody @Valid StatusUpdateStudentReq req) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateStudentStatus(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()

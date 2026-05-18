@@ -3,6 +3,7 @@ package com.green.member.application.professor.model;
 import com.green.common.enumcode.EnumProfessorStatus;
 import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumProfessorPosition;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 public class StatusUpdateProfessorReq {
+    @NotNull(message = "상태값은 필수입니다")
     private EnumProfessorStatus status;
     private EnumProfessorPosition position;
     private String reason;
