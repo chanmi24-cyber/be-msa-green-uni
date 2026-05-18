@@ -9,6 +9,7 @@ import com.green.member.application.student.model.StudentProfileRes;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.student.Student;
+import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.application.major.MajorCacheRepository;
@@ -38,7 +39,7 @@ public class StudentService {
         StudentMajor mainMajor = majors.stream()
                 .filter(m -> m.getType() == EnumMajorType.PRIMARY)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
         StudentMajor subMajor = majors.stream()
                 .filter(m -> m.getType() == EnumMajorType.MINOR)
                 .findFirst()
@@ -81,8 +82,12 @@ public class StudentService {
     // 학생 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<StudentHistoryRes> findStudentHistory(Long memberCode){
-        return studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode)
-                .stream()
+        List<StudentHistory> histories =
+                studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode);
+        if (histories.isEmpty()) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        return histories.stream()
                 .map( h -> {
                     StudentHistoryRes res = new StudentHistoryRes();
                     res.setChangeType(h.getChangeType());
