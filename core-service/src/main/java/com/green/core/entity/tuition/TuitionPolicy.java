@@ -36,4 +36,9 @@ public class TuitionPolicy extends CreatedUpdatedAt {
 
     @Column(name = "updator_code", nullable = false)
     private Long updatorCode;
+
+    public void updateBaseAmount(Long baseAmount, Long updatorCode) {
+        this.baseAmount = baseAmount;
+        this.updatorCode = updatorCode;
+    }
 }

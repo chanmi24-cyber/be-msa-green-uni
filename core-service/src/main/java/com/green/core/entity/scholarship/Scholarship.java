@@ -1,4 +1,4 @@
-package com.green.core.entity.tuition;
+package com.green.core.entity.scholarship;
 import com.green.common.entity.CreatedAt;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
