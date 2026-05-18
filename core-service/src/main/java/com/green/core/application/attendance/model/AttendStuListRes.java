@@ -22,8 +22,10 @@ public class AttendStuListRes {
     @Getter
     @AllArgsConstructor
     public static class Detail {
-        private String attendDate;  // "2026-04-01(수)" 형식 — 서비스에서 포맷 후 전달
-        private String status;      // 영문 code: ATTEND | ABSENT | LATE | EARLY_LEAVE
-        private String reason;      // 사유 (교수 수동 입력 시 존재, 없으면 null)
+        private String attendDate;   // "2026-04-01(수)" / "2026-05-01(수)(휴강)" / "(보강)" 포함 포맷
+        private String status;       // ATTEND | ABSENT | LATE | EARLY_LEAVE | null(CANCEL 세션)
+        private String reason;       // 사유 (교수 수동 입력 시 존재, 없으면 null)
+        // [추가] QR 스캔 시각 — ATTEND·LATE 만 "HH:mm" 형식, 나머지 null
+        private String attendedAt;
     }
 }
