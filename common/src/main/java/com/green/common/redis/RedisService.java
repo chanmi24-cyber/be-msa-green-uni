@@ -14,7 +14,7 @@ import java.util.Set;
 public class RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // 저장 (키가 같으면 덮어씀 = 같은 기기로 재로그인 시 RT 갱신)
+    // 저장 (키가 같으면 덮어씀)
     public void save(String key, Object value, long timeoutSeconds) {
         // 데이터 저장 및 만료 시간 설정
         redisTemplate.opsForValue().set(key, value, Duration.ofSeconds(timeoutSeconds));
@@ -31,10 +31,23 @@ public class RedisService {
         return Boolean.TRUE.equals(redisTemplate.delete(key));
     }
 
+    // 모든 세션 삭제
     public void deleteAllByMemberCode(Long memberCode){
         Set<String> keys = redisTemplate.keys("RT-" + memberCode + ":*");
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
+        }
+    }
+
+    // 현재 기기(deviceId)를 제외한 다른 기기 세션 삭제
+    public void deleteAllByMemberCodeExcept(Long memberCode, String deviceId){
+        Set<String> keys = redisTemplate.keys("RT-" + memberCode + ":*");
+        if (keys != null && !keys.isEmpty()) {
+            String currentKey = "RT-" + memberCode + ":" + deviceId;
+            keys.remove(currentKey);
+            if (!keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
         }
     }
 

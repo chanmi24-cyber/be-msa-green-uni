@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ProfessorHistoryRepository extends JpaRepository<ProfessorHistory, Long> {
-    List<ProfessorHistory> findByProfessor_MemberCode(Long memberCode);
+    List<ProfessorHistory> findByProfessor_MemberCodeOrderByCreatedAtDesc(Long memberCode);
 }

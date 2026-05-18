@@ -13,6 +13,7 @@ import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
+import com.green.core.exception.MajorErrorCode;
 import com.green.core.kafka.NotificationProducer;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class LectureService {
         schedulePeriodValidator.checkCourseOpen();
 
         Major major = majorRepository.findById(req.getMajorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         Lecture lecture = Lecture.builder()
                 .memberCode(memberDto.memberCode())  // MemberDto record라서 ()로 호출
@@ -72,7 +73,31 @@ public class LectureService {
 
         for (LectureCreateReq.ScheduleReq s : req.getSchedules()) {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
+                    .orElseThrow(() -> new BusinessException(LectureErrorCode.CLASSROOM_NOT_FOUND));
+
+            // 수용인원 체크
+            if (req.getMaxStd() > classroom.getCapacity()) {
+                throw new BusinessException(LectureErrorCode.EXCEED_CLASSROOM_CAPACITY);
+            }
+
+            // 교수 시간 충돌 체크
+            long professorConflict = lectureScheduleRepository.countProfessorConflict(
+                    memberDto.memberCode(),
+                    s.getDayOfWeek(),
+                    s.getStartPeriod(),
+                    s.getEndPeriod(),
+                    req.getYear(),
+                    req.getSemester()
+            );
+            if (professorConflict > 0) {
+                throw new BusinessException(LectureErrorCode.PROFESSOR_SCHEDULE_CONFLICT);
+            }
+
+            // 날짜 순서 체크
+            if (req.getStartDate() != null && req.getEndDate() != null
+                    && req.getStartDate().isAfter(req.getEndDate())) {
+                throw new BusinessException(LectureErrorCode.INVALID_DATE_RANGE);
+            }
 
             LectureSchedule schedule = LectureSchedule.builder()
                     .lecture(lecture)
@@ -152,9 +177,9 @@ public class LectureService {
 
         } else if (memberDto.role() == EnumMemberRole.PROFESSOR) {
             res = lectureMapper.findProAdmLectureDetail(lectureId);
-            // 본인 강의인지 체크
+            // 본인 강의가 아니면 → 403 대신 학생용으로 fallback
             if (res != null && !res.getMemberCode().equals(memberDto.memberCode())) {
-                throw new BusinessException(LectureErrorCode.LECTURE_FORBIDDEN);
+                res = lectureMapper.findStudentLectureDetail(lectureId);
             }
 
         } else { // ADMIN
@@ -205,13 +230,13 @@ public class LectureService {
 
         //수정로직
         Major major = majorRepository.findById(req.getMajorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         // 기존 스케줄 삭제 후 재등록
         lectureScheduleRepository.deleteAllByLecture(lecture);
         for (LectureDetailReq.ScheduleReq s : req.getSchedules()) {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
+                    .orElseThrow(() -> new BusinessException(LectureErrorCode.CLASSROOM_NOT_FOUND));
             LectureSchedule schedule = LectureSchedule.builder()
                     .lecture(lecture)
                     .classRoom(classroom)
@@ -266,5 +291,7 @@ public class LectureService {
         //삭제로직
         lecture.delete();
     }
+
+
 
 }

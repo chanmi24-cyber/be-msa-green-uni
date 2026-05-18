@@ -1,7 +1,7 @@
 package com.green.common.kafka.auth;
 
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.constants.UpdateType;
 import com.green.common.kafka.KafkaEvent;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,5 +21,5 @@ public class AuthMemberEvent implements Serializable, KafkaEvent {
     private String role;
     private Boolean isActive;
     private EventType eventType;
-    private String updateType;
+    private UpdateType updateType;
 }

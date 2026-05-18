@@ -35,9 +35,7 @@ public class AuthMember extends CreatedUpdatedAt {
     @Builder.Default
     private Boolean isFirstLogin = true;
 
-    public void deactivate() {
-        this.isActive = false;
-    }
+    public void deactivate() { this.isActive = false; }
     public void updatePassword(String hashedPw) { this.password = hashedPw;  }
     public void updateFirstLogin() { this.isFirstLogin = false; }
     public void updateEmail(String email){ this.email = email; }

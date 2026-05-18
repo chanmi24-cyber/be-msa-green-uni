@@ -1,9 +1,8 @@
 package com.green.common.kafka.member;
 
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.constants.UpdateType;
 import com.green.common.kafka.KafkaEvent;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,5 +28,5 @@ public class StudentEvent implements Serializable, KafkaEvent {
     private Boolean isMultiChild;
     private Boolean isVeteran;
     private EventType eventType;
-    private String updateType;
+    private UpdateType updateType;
 }

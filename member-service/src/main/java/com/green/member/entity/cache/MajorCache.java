@@ -18,6 +18,9 @@ public class MajorCache {
     @Column(name = "name", nullable = false, length = 20)
     private String name;
 
+    @Column(name = "college_id")
+    private Long collegeId;
+
     @Column(name = "college_name", nullable = false, length = 50)
     private String collegeName;
 
