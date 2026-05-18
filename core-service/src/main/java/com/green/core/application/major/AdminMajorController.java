@@ -1,5 +1,7 @@
 package com.green.core.application.major;
 
+import com.green.common.auth.MemberContext;
+import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.core.application.major.model.CollegeListRes;
 import com.green.core.application.major.model.*;
@@ -52,7 +54,8 @@ public class AdminMajorController {
     @PatchMapping("/{majorId}")
     public ResultResponse<Void> editMajor(@PathVariable Long majorId,
                                             @RequestBody MajorCreateUpdateReq req) {
-        majorService.editMajor(majorId, req);
+        MemberDto memberDto = MemberContext.get(); // 여기서만 선언
+        majorService.editMajor(memberDto, majorId, req);
         return ResultResponse.<Void>builder()
                 .message("학과 수정 완료")
                 .build();

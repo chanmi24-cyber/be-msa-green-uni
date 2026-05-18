@@ -32,8 +32,7 @@ public class WebSecurityConfiguration {
                 .cors( cors -> cors.configurationSource(corsConfigurationSource()) )
                 //인가처리 (권한처리)
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers("/api/academic/public/**").permitAll() // 비로그인 가능
+                        .requestMatchers("/api/academic/public/**", "/api/auth/**").permitAll() // 비로그인 가능
 
                         // 권한별 접근 제어
                         .requestMatchers("/api/*/admin/**").hasRole(EnumMemberRole.ADMIN.name())
@@ -59,7 +58,7 @@ public class WebSecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins( List.of("http://localhost:5173", "http://localhost:5174") );
+        config.setAllowedOrigins( List.of("http://localhost:5173", "http://localhost:5174", "http://192.168.0.31:5173", "https://localhost:5173", "https://localhost:5174", "https://192.168.0.31:5173") );
         config.setAllowedMethods( List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS") );
         config.setAllowedHeaders( List.of("*") );
         config.setAllowCredentials(true);

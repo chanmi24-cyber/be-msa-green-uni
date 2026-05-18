@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = {"com.green.common", "com.green.core"})
 @EntityScan(basePackages = {"com.green.common", "com.green.core"})
-@EnableJpaRepositories(basePackages = {"com.green.common", "com.green.core"})
 public class CoreApplication {
     public static void main(String[] args) {
         SpringApplication.run(CoreApplication.class, args);

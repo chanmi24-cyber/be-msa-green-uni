@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ScheduleActivator {
+public class ScheduleProducer {
 
     private final ScheduleRepository scheduleRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
