@@ -25,4 +25,12 @@ public class MajorCacheController {
                 .data(majorCacheService.findAll())
                 .build();
     }
+
+    @GetMapping("/colleges")
+    public ResultResponse<?> getCollegeList() {
+        return ResultResponse.builder()
+                .message("단과대 목록 조회")
+                .data(majorCacheService.findColleges())
+                .build();
+    }
 }
