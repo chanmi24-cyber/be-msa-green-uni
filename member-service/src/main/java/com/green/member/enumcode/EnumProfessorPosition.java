@@ -19,6 +19,7 @@ public enum EnumProfessorPosition implements EnumMapperType {
 
     @JsonCreator
     public static EnumProfessorPosition from(String value) {
+        if (value == null || value.isBlank()) return null;
         for (EnumProfessorPosition position : EnumProfessorPosition.values()) {
             if (position.getCode().equalsIgnoreCase(value)) {
                 return position;

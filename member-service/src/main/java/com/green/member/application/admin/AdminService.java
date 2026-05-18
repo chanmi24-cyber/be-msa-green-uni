@@ -3,6 +3,8 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
@@ -24,8 +26,6 @@ import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
-import com.green.member.application.student.model.StatusUpdateStudentReq;
-import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
@@ -66,13 +66,37 @@ public class AdminService {
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
 
-    // 회원 정보 추가. 공통 처리: member 저장 + memberCode 생성
+    // 학생 목록 조회
+    @Transactional(readOnly = true)
+    public List<StudentListDto> findStudents() {
+        return studentRepository.findStudentList();
+    }
+    // 교수 목록 조회
+    @Transactional(readOnly = true)
+    public List<ProfessorListDto> findProfessors() {
+        return professorRepository.findProfessorList();
+    }
+    // 관리자 목록 조회
+    @Transactional(readOnly = true)
+    public List<AdminListDto> findAdmins() {
+        return adminRepository.findAdminList();
+    }
+
+    // 회원 계정 등록. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
         // 파일 처리
         String savedPicFileName = pic == null ? null : myFileUtil.makeRandomFileName(pic);
 
         // 입학 연도
         int entryYear = req.getEntryDate().getYear();
+
+        // 배치 등록 시 이전 행의 INSERT가 반영된 상태에서 순번을 계산하도록 명시적 플러시
+        memberRepository.flush();
+
+        // 이미 등록된 이메일인지 검사
+        if( memberRepository.existsByEmail(req.getEmail()) ){
+            throw new BusinessException(MemberErrorCode.DUPLICATE_EMAIL);
+        }
 
         // 순번 조회
         int seq = switch (role) {
@@ -139,7 +163,7 @@ public class AdminService {
 
     // 학생 정보 추가
     @Transactional
-    public MemberCreateRes createStudent(StudentCreateReq req, MultipartFile pic) {
+    public MemberCreateRes createStudent(StudentCreateReq req, MultipartFile pic, Long updaterCode) {
         Member member = createMember(req, pic, EnumMemberRole.STUDENT);
 
         // 학생 테이블 저장
@@ -150,7 +174,7 @@ public class AdminService {
                 .isTransfer(req.getIsTransfer() != null ? req.getIsTransfer() : false)
                 .isMultiChild(req.getIsMultiChild() != null ? req.getIsMultiChild() : false)
                 .isVeteran(req.getIsVeteran() != null ? req.getIsVeteran() : false)
-                .status(req.getStatus() != null ? req.getStatus() : EnumStudentStatus.UNREGISTERED)
+                .status(req.getStatus())
                 .build();
 
         Student savedStudent = studentRepository.save(newStudent);
@@ -163,6 +187,17 @@ public class AdminService {
                 .build();
 
         StudentMajor savedStudentMajor = studentMajorRepository.save(studentMajor);
+
+        // 입학 이력 저장 (신규입학 / 편입학 구분)
+        String changeType = savedStudent.getIsTransfer() ? "편입학" : "신규입학";
+        studentHistoryRepository.save(StudentHistory.builder()
+                .student(savedStudent)
+                .changeType(changeType)
+                .oldStatus(null)
+                .newStatus(savedStudent.getStatus())
+                .startDate(member.getEntryDate())
+                .updatorCode(updaterCode)
+                .build());
 
         // StudentEvent Outbox 저장
         StudentEvent studentEvent = StudentEvent.builder()
@@ -187,21 +222,32 @@ public class AdminService {
 
     // 교수 정보 추가
     @Transactional
-    public MemberCreateRes createProfessor(ProfessorCreateReq req, MultipartFile pic) {
+    public MemberCreateRes createProfessor(ProfessorCreateReq req, MultipartFile pic, Long updaterCode) {
         Member member = createMember(req, pic, EnumMemberRole.PROFESSOR);
 
         Professor newProfessor = Professor.builder()
                 .member(member)
                 .majorId(req.getMajorId())
                 .degree(req.getDegree())
-                .position(req.getPosition() != null ? req.getPosition() : EnumProfessorPosition.PROFESSOR)
+                .position(req.getPosition())
                 .labBuilding(req.getLabBuilding())
                 .labRoom(req.getLabRoom())
                 .labTel(req.getLabTel())
-                .status(req.getStatus() != null ? req.getStatus() : EnumProfessorStatus.EMPLOYMENT)
+                .status(req.getStatus())
                 .build();
 
         Professor savedProfessor = professorRepository.save(newProfessor);
+
+        // 신규임용 이력 저장
+        professorHistoryRepository.save(ProfessorHistory.builder()
+                .professor(savedProfessor)
+                .changeType("신규임용")
+                .oldStatus(null)
+                .newStatus(savedProfessor.getStatus())
+                .newPosition(savedProfessor.getPosition())
+                .startDate(member.getEntryDate())
+                .updatorCode(updaterCode)
+                .build());
 
         // ProfessorEvent Outbox 저장
         ProfessorEvent professorEvent = ProfessorEvent.builder()
@@ -222,15 +268,25 @@ public class AdminService {
 
     // 관리자 정보 추가
     @Transactional
-    public MemberCreateRes createAdmin(AdminCreateReq req, MultipartFile pic) {
+    public MemberCreateRes createAdmin(AdminCreateReq req, MultipartFile pic, Long updaterCode) {
         Member member = createMember(req, pic, EnumMemberRole.ADMIN);
 
         Admin newAdmin = Admin.builder()
                 .member(member)
-                .status(req.getStatus() != null ? req.getStatus() : EnumAdminStatus.EMPLOYMENT)
+                .status(req.getStatus())
                 .build();
 
-        adminRepository.save(newAdmin);
+        Admin savedAdmin = adminRepository.save(newAdmin);
+
+        // 신규입사 이력 저장
+        adminHistoryRepository.save(AdminHistory.builder()
+                .admin(savedAdmin)
+                .changeType("신규입사")
+                .oldStatus(null)
+                .newStatus(savedAdmin.getStatus())
+                .startDate(member.getEntryDate())
+                .updatorCode(updaterCode)
+                .build());
 
         return MemberCreateRes.builder()
                 .memberCode(member.getMemberCode())

@@ -1,7 +1,43 @@
 package com.green.member.application.student;
 
+import com.green.member.application.student.model.StudentListDto;
 import com.green.member.entity.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
+
+    @Query(
+            value = """
+            SELECT m.member_code   AS memberCode,
+                   m.name          AS name,
+                   m.email         AS email,
+                   m.tel           AS tel,
+                   s.status        AS status,
+                   s.academic_year AS academicYear,
+                   s.semester      AS semester,
+                   mc_p.college_name AS college,
+                   mc_p.name         AS majorName,
+                   mc_d.name         AS minorName
+            FROM student s
+            JOIN member m
+              ON m.member_code = s.member_code
+            JOIN student_major sm_p
+              ON sm_p.student_code = s.member_code
+             AND sm_p.type = 'PRIMARY'
+             AND sm_p.is_active = true
+            JOIN major_cache mc_p
+              ON mc_p.major_id = sm_p.major_id
+            LEFT JOIN student_major sm_d
+              ON sm_d.student_code = s.member_code
+             AND sm_d.type = 'MINOR'
+             AND sm_d.is_active = true
+            LEFT JOIN major_cache mc_d
+              ON mc_d.major_id = sm_d.major_id
+            """,
+            nativeQuery = true
+    )
+    List<StudentListDto> findStudentList();
 }
