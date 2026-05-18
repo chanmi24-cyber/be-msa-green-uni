@@ -93,11 +93,18 @@ public class ScholarshipService {
                     // studentCode로 캐시에서 학생 정보 조회
                     StudentCache cache = studentCacheRepository.findById(s.getStudentCode())
                             .orElse(null);
+
                     String studentName = cache != null ? cache.getName() : "알 수 없음";
                     Integer academicYear = cache != null ? cache.getAcademicYear() : null;
-                    String deptName = majorRepository.findById(cache.getMajorId())
-                            .map(Major::getName)
-                            .orElse("알 수 없음");
+
+                    // 💡 [수정] cache가 null이 아닐 때만 학과 레포지토리를 조회하도록 안전하게 방어 조치합니다.
+                    String deptName = "알 수 없음";
+                    if (cache != null && cache.getMajorId() != null) {
+                        deptName = majorRepository.findById(cache.getMajorId())
+                                .map(Major::getName)
+                                .orElse("알 수 없음");
+                    }
+
                     return ScholarshipRes.from(s, studentName, deptName, academicYear);
                 });
     }
