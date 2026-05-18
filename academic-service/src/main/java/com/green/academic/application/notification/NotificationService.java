@@ -51,7 +51,7 @@ public class NotificationService {
     // NOTI-04 전체 읽음 처리
     @Transactional
     public void readAllNotifications(MemberDto memberDto) {
-        notificationRepository.readAllByMemberCode(memberDto.memberCode());
+        notificationRepository.readAllByMemberCodeOrRole(memberDto.memberCode(), memberDto.role().getCode());
     }
 
     // NOTI-06 알림 삭제
@@ -71,6 +71,6 @@ public class NotificationService {
     // NOTI-07 전체 삭제
     @Transactional
     public void deleteAllNotifications(MemberDto memberDto) {
-        notificationRepository.deleteAllByMemberCode(memberDto.memberCode());
+        notificationRepository.deleteAllByMemberCodeOrRole(memberDto.memberCode(), memberDto.role().getCode());
     }
 }
