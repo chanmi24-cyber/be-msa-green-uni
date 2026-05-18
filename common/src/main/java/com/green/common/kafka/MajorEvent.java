@@ -17,6 +17,7 @@ import java.io.Serializable;
 public class MajorEvent implements Serializable {
     private Long majorId;
     private String name;
+    private Long collegeId;
     private String collegeName;
     private String active;
     private EventType eventType;

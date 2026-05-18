@@ -16,6 +16,7 @@ public enum EnumAdminStatus implements EnumMapperType {
 
     @JsonCreator
     public static EnumAdminStatus from(String value) {
+        if (value == null || value.isBlank()) return null;
         for (EnumAdminStatus status : EnumAdminStatus.values()) {
             if (status.getCode().equalsIgnoreCase(value)) {
                 return status;
