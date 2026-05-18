@@ -4,6 +4,8 @@ import com.green.academic.application.notification.model.NotiListReq;
 import com.green.academic.application.notification.model.NotiListRes;
 import com.green.academic.application.notification.model.UnreadCountRes;
 import com.green.academic.entity.Notification;
+import com.green.academic.exception.NotificationErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,11 +40,11 @@ public class NotificationService {
     @Transactional
     public void readNotification(MemberDto memberDto, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
+                .orElseThrow(() -> new BusinessException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (notification.getMemberCode() != null
                 && !notification.getMemberCode().equals(memberDto.memberCode())) {
-            throw new IllegalArgumentException("본인 알림이 아닙니다.");
+            throw new BusinessException(NotificationErrorCode.NOTIFICATION_ACCESS_DENIED);
         }
 
         notification.read();
@@ -58,11 +60,11 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(MemberDto memberDto, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
+                .orElseThrow(() -> new BusinessException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (notification.getMemberCode() != null
                 && !notification.getMemberCode().equals(memberDto.memberCode())) {
-            throw new IllegalArgumentException("본인 알림이 아닙니다.");
+            throw new BusinessException(NotificationErrorCode.NOTIFICATION_ACCESS_DENIED);
         }
 
         notificationRepository.delete(notification);
