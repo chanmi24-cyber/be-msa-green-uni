@@ -2,13 +2,15 @@ package com.green.core.application.attendance;
 
 import com.green.common.model.ResultResponse;
 import com.green.core.application.attendance.model.AttendActiveSessionRes;
+import com.green.core.application.attendance.model.AttendCancelHistoryRes;
+import com.green.core.application.attendance.model.AttendMakeupReq;
 import com.green.core.application.attendance.model.AttendTodaySessionRes;
 import com.green.core.application.attendance.model.AttendLectureRes;
 import com.green.core.application.attendance.model.AttendProListRes;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
 import com.green.core.application.attendance.model.AttendSessionListRes;
-import com.green.core.application.attendance.model.AttendSessionStartReq;
-import com.green.core.application.attendance.model.AttendSessionStartRes;
+import com.green.core.application.attendance.model.AttendSessionReq;
+import com.green.core.application.attendance.model.AttendSessionRes;
 import com.green.core.application.attendance.model.AttendStatusUpdateReq;
 import com.green.core.entity.attendance.QrToken;
 
@@ -64,11 +66,12 @@ public class AttendController {
     }
 
     // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
+    // [수정] AttendSessionStartReq → AttendSessionReq, AttendSessionStartRes → AttendSessionRes
     @PostMapping("{lectureId}/sessions")
-    public ResponseEntity<ResultResponse<AttendSessionStartRes>> startSession(
+    public ResponseEntity<ResultResponse<AttendSessionRes>> startSession(
             @PathVariable Long lectureId,
-            @RequestBody AttendSessionStartReq req) {
-        AttendSessionStartRes res = attendService.startSession(lectureId, req);
+            @RequestBody AttendSessionReq req) {
+        AttendSessionRes res = attendService.startSession(lectureId, req);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ResultResponse<>("출석 세션이 시작되었습니다.", res));
     }
 
@@ -162,6 +165,34 @@ public class AttendController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate attendDate) {
         if (attendDate == null) attendDate = LocalDate.now();
         return ResponseEntity.ok(new ResultResponse<>("날짜별 출석부 조회 성공", attendService.getRosterByDate(lectureId, attendDate)));
+    }
+
+    // ── ATTD-08 휴강 처리 (POST /{lectureId}/cancels) ────────────────────────────
+    // [추가]
+    @PostMapping("{lectureId}/cancels")
+    public ResponseEntity<ResultResponse<Void>> cancelClass(
+            @PathVariable Long lectureId,
+            @RequestBody AttendSessionReq req) {
+        attendService.cancelClass(lectureId, req.getClassDate());
+        return ResponseEntity.ok(new ResultResponse<>("휴강 처리되었습니다.", null));
+    }
+
+    // ── ATTD-10 휴강 내역 조회 (GET /{lectureId}/cancels) ─────────────────────────
+    // [추가]
+    @GetMapping("{lectureId}/cancels")
+    public ResponseEntity<ResultResponse<List<AttendCancelHistoryRes>>> getCancelHistory(
+            @PathVariable Long lectureId) {
+        return ResponseEntity.ok(new ResultResponse<>("휴강 내역 조회 성공", attendService.getCancelHistory(lectureId)));
+    }
+
+    // ── ATTD-09 보강 세션 시작 (POST /{lectureId}/makeups) ────────────────────────
+    // [추가]
+    @PostMapping("{lectureId}/makeups")
+    public ResponseEntity<ResultResponse<AttendSessionRes>> startMakeupSession(
+            @PathVariable Long lectureId,
+            @RequestBody AttendMakeupReq req) {
+        AttendSessionRes res = attendService.startMakeupSession(lectureId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ResultResponse<>("보강 세션이 시작되었습니다.", res));
     }
 
     // ── ATTD-06 출석 상태 일괄 수정 (PATCH /{lectureId}) ─────────────────────────────

@@ -8,12 +8,15 @@ import com.green.core.application.attendance.model.AttendLectureRes;
 import com.green.core.application.attendance.model.AttendProListRes;
 import com.green.core.application.attendance.model.AttendScanReq;
 import com.green.core.application.attendance.model.AttendScanRes;
+import com.green.core.application.attendance.model.AttendCancelHistoryRes;
+import com.green.core.application.attendance.model.AttendMakeupReq;
 import com.green.core.application.attendance.model.AttendSessionEndRes;
 import com.green.core.application.attendance.model.AttendSessionListRes;
-import com.green.core.application.attendance.model.AttendSessionStartReq;
-import com.green.core.application.attendance.model.AttendSessionStartRes;
+import com.green.core.application.attendance.model.AttendSessionReq;
+import com.green.core.application.attendance.model.AttendSessionRes;
 import com.green.core.application.attendance.model.AttendStatusUpdateReq;
 import com.green.core.application.attendance.model.AttendStuListRes;
+import com.green.core.entity.attendance.AttendanceCancel;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.attendance.Attendance;
@@ -56,10 +59,13 @@ public class AttendService {
     private final AttendLectureScheduleRepository attendLectureScheduleRepository;
     private final AttendStudentCacheRepository attendStudentCacheRepository;
     private final MajorRepository majorRepository;
+    // [추가] 휴강/보강 이력 Repository
+    private final AttendanceCancelRepository attendanceCancelRepository;
 
     // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
+    // [수정] AttendSessionStartReq → AttendSessionReq, AttendSessionStartRes → AttendSessionRes
     @Transactional
-    public AttendSessionStartRes startSession(Long lectureId, AttendSessionStartReq req) {
+    public AttendSessionRes startSession(Long lectureId, AttendSessionReq req) {
         Long professorCode = MemberContext.get().memberCode();
 
         Lecture lecture = attendLectureRepository.findById(lectureId)
@@ -90,12 +96,13 @@ public class AttendService {
                 .map(ls -> ls.getClassRoom().getBuilding().getValue() + " " + ls.getClassRoom().getRoom())
                 .orElse("");
 
-        return new AttendSessionStartRes(
+        return new AttendSessionRes(
                 session.getAttendsessionId(),
                 session.getIsActive(),
                 session.getStartedAt(),
                 lecture.getLectureName(),
-                lectureRoom
+                lectureRoom,
+                null // 일반 세션은 originalDate 없음
         );
     }
 
@@ -192,12 +199,30 @@ public class AttendService {
                 .findByLecture_LectureIdAndStudentCode(lectureId, studentCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "수강 신청하지 않은 강의입니다."));
 
-        // 6. 중복 출석 확인
+        // [수정] 6-7. MAKEUP 세션: 원래 CANCEL 세션의 ABSENT → ATTEND 업데이트
+        if (session.getSessionType() == EnumSessionType.MAKEUP) {
+            AttendanceSession cancelSession = attendanceSessionRepository
+                    .findByLecture_LectureIdAndClassDate(lectureId, session.getOriginalDate())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "원래 휴강 세션을 찾을 수 없습니다."));
+
+            Attendance cancelRecord = attendanceRepository
+                    .findByAttendsessionAndStudentCode(cancelSession, studentCode)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "출석 기록을 찾을 수 없습니다."));
+
+            if (cancelRecord.getStatus() != EnumAttendStatus.ABSENT) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 출석처리된 강의입니다.");
+            }
+
+            cancelRecord.updateStatus(EnumAttendStatus.ATTEND, null);
+            return new AttendScanRes(cancelRecord.getAttendId(), cancelRecord.getStatus(), cancelSession.getClassDate());
+        }
+
+        // 6. 중복 출석 확인 (일반 세션)
         if (attendanceRepository.existsByAttendsessionAndStudentCode(session, studentCode)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 출석처리된 강의입니다.");
         }
 
-        // 7. 출석 INSERT
+        // 7. 출석 INSERT (일반 세션)
         Attendance attendance = Attendance.builder()
                                           .attendsession(session)
                                           .course(course)
@@ -444,6 +469,10 @@ public class AttendService {
     public void processSessionEnd(AttendanceSession session) {
         session.end();
 
+        // [추가] MAKEUP 세션은 별도 ABSENT 처리 불필요
+        //        휴강 시 이미 전원 ABSENT 삽입됨 — 미스캔 학생은 ABSENT 상태 유지
+        if (session.getSessionType() == EnumSessionType.MAKEUP) return;
+
         Long lectureId = session.getLecture().getLectureId();
         LocalDate classDate = session.getClassDate();
 
@@ -489,46 +518,203 @@ public class AttendService {
         );
     }
 
+    // ── ATTD-08 휴강 처리 ────────────────────────────────────────────────────────
+    // [추가] CANCEL 세션 생성 + attendance_cancel 기록 INSERT
+    @Transactional
+    public void cancelClass(Long lectureId, LocalDate cancelDate) {
+        Long professorCode = MemberContext.get().memberCode();
+
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 강의에 접근 권한이 없습니다.");
+        }
+
+        // 해당 날짜 세션 중복 체크
+        if (attendanceSessionRepository.existsByLecture_LectureIdAndClassDate(lectureId, cancelDate)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당 날짜에 이미 세션이 존재합니다.");
+        }
+
+        // CANCEL 세션 생성 (is_active = false — 출석 스캔 없음)
+        AttendanceSession session = AttendanceSession.builder()
+                .lecture(lecture)
+                .sessionType(EnumSessionType.CANCEL)
+                .isActive(false)
+                .classDate(cancelDate)
+                .startedAt(LocalDateTime.now())
+                .build();
+        attendanceSessionRepository.save(session);
+
+        // 휴강 이력 테이블에 기록
+        AttendanceCancel cancel = AttendanceCancel.builder()
+                .lecture(lecture)
+                .cancelDate(cancelDate)
+                .build();
+        attendanceCancelRepository.save(cancel);
+
+        // [추가] 수강생 전원 ABSENT 처리 — 보강 미참석 시 결석으로 유지, 참석 시 ATTEND로 UPDATE
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
+        List<Attendance> absentList = enrollments.stream()
+                .map(e -> Attendance.builder()
+                        .attendsession(session)
+                        .course(e)
+                        .studentCode(e.getStudentCode())
+                        .status(EnumAttendStatus.ABSENT)
+                        .build())
+                .toList();
+        attendanceRepository.saveAll(absentList);
+    }
+
+    // ── ATTD-10 휴강 내역 조회 (보강 모달 드롭다운용) ─────────────────────────────
+    // [추가]
+    @Transactional(readOnly = true)
+    public List<AttendCancelHistoryRes> getCancelHistory(Long lectureId) {
+        Long professorCode = MemberContext.get().memberCode();
+
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+        }
+
+        return attendanceCancelRepository
+                .findByLecture_LectureIdOrderByCancelDateDesc(lectureId)
+                .stream()
+                .map(c -> new AttendCancelHistoryRes(c.getCancelDate(), c.getMakeupDate()))
+                .toList();
+    }
+
+    // ── ATTD-09 보강 세션 시작 ───────────────────────────────────────────────────
+    // [추가] MAKEUP 세션 생성 + attendance_cancel.makeupDate 업데이트
+    @Transactional
+    public AttendSessionRes startMakeupSession(Long lectureId, AttendMakeupReq req) {
+        Long professorCode = MemberContext.get().memberCode();
+
+        Lecture lecture = attendLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 강의입니다."));
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 강의에 접근 권한이 없습니다.");
+        }
+
+        // 보강 날짜 중복 세션 체크
+        if (attendanceSessionRepository.existsByLecture_LectureIdAndClassDate(lectureId, req.getClassDate())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당 날짜에 이미 세션이 존재합니다.");
+        }
+
+        // 원래 휴강 기록 확인 + makeupDate 업데이트
+        AttendanceCancel cancel = attendanceCancelRepository
+                .findByLecture_LectureIdAndCancelDate(lectureId, req.getOriginalDate())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 날짜의 휴강 기록이 없습니다."));
+        cancel.completeMakeup(req.getClassDate());
+
+        // MAKEUP 세션 생성
+        AttendanceSession session = AttendanceSession.builder()
+                .lecture(lecture)
+                .sessionType(EnumSessionType.MAKEUP)
+                .isActive(true)
+                .classDate(req.getClassDate())
+                .originalDate(req.getOriginalDate())
+                .startedAt(LocalDateTime.now())
+                .build();
+        attendanceSessionRepository.save(session);
+
+        String lectureRoom = attendLectureScheduleRepository
+                .findByLectureIdWithRoom(lectureId)
+                .stream()
+                .findFirst()
+                .map(ls -> ls.getClassRoom().getBuilding().getValue() + " " + ls.getClassRoom().getRoom())
+                .orElse("");
+
+        return new AttendSessionRes(
+                session.getAttendsessionId(),
+                session.getIsActive(),
+                session.getStartedAt(),
+                lecture.getLectureName(),
+                lectureRoom,
+                req.getOriginalDate()
+        );
+    }
+
     // ── ATTD-04 학생 본인 출석 조회 ──────────────────────────────────────────────
-    // lectureId 없으면 수강 중인 전체 강의 출석 반환, 있으면 해당 강의만 필터
+    // [수정] Attendance 기반 → AttendanceSession 기반으로 전환
+    //        CANCEL 세션(휴강)도 이력에 포함, QR 스캔 시각(attendedAt) 추가
     @Transactional(readOnly = true)
     public List<AttendStuListRes> getMyAttendance(Long lectureId) {
         Long studentCode = MemberContext.get().memberCode();
 
-        List<Attendance> attendances = lectureId != null
-                ? attendanceRepository.findByStudentCodeAndLectureIdWithDetails(studentCode, lectureId)
-                : attendanceRepository.findByStudentCodeWithDetails(studentCode);
+        // 1. 수강 중인 강의 ID 목록 조회
+        List<Long> lectureIds = lectureId != null
+                ? List.of(lectureId)
+                : attendEnrollmentRepository.findLectureIdsByStudentCode(studentCode);
 
-        // 강의별로 그룹핑 — LinkedHashMap으로 조회 순서(강의 ID 오름차순) 유지
-        Map<Long, List<Attendance>> byLecture = attendances.stream()
+        if (lectureIds.isEmpty()) return List.of();
+
+        // 2. 세션 전체 + 해당 학생의 출석 기록 LEFT JOIN (CANCEL 세션은 Attendance 없음)
+        List<Object[]> rows = attendanceSessionRepository
+                .findSessionsWithAttendance(lectureIds, studentCode);
+
+        // 3. 강의별 그룹핑 — LinkedHashMap으로 classDate 오름차순 순서 유지
+        Map<Long, List<Object[]>> byLecture = rows.stream()
                 .collect(Collectors.groupingBy(
-                        a -> a.getAttendsession().getLecture().getLectureId(),
+                        row -> ((AttendanceSession) row[0]).getLecture().getLectureId(),
                         LinkedHashMap::new,
                         Collectors.toList()
                 ));
 
         return byLecture.entrySet().stream()
                 .map(entry -> {
-                    List<Attendance> records = entry.getValue();
-                    Lecture lecture = records.get(0).getAttendsession().getLecture();
+                    List<Object[]> sessionRows = entry.getValue();
+                    Lecture lecture = ((AttendanceSession) sessionRows.get(0)[0]).getLecture();
 
-                    int attendCount     = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.ATTEND).count();
-                    int absentCount     = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.ABSENT).count();
-                    int lateCount       = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.LATE).count();
-                    int earlyLeaveCount = (int) records.stream().filter(a -> a.getStatus() == EnumAttendStatus.EARLY_LEAVE).count();
+                    int attendCount = 0, absentCount = 0, lateCount = 0, earlyLeaveCount = 0;
+                    List<AttendStuListRes.Detail> details = new java.util.ArrayList<>();
 
-                    List<AttendStuListRes.Detail> details = records.stream()
-                            .map(a -> new AttendStuListRes.Detail(
-                                    formatAttendDate(a.getAttendsession().getClassDate()),
-                                    a.getStatus().getCode(),
-                                    a.getReason()
-                            ))
-                            .toList();
+                    for (Object[] row : sessionRows) {
+                        AttendanceSession session = (AttendanceSession) row[0];
+                        Attendance att            = (Attendance) row[1];
+
+                        // [수정] MAKEUP 세션은 학생 이력에서 제외
+                        //        출석 기록은 원래 CANCEL 세션에 저장되므로 중복 표시 방지
+                        if (session.getSessionType() == EnumSessionType.MAKEUP) continue;
+
+                        // [수정] CANCEL 포함 모든 세션의 실제 상태 집계
+                        if (att != null) {
+                            switch (att.getStatus()) {
+                                case ATTEND      -> attendCount++;
+                                case ABSENT      -> absentCount++;
+                                case LATE        -> lateCount++;
+                                case EARLY_LEAVE -> earlyLeaveCount++;
+                            }
+                        }
+
+                        // [수정] attendedAt:
+                        //   - 일반 세션(NORMAL): createdAt = QR 스캔 시각
+                        //   - 휴강 세션(CANCEL): updatedAt = 보강 스캔 시각 (ABSENT→ATTEND 업데이트 시각)
+                        String attendedAt = null;
+                        if (att != null && (att.getStatus() == EnumAttendStatus.ATTEND
+                                         || att.getStatus() == EnumAttendStatus.LATE)) {
+                            java.time.LocalDateTime scanTime =
+                                    (session.getSessionType() == EnumSessionType.CANCEL)
+                                    ? att.getUpdatedAt()
+                                    : att.getCreatedAt();
+                            if (scanTime != null) {
+                                attendedAt = scanTime.format(
+                                        java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                            }
+                        }
+
+                        details.add(new AttendStuListRes.Detail(
+                                formatAttendDate(session.getClassDate(), session.getSessionType()),
+                                att != null ? att.getStatus().getCode() : null, // [수정] CANCEL도 실제 상태 표시
+                                att != null ? att.getReason() : null,
+                                attendedAt
+                        ));
+                    }
 
                     return new AttendStuListRes(
                             lecture.getLectureId(),
                             lecture.getLectureName(),
-                            records.size(),
+                            attendCount + absentCount + lateCount + earlyLeaveCount,
                             attendCount,
                             absentCount,
                             lateCount,
@@ -539,11 +725,16 @@ public class AttendService {
                 .toList();
     }
 
-    // "2026-04-01(수)" 형식 — 스펙 AttendStuListRes.Detail.attendDate 참고
+    // [수정] sessionType 파라미터 추가 — CANCEL: "(휴강)", MAKEUP: "(보강)" 레이블 포함
     private static final String[] DAY_KO = {"", "월", "화", "수", "목", "금", "토", "일"};
 
-    private String formatAttendDate(LocalDate date) {
-        return date + "(" + DAY_KO[date.getDayOfWeek().getValue()] + ")";
+    private String formatAttendDate(LocalDate date, EnumSessionType type) {
+        String base = date + "(" + DAY_KO[date.getDayOfWeek().getValue()] + ")";
+        return switch (type) {
+            case CANCEL -> base + "(휴강)";
+            case MAKEUP -> base + "(보강)";
+            default     -> base;
+        };
     }
 
     // ── IP가 CIDR 범위 내에 있는지 확인 ──────────────────────────────────────────

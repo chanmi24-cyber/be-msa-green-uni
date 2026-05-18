@@ -24,4 +24,14 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     List<AttendanceSession> findAllActiveStartedBefore(@org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
 
     List<AttendanceSession> findByLecture_LectureIdOrderByClassDateDesc(Long lectureId);
+
+    // [추가] 학생 출석 이력 조회: 여러 강의의 전체 세션 + 해당 학생의 출석 기록 LEFT JOIN
+    // CANCEL 세션은 Attendance가 없으므로 LEFT JOIN 필수 — ON 절에서 studentCode 필터
+    @Query("SELECT s, a FROM AttendanceSession s " +
+           "LEFT JOIN Attendance a ON a.attendsession = s AND a.studentCode = :studentCode " +
+           "WHERE s.lecture.lectureId IN :lectureIds " +
+           "ORDER BY s.lecture.lectureId ASC, s.classDate ASC")
+    List<Object[]> findSessionsWithAttendance(
+            @org.springframework.data.repository.query.Param("lectureIds") List<Long> lectureIds,
+            @org.springframework.data.repository.query.Param("studentCode") Long studentCode);
 }

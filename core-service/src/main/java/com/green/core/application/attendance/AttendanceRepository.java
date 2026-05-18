@@ -22,6 +22,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
   boolean existsByAttendsessionAndStudentCode(AttendanceSession attendsession, Long studentCode);
 
+  // [추가] 보강 스캔 시 CANCEL 세션의 ABSENT 레코드 조회용
+  java.util.Optional<Attendance> findByAttendsessionAndStudentCode(AttendanceSession attendsession, Long studentCode);
+
   List<Attendance> findByAttendsession_AttendsessionId(Long sessionId);
 
   @Query("SELECT a FROM Attendance a JOIN FETCH a.attendsession s WHERE a.attendId = :attendId AND s.lecture.lectureId = :lectureId")
