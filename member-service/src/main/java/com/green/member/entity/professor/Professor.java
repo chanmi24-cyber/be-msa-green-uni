@@ -6,6 +6,8 @@ import com.green.member.entity.member.Member;
 import com.green.common.enumcode.EnumProfessorDegree;
 import com.green.member.enumcode.EnumProfessorPosition;
 import com.green.common.enumcode.EnumProfessorStatus;
+import com.green.member.enumcode.NullableBuildingConverter;
+import com.green.member.enumcode.NullableProfessorStatusConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,7 +38,8 @@ public class Professor extends UpdatedAt {
     @Builder.Default
     private EnumProfessorPosition position = EnumProfessorPosition.PROFESSOR;
 
-    @Column(name = "lab_building", nullable = false, length = 30)
+    @Convert(converter = NullableBuildingConverter.class)
+    @Column(name = "lab_building", length = 30)
     private EnumBuilding labBuilding;
 
     @Column(name = "lab_room", length = 20)
@@ -53,5 +56,17 @@ public class Professor extends UpdatedAt {
         if (labBuilding != null) this.labBuilding = labBuilding;
         if (labRoom != null) this.labRoom = labRoom;
         if (labTel != null) this.labTel = labTel;
+    }
+
+    public void updateByAdmin(EnumProfessorDegree degree, Long majorId){
+        if(degree != null) this.degree = degree;
+        if(majorId != null) this.majorId = majorId;
+    }
+
+    public void updateStatus(EnumProfessorStatus status){
+        if(status != null) this.status = status;
+    }
+    public void updatePosition(EnumProfessorPosition position){
+        if(position != null) this.position = position;
     }
 }

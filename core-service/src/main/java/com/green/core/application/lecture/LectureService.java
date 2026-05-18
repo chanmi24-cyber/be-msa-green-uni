@@ -14,11 +14,15 @@ import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
 import com.green.core.exception.MajorErrorCode;
+import com.green.core.kafka.NotificationProducer;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.green.common.constants.EventType;
+import com.green.common.kafka.NotificationEvent;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +42,7 @@ public class LectureService {
     private final LectureMapper lectureMapper;
     private final LectureHistoryRepository lectureHistoryRepository;
     private final ObjectMapper objectMapper;
+    private final NotificationProducer notificationProducer;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -112,18 +117,34 @@ public class LectureService {
         Lecture lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
 
-        // APPROVED면 승인, REJECTED면 반려
         if (req.getStatus() == EnumApprovalStatus.REJECTED) {
-            // 반려 사유 저장
             LectureRejection rejection = LectureRejection.builder()
                     .lecture(lecture)
                     .reason(req.getReason())
                     .updatorCode(memberDto.memberCode())
                     .build();
             lectureRejectionRepository.save(rejection);
+
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(lecture.getMemberCode())
+                    .type("LECTURE_REJECTED")
+                    .message("강의 '" + lecture.getLectureName() + "'이 반려되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+
+        } else if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(lecture.getMemberCode())
+                    .type("LECTURE_APPROVED")
+                    .message("강의 '" + lecture.getLectureName() + "'이 승인되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
         }
 
-        // 상태 변경 → Lecture에 메서드 있음.
         lecture.updateStatus(req.getStatus());
     }
 

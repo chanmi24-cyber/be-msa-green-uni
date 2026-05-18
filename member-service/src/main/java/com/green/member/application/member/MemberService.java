@@ -1,35 +1,26 @@
 package com.green.member.application.member;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.constants.EventType;
-import com.green.common.enumcode.EnumChangeType;
+import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.enumcode.EnumMajorType;
-import com.green.common.kafka.KafkaEvent;
+import com.green.common.exception.AuthErrorCode;
+import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.common.outbox.Outbox;
-import com.green.common.outbox.OutboxRepository;
+import com.green.member.application.OutboxService;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
-import com.green.member.application.professor.model.ProfessorProfileRes;
-import com.green.member.application.student.StudentMajorRepository;
-import com.green.member.application.student.StudentRepository;
-import com.green.member.application.student.model.StudentProfileRes;
+import com.green.member.application.professor.ProfessorService;
+import com.green.member.application.student.StudentService;
 import com.green.member.configuration.MyFileUtil;
-import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
-import com.green.member.entity.member.MemberHistory;
 import com.green.member.entity.professor.Professor;
-import com.green.member.entity.student.Student;
-import com.green.member.entity.student.StudentMajor;
-import com.green.member.repository.MajorCacheRepository;
+import com.green.member.exception.MemberErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +29,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -46,117 +36,31 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository memberRepository;
-    private final MajorCacheRepository majorCacheRepository;
-    private final StudentRepository studentRepository;
-    private final StudentMajorRepository studentMajorRepository;
     private final ProfessorRepository professorRepository;
-    private final AdminRepository adminRepository;
     private final MyFileUtil myFileUtil;
-    private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
-    private final MemberHistoryRepository memberHistoryRepository;
     private final MemberHistoryService memberHistoryService;
+    private final OutboxService outboxService;
+    private final StudentService studentService;
+    private final ProfessorService professorService;
+    private final AdminRepository adminRepository;
 
     // 내 정보 조회
+    @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
-            case STUDENT   -> findStudent(memberCode, role);
-            case PROFESSOR -> findProfessor(memberCode, role);
+            case STUDENT   -> studentService.findStudent(memberCode, role);
+            case PROFESSOR -> professorService.findProfessor(memberCode, role);
             case ADMIN     -> findAdmin(memberCode, role);
         };
         return memberProfile;
     }
-    // 학생 정보 조회
-    public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
-        log.info("memberInfo : {}", memberInfo);
-        Student studentInfo = studentRepository.findById(memberCode).orElseThrow();
-        log.info("studentInfo: {}", studentInfo);
-        List<StudentMajor> majors = studentMajorRepository.findByStudent_MemberCodeAndIsActiveTrue(memberCode);
-        log.info("majors: {}", majors);
 
-        StudentMajor mainMajor = majors.stream()
-                .filter(m -> m.getType() == EnumMajorType.PRIMARY)
-                .findFirst()
-                .orElseThrow();
-        StudentMajor subMajor = majors.stream()
-                .filter(m -> m.getType() == EnumMajorType.MINOR)
-                .findFirst()
-                .orElse(null);
-        MajorCache mainMajorCache = majorCacheRepository.findById(mainMajor.getMajorId()).orElseThrow();
-        String subMajorName = null;
-        if (subMajor != null) {
-            MajorCache subMajorCache = majorCacheRepository.findById(subMajor.getMajorId()).orElseThrow();
-            subMajorName = subMajorCache.getName();
-        }
-
-        return StudentProfileRes.builder()
-                .memberCode(memberInfo.getMemberCode())
-                .role(role.getCode())
-                // 기본 정보
-                .name(memberInfo.getName())
-                .email(memberInfo.getEmail())
-                .address(memberInfo.getAddress())
-                .pic(memberInfo.getPic())
-                .birth(memberInfo.getBirth())
-                .tel(memberInfo.getTel())
-                .emergencyTel(memberInfo.getEmergencyTel())
-                .postcode(memberInfo.getPostcode())
-                .detailAddress(memberInfo.getDetailAddress())
-                .entryDate(memberInfo.getEntryDate())
-                .exitDate(memberInfo.getExitDate())
-                // 학사 정보
-                .academicYear(studentInfo.getAcademicYear())
-                .semester(studentInfo.getSemester())
-                .mainMajorName(mainMajorCache.getName())
-                .subMajorName(subMajorName)
-                .collegeName(mainMajorCache.getCollegeName())
-                .isMultiChild(studentInfo.getIsMultiChild())
-                .isTransfer(studentInfo.getIsTransfer())
-                .isVeteran(studentInfo.getIsVeteran())
-                .status(studentInfo.getStatus().getCode())
-                .build();
-    }
-    // 교수 정보 조회
-    public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
-        Professor professorInfo = professorRepository.findById(memberCode).orElseThrow();
-        log.info("professorInfo: {}", professorInfo);
-
-        MajorCache majorCache = majorCacheRepository.findById(professorInfo.getMajorId()).orElseThrow();
-
-        return ProfessorProfileRes.builder()
-                .memberCode(memberInfo.getMemberCode())
-                .role(role.getCode())
-                // 기본 정보
-                .name(memberInfo.getName())
-                .email(memberInfo.getEmail())
-                .address(memberInfo.getAddress())
-                .pic(memberInfo.getPic())
-                .birth(memberInfo.getBirth())
-                .tel(memberInfo.getTel())
-                .emergencyTel(memberInfo.getEmergencyTel())
-                .postcode(memberInfo.getPostcode())
-                .detailAddress(memberInfo.getDetailAddress())
-                .entryDate(memberInfo.getEntryDate())
-                .exitDate(memberInfo.getExitDate())
-                // 학사 정보
-                .degree(professorInfo.getDegree().getCode())
-                .position(professorInfo.getPosition().getCode())
-                .majorName(majorCache.getName())
-                .collegeName(majorCache.getCollegeName())
-                .labBuilding(professorInfo.getLabBuilding().getCode())
-                .labRoom(professorInfo.getLabRoom())
-                .labTel(professorInfo.getLabTel())
-                .status(professorInfo.getStatus().getCode())
-                .build();
-    }
     // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
         log.info("findAdmin 진입, memberCode: {}", memberCode);
-        Member memberInfo = memberRepository.findById(memberCode).orElseThrow();
+        Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         log.info("memberInfo: {}", memberInfo);
-        Admin adminInfo = adminRepository.findById(memberCode).orElseThrow();
+        Admin adminInfo = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         log.info("adminInfo: {}", adminInfo);
 
         return AdminProfileRes.builder()
@@ -183,7 +87,7 @@ public class MemberService {
     @Transactional
     public void updateMyProfile(Long memberCode, EnumMemberRole role,
                                 MemberUpdateReq req, MultipartFile pic) {
-        Member member = memberRepository.findById(memberCode).orElseThrow();
+        Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         // 사진 처리
         String savedPicFileName = null;
@@ -236,8 +140,9 @@ public class MemberService {
                     .memberCode(memberCode)
                     .email(req.getEmail())
                     .eventType(EventType.E_UPDATED)
+                    .updateType(UpdateType.EMAIL)
                     .build();
-            saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
+            outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, member.getMemberCode(), authEvent);
 
             // StudentEvent Outbox 저장
             if (role == EnumMemberRole.STUDENT) {
@@ -245,10 +150,9 @@ public class MemberService {
                         .memberCode(member.getMemberCode())
                         .email(req.getEmail())
                         .eventType(EventType.E_UPDATED)
-                        .updateType("EMAIL")
+                        .updateType(UpdateType.EMAIL)
                         .build();
-
-                saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
+                outboxService.saveToOutbox(MemberTopic.STUDENT, member.getMemberCode(), studentEvent);
             }
         }
 
@@ -264,7 +168,7 @@ public class MemberService {
 
         // 교수 연구실 업데이트
         if (role == EnumMemberRole.PROFESSOR) {
-            Professor professor = professorRepository.findById(memberCode).orElseThrow();
+            Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
             String oldLabBuilding = professor.getLabBuilding() != null ? professor.getLabBuilding().getCode() : null;
             String oldLabRoom = professor.getLabRoom();
             String oldLabTel = professor.getLabTel();
@@ -275,41 +179,8 @@ public class MemberService {
             if (req.getLabRoom() != null && !req.getLabRoom().equals(oldLabRoom)) before.put("labRoom", oldLabRoom);
             if (req.getLabTel() != null && !req.getLabTel().equals(oldLabTel)) before.put("labTel", oldLabTel);
         }
-
         memberHistoryService.save(memberCode, memberCode, before);
 
     }
 
-
-    private void saveToOutbox(String topic, Long aggregateId, KafkaEvent event) {
-        log.info("saveToOutbox 호출됨 - topic: {}, aggregateId: {}", topic, aggregateId);
-        try {
-            String payload = objectMapper.writeValueAsString(event);
-            Outbox outbox = Outbox.builder()
-                    .topic(topic)
-                    .aggregateId(aggregateId)
-                    .eventType(event.getEventType().name())
-                    .payload(payload)
-                    .build();
-            outboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Outbox 직렬화 실패", e);
-        }
-    }
-
-    private void saveMemberHistory(Long memberCode, Long updatorCode, Map<String, Object> beforeData) {
-        if (beforeData.isEmpty()) return;
-        try {
-            String json = objectMapper.writeValueAsString(beforeData);
-            MemberHistory history = MemberHistory.builder()
-                    .member(memberRepository.getReferenceById(memberCode))
-                    .changeType(EnumChangeType.UPDATE)
-                    .beforeData(json)
-                    .updatorCode(updatorCode)
-                    .build();
-            memberHistoryRepository.save(history);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("히스토리 직렬화 실패", e);
-        }
-    }
 }

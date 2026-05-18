@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository  extends JpaRepository<Member, Long> {
+    boolean existsByEmail(String email);
+
     @Query("""
         SELECT COUNT(s) + 1
         FROM Student s

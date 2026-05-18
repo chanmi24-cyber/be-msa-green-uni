@@ -15,6 +15,7 @@ public enum EnumProfessorStatus implements EnumMapperType {
 
     @JsonCreator
     public static EnumProfessorStatus from(String value) {
+        if (value == null || value.isBlank()) return null;
         for (EnumProfessorStatus status : EnumProfessorStatus.values()) {
             if (status.getCode().equalsIgnoreCase(value)) {
                 return status;

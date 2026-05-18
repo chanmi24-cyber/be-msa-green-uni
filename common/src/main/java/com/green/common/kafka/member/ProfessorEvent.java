@@ -1,6 +1,8 @@
 package com.green.common.kafka.member;
 
 import com.green.common.constants.EventType;
+import com.green.common.constants.UpdateType;
+import com.green.common.kafka.KafkaEvent;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,11 +14,12 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProfessorEvent implements Serializable {
+public class ProfessorEvent implements Serializable, KafkaEvent {
     private Long memberCode;
     private String name;
     private Long majorId;
     private String degree;
     private String status;
     private EventType eventType;
+    private UpdateType updateType;
 }

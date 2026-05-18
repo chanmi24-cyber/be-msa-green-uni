@@ -4,7 +4,7 @@ import com.green.common.constants.EventType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.MajorEvent;
 import com.green.member.entity.cache.MajorCache;
-import com.green.member.repository.MajorCacheRepository;
+import com.green.member.application.major.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -29,7 +29,9 @@ public class MajorEventConsumer {
                 MajorCache cache = MajorCache.builder()
                         .majorId(event.getMajorId())
                         .name(event.getName())
+                        .collegeId(event.getCollegeId())
                         .collegeName(event.getCollegeName())
+                        .active(event.getActive())
                         .build();
                 majorCacheRepository.save(cache);
                 log.info("MajorCache 정보저장 완료: {}", event.getMajorId());

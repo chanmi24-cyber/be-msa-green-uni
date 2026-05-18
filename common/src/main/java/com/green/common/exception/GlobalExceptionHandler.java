@@ -10,12 +10,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -29,6 +32,15 @@ import java.util.List;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    // JSON 파싱 실패 (잘못된 enum 값, 타입 불일치 등)
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        log.warn("HttpMessageNotReadableException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResultResponse<>("요청 데이터 형식이 올바르지 않습니다.", null));
+    }
 
     //Validation 예외가 발생되었을 때 캐치
     //입력값 검증 실패 시 호출. 여러 에러 중 첫 번째 에러 메시지만 추출하여 반환
@@ -112,9 +124,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(new ResultResponse<>(ex.getMessage(), null));
     }
 
+    // 필수 헤더 누락 (e.g. X-Device-Id 없이 요청)
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ResultResponse<String>> handleMissingRequestHeader(MissingRequestHeaderException ex) {
+        String message = "필수 헤더가 누락되었습니다: " + ex.getHeaderName();
+        log.warn("MissingRequestHeaderException: {}", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResultResponse<>(message, null));
+    }
+
+    // 헤더/파라미터 타입 불일치 (e.g. X-Device-Id에 mobile/pc 외 값)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResultResponse<String>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "잘못된 값입니다: " + ex.getName() + " = " + ex.getValue();
+        log.warn("MethodArgumentTypeMismatchException: {}", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ResultResponse<>(message, null));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ResultResponse<String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.error("DataIntegrityViolationException: {}", ex.getMessage());
+        String msg = ex.getMessage();
+        if (msg != null && msg.contains("cannot be null")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResultResponse<>(CommonErrorCode.NULL_CONSTRAINT_VIOLATION.getMessage(), null));
+        }
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ResultResponse<>(CommonErrorCode.DUPLICATE_ENTRY.getMessage(), null));
     }

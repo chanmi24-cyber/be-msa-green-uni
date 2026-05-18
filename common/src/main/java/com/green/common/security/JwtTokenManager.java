@@ -46,10 +46,6 @@ public class JwtTokenManager { //인증처리 총괄
         setRefreshTokenInCookie(res, refreshToken); // 만들어진 RT 문자열을 쿠키에 담는 메소드 호출
     }
 
-//    public String generateRefreshToken(JwtMember jwtMember) {
-//        return jwtTokenProvider.generateRefreshToken(jwtMember);
-//    }
-
     // 만들어진 AT 문자열을 쿠키에 담기
     public void setAccessTokenInCookie(HttpServletResponse res, String accessToken){
         myCookieUtil.setCookie(res,
@@ -109,11 +105,16 @@ public class JwtTokenManager { //인증처리 총괄
     public void logOut(HttpServletRequest req, HttpServletResponse res){
         String refreshToken = getRefreshTokenFromCookie(req);
         if (refreshToken != null) {
-            // RT에서 redis 키 조합
-            JwtMember jwtMember = jwtTokenProvider.getJwtMemberFromToken(refreshToken);
-            String redisKey = String.format("RT-%d:%s", jwtMember.getLoginMemberCode(), jwtMember.getDeviceId());
-            // redis에서 해당 기기 RT 삭제
-            redisService.delete(redisKey);
+            try {
+                // RT에서 redis 키 조합
+                JwtMember jwtMember = jwtTokenProvider.getJwtMemberFromToken(refreshToken);
+                String redisKey = String.format("RT-%d:%s", jwtMember.getLoginMemberCode(), jwtMember.getDeviceId());
+                // redis에서 해당 기기 RT 삭제
+                redisService.delete(redisKey);
+            } catch (Exception e) {
+                // RT가 만료/위변조된 경우에도 쿠키는 반드시 삭제
+                log.warn("로그아웃 중 RT 파싱 실패: {}", e.getMessage());
+            }
         }
         // Redis 삭제 성공 여부와 관계없이 쿠키는 항상 삭제
         deleteAccessTokenInCookie(res);
@@ -124,6 +125,11 @@ public class JwtTokenManager { //인증처리 총괄
     public void reissue(HttpServletRequest req, HttpServletResponse res) {
         // 쿠키에서 RT을 얻기
         String refreshToken = getRefreshTokenFromCookie(req);
+
+        // RT 쿠키 없으면 인증 실패
+        if (refreshToken == null) {
+            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
 
         // RT를 이용하여 JwtMember 객체 꺼내기
         JwtMember jwtMember = jwtTokenProvider.getJwtMemberFromToken(refreshToken);
@@ -137,7 +143,8 @@ public class JwtTokenManager { //인증처리 총괄
             throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 검증 통과 시 새 AT 생성 후 쿠키에 저장
+        // 검증 통과 시 AT + RT 모두 교체 (Refresh Token Rotation)
         setAccessTokenInCookie(res, jwtMember);
+        setRefreshTokenInCookie(res, jwtMember);
     }
 }

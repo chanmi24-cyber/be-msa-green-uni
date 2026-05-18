@@ -26,4 +26,7 @@ public class Admin extends UpdatedAt {
     @Builder.Default
     private EnumAdminStatus status = EnumAdminStatus.EMPLOYMENT;
 
+    public void updateStatus(EnumAdminStatus status){
+        if (status != null) this.status = status;
+    }
 }

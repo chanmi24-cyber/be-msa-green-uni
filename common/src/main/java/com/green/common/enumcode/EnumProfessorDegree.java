@@ -13,6 +13,7 @@ public enum EnumProfessorDegree implements EnumMapperType {
 
     @JsonCreator
     public static EnumProfessorDegree from(String value) {
+        if (value == null || value.isBlank()) return null;
         for (EnumProfessorDegree degree : EnumProfessorDegree.values()) {
             if (degree.getCode().equalsIgnoreCase(value)) {
                 return degree;

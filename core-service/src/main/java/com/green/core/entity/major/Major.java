@@ -19,6 +19,7 @@ public class Major extends CreatedUpdatedAt {
 
     @Id @Tsid
     @Column(name = "major_id")
+    //없앰
     private Long majorId;
 
     @Column(name = "name", nullable = false, length = 20)
