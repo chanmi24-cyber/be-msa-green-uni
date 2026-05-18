@@ -44,6 +44,11 @@ spring:
               predicates:
                 - Path=/api/member/**, /api/member/**
 
+            - id: member-file
+              uri: http://${SERVICE_HOST}:${MEMBER_PORT}
+              predicates:
+                - Path=/file/**
+
             - id: core-service
               uri: http://${SERVICE_HOST}:${CORE_PORT}
               predicates:
