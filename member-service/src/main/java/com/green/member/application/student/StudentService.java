@@ -82,11 +82,11 @@ public class StudentService {
     // 학생 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<StudentHistoryRes> findStudentHistory(Long memberCode){
-        List<StudentHistory> histories =
-                studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode);
-        if (histories.isEmpty()) {
+        if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
+        List<StudentHistory> histories =
+                studentHistoryRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode);
         return histories.stream()
                 .map( h -> {
                     StudentHistoryRes res = new StudentHistoryRes();
