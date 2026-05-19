@@ -65,11 +65,11 @@ public class ProfessorService {
     // 교수 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<ProfessorHistoryRes> findStatusHistory(Long memberCode){
-        List<ProfessorHistory> histories =
-                professorHistoryRepository.findByProfessor_MemberCodeOrderByCreatedAtDesc(memberCode);
-        if (histories.isEmpty()) {
+        if (!professorRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND);
         }
+        List<ProfessorHistory> histories =
+                professorHistoryRepository.findByProfessor_MemberCodeOrderByCreatedAtDesc(memberCode);
         return histories.stream()
                 .map( h -> {
                     ProfessorHistoryRes res = new ProfessorHistoryRes();

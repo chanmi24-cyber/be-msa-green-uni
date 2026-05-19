@@ -7,12 +7,16 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
+import com.green.member.application.professor.ProfessorService;
 import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.ProfessorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentBatchService;
+import com.green.member.application.student.StudentService;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
+import com.green.member.application.student.model.StudentHistoryRes;
 import com.green.member.application.student.model.StudentListDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +41,8 @@ public class AdminController {
     private final StudentBatchService studentBatchService;
     private final ProfessorBatchService professorBatchService;
     private final AdminBatchService adminBatchService;
+    private final ProfessorService professorService;
+    private final StudentService studentService;
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -44,6 +50,42 @@ public class AdminController {
         List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+
+    @GetMapping("/students/{memberCode}/history")
+    public ResultResponse<?> findStudentHistory(@PathVariable Long memberCode){
+        List<StudentHistoryRes> res = studentService.findStudentHistory( memberCode );
+        return ResultResponse.builder()
+                .message("관리자의 학생 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+    @GetMapping("/professors/{memberCode}/history")
+    public ResultResponse<?> findProfessorHistory(@PathVariable Long memberCode){
+        List<ProfessorHistoryRes> res = professorService.findStatusHistory( memberCode );
+        return ResultResponse.builder()
+                .message("관리자의 교수 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+    @GetMapping("/admins/{memberCode}/history")
+    public ResultResponse<?> findAdminHistory(@PathVariable Long memberCode){
+        List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode );
+        return ResultResponse.builder()
+                .message("관리자의 관리자 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    // 회원 상세 정보 조회
+    @GetMapping("/{memberCode}")
+    public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
+        MemberProfileRes res = adminService.getMemberProfile(memberCode);
+        return ResultResponse.builder()
+                .message("회원 프로파일 조회")
                 .data(res)
                 .build();
     }
@@ -169,38 +211,35 @@ public class AdminController {
                 .build();
     }
 
-    @GetMapping("/{memberCode}")
-    public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
-        MemberProfileRes res = adminService.getMemberProfile(memberCode);
-        return ResultResponse.builder()
-                .message("회원 프로파일 조회")
-                .data(res)
-                .build();
-    }
-
     // 관리자 계정 정보 수정
     @PatchMapping("/admins/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminMemberUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminMemberUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateAdmin(memberCode, loginMember.memberCode(), req);
+        adminService.updateAdmin(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("관리자 계정 정보 수정 성공")
                 .build();
     }
     // 교수 계정 정보 수정
     @PatchMapping("/professors/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminProfessorUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminProfessorUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateProfessor(memberCode, loginMember.memberCode(), req);
+        adminService.updateProfessor(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("교수 계정 정보 수정 성공")
                 .build();
     }
     // 학생 계정 정보 수정
     @PatchMapping("/students/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminStudentUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminStudentUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateStudent(memberCode, loginMember.memberCode(), req);
+        adminService.updateStudent(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("학생 계정 정보 수정 성공")
                 .build();
