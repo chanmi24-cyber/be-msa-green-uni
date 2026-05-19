@@ -213,27 +213,33 @@ public class AdminController {
 
     // 관리자 계정 정보 수정
     @PatchMapping("/admins/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminMemberUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminMemberUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateAdmin(memberCode, loginMember.memberCode(), req);
+        adminService.updateAdmin(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("관리자 계정 정보 수정 성공")
                 .build();
     }
     // 교수 계정 정보 수정
     @PatchMapping("/professors/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminProfessorUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminProfessorUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateProfessor(memberCode, loginMember.memberCode(), req);
+        adminService.updateProfessor(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("교수 계정 정보 수정 성공")
                 .build();
     }
     // 학생 계정 정보 수정
     @PatchMapping("/students/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode, @RequestBody AdminStudentUpdateReq req) {
+    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
+                                           @RequestPart AdminStudentUpdateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
-        adminService.updateStudent(memberCode, loginMember.memberCode(), req);
+        adminService.updateStudent(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
                 .message("학생 계정 정보 수정 성공")
                 .build();

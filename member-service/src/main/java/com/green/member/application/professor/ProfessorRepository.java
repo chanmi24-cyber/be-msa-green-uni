@@ -23,6 +23,7 @@ public interface ProfessorRepository extends JpaRepository<Professor,Long> {
               ON m.member_code = p.member_code
             JOIN major_cache mc_p
               ON mc_p.major_id = p.major_id
+            ORDER BY m.member_code DESC
             """,
             nativeQuery = true
     )
