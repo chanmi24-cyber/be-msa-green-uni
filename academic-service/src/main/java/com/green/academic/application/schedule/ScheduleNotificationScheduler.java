@@ -206,14 +206,14 @@ public class ScheduleNotificationScheduler {
     private String buildUrl(EnumScheduleType type, Schedule schedule) {
         String qs = "?year=" + schedule.getYear() + "&semester=" + schedule.getSemester() + "&page=1";
         return switch (type) {
-            case COURSE_REGISTRATION -> "/courses" + qs;
-            case COURSE_MODIFICATION -> "/courses" + qs;
-            case GRADE_INPUT         -> "/grades" + qs;
-            case GRADE_VIEW          -> "/grades/my" + qs;
-            case GRADE_APPEAL        -> "/grades/appeal/my" + qs;
             case LECTURE_EVALUATION  -> "/evaluations" + qs;
-            case TUITION_PAYMENT     -> "/tuitions/my" + qs;
             case COURSE_OPEN         -> "/lectures/my" + qs;
+            case COURSE_REGISTRATION -> "/courses";
+            case COURSE_MODIFICATION -> "/courses";
+            case GRADE_INPUT         -> "/grades";
+            case GRADE_VIEW          -> "/grades/my";
+            case GRADE_APPEAL        -> "/grades/appeal/my";
+            case TUITION_PAYMENT     -> "/tuitions/my";
             case MAJOR_CHANGE        -> "/members/major-request";
             case SEMESTER_START      -> "/";
             default -> "/";
