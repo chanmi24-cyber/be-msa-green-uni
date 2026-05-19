@@ -193,6 +193,7 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
+        <!-- [수정] 수강정정 기간엔 totalCount도 createdBefore 기준으로 계산 -->
         (SELECT COUNT(DISTINCT l2.lecture_id)
         FROM course c2
         JOIN lecture l2 ON c2.lecture_id = l2.lecture_id
@@ -200,6 +201,7 @@
         AND l2.status = 'APPROVED'
         <if test="req.year != null">AND l2.year = #{req.year}</if>
         <if test="req.semester != null">AND l2.semester = #{req.semester}</if>
+        <if test="req.createdBefore != null">AND c2.created_at &lt; #{req.createdBefore}</if>
         ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM course c
@@ -211,6 +213,7 @@
         AND l.status = 'APPROVED'
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
+        <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{req.size} OFFSET #{req.startIdx}
     </select>
