@@ -3,6 +3,8 @@ package com.green.core.application.lecture.model;
 import com.green.common.enumcode.EnumApprovalStatus;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 // LEC-06, 07 공용
 @Getter
 @Setter
@@ -18,4 +20,5 @@ public class MyLectureListReq {
     private Integer page;
     private Integer size;
     private Integer startIdx;
+    private LocalDateTime createdBefore;
 }
