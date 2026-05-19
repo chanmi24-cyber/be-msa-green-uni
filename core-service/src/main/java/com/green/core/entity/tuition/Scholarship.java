@@ -24,4 +24,10 @@ public class Scholarship extends CreatedAt {
 
     @Column(name = "scholarship_amount", nullable = false)
     private Long scholarshipAmount;
+
+    @Column(name = "year", nullable = false)
+    private Integer year;
+
+    @Column(name = "semester", nullable = false)
+    private Integer semester;
 }
