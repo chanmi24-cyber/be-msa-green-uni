@@ -36,6 +36,7 @@ public class AuthMemberConsumer {
                     authService.updateEmail(event.getMemberCode(), event.getEmail());
                 } else if (UpdateType.DEACTIVATE.equals(event.getUpdateType())) {
                     authService.deactivate(event.getMemberCode());
+                    authService.deleteSessionAfterDeactivate(event.getMemberCode());
                 }
             }
         } catch (BusinessException e) {
