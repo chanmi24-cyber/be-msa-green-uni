@@ -85,6 +85,12 @@ public class JwtTokenManager { //인증처리 총괄
 
         //쿠키에 AT가 있다면, JWT에 담았던 JwtMember객체(로그인 유저 정보)를 빼내어, 시큐리티를 위한 UserPrincipal로 변환
         JwtMember jwtMember = jwtTokenProvider.getJwtMemberFromToken(accessToken);
+
+        // 자퇴/퇴학/퇴임 등으로 비활성화된 계정은 기존 AT로도 접근 불가
+        if (redisService.hasKey("DEACTIVATED:" + jwtMember.getLoginMemberCode())) {
+            return null;
+        }
+
         UserPrincipal userPrincipal = new UserPrincipal(jwtMember);
         log.info("userPrincipal: {}", userPrincipal);
         // 시큐리티 인증된 로그인 유저 정보(로그인ID, role 담아 반환. @AuthenticationPrincipal로 활용)

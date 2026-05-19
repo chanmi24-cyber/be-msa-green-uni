@@ -2,6 +2,7 @@ package com.green.auth.application.auth;
 
 import com.green.auth.application.auth.model.*;
 import com.green.auth.entity.AuthMember;
+import com.green.common.constants.ConstJwt;
 import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.EmailErrorCode;
 import com.green.common.exception.BusinessException;
@@ -19,6 +20,7 @@ public class AuthService {
     private final AuthMemberRepository authMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisService redisService;
+    private final ConstJwt constJwt;
 
     // 로그인
     @Transactional(readOnly = true)
