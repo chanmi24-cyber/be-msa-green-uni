@@ -213,9 +213,9 @@ public class AdminController {
 
     // 관리자 계정 정보 수정
     @PatchMapping("/admins/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
-                                           @RequestPart AdminMemberUpdateReq req,
-                                           @RequestPart(required = false) MultipartFile pic) {
+    public ResultResponse<?> updateAdminProfile(@PathVariable Long memberCode,
+                                                @RequestPart AdminMemberUpdateReq req,
+                                                @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateAdmin(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
@@ -224,9 +224,9 @@ public class AdminController {
     }
     // 교수 계정 정보 수정
     @PatchMapping("/professors/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
-                                           @RequestPart AdminProfessorUpdateReq req,
-                                           @RequestPart(required = false) MultipartFile pic) {
+    public ResultResponse<?> updateProfessorProfile(@PathVariable Long memberCode,
+                                                    @RequestPart AdminProfessorUpdateReq req,
+                                                    @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateProfessor(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
@@ -235,9 +235,9 @@ public class AdminController {
     }
     // 학생 계정 정보 수정
     @PatchMapping("/students/{memberCode}")
-    public ResultResponse<?> updateProfile(@PathVariable Long memberCode,
-                                           @RequestPart AdminStudentUpdateReq req,
-                                           @RequestPart(required = false) MultipartFile pic) {
+    public ResultResponse<?> updateStudentProfile(@PathVariable Long memberCode,
+                                                  @RequestPart AdminStudentUpdateReq req,
+                                                  @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateStudent(memberCode, loginMember.memberCode(), req, pic);
         return ResultResponse.builder()
@@ -256,7 +256,7 @@ public class AdminController {
     }
     // 교수 계정 상태 변경
     @PatchMapping("/professors/{memberCode}/status")
-    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody @Valid StatusUpdateProfessorReq req) {
+    public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateProfessorReq req) {
         MemberDto loginMember = MemberContext.get();
         adminService.updateProfessorStatus(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()

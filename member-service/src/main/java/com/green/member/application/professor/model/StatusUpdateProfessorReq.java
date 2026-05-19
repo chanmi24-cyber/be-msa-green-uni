@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 public class StatusUpdateProfessorReq {
-    @NotNull(message = "상태값은 필수입니다")
     private EnumProfessorStatus status;
     private EnumProfessorPosition position;
     private String reason;
