@@ -15,7 +15,7 @@ import com.green.core.entity.grade.Grade;
 import com.green.core.entity.lecture.Lecture;
 import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.exception.CourseErrorCode;
-import com.green.core.repository.GradeRepository;
+import com.green.core.application.grade.GradeRepository; // [수정] grade 도메인 폴더로 이동
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.ScheduleCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
