@@ -3,9 +3,13 @@ package com.green.core.scheduleValidator;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.SchedulePeriodErrorCode;
+import com.green.core.entity.cache.ScheduleCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import com.green.core.repository.ScheduleCacheRepository;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -82,5 +86,30 @@ public class SchedulePeriodValidator {
                 .findByTypeAndIsActiveTrue(EnumScheduleType.MAJOR_CHANGE)
                 .isPresent();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_MAJOR_CHANGE_PERIOD);
+    }
+
+    // 수강신청 또는 수강정정 기간 여부 확인 (예외 없이 boolean 반환)
+    public boolean isCourseRegistrationOrModificationPeriod() {
+        boolean isRegistration = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
+                .isPresent();
+        boolean isModification = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION)
+                .isPresent();
+        return isRegistration || isModification;
+    }
+
+    // 수강신청 기간 여부만 확인 (예외 없이 boolean 반환)
+    public boolean isCourseRegistrationPeriod() {
+        return scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
+                .isPresent();
+    }
+
+    // 수강정정 기간 시작일 반환 (활성 상태인 경우에만)
+    public Optional<LocalDateTime> getCourseModificationStartDate() {
+        return scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION)
+                .map(ScheduleCache::getStartDate);
     }
 }
