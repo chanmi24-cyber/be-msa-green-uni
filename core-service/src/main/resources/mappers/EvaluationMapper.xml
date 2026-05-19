@@ -23,7 +23,7 @@
         LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
-        AND g.grade_letter IS NOT NULL
+        AND g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
