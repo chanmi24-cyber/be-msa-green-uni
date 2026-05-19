@@ -160,6 +160,11 @@ public class LectureService {
 
     // LEC-07 학생: 내 강의 목록
     public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
+        if (schedulePeriodValidator.isCourseRegistrationPeriod()) {
+            return List.of();
+        }
+        schedulePeriodValidator.getCourseModificationStartDate()
+                .ifPresent(req::setCreatedBefore);
         return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
     }
 
