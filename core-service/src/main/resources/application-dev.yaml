@@ -1,0 +1,5 @@
+school:
+  network:
+    # [개발] ngrok 통해 들어오는 요청은 공인 IP로 변환되므로 모든 IP 허용
+    # 운영 배포 시 application.yaml의 192.168.0.0/24 가 자동 적용됨
+    cidr: "0.0.0.0/0"
