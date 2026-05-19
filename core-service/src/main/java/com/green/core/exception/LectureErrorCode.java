@@ -16,7 +16,8 @@ public enum LectureErrorCode implements ErrorCode {
     EXCEED_CLASSROOM_CAPACITY("L006", "수강인원이 강의실 최대 수용인원을 초과합니다.", HttpStatus.BAD_REQUEST),
     SCHEDULE_CONFLICT("L007", "해당 강의실에 같은 시간대 강의가 이미 존재합니다.", HttpStatus.CONFLICT),
     PROFESSOR_SCHEDULE_CONFLICT("L008", "해당 시간에 이미 다른 강의가 있습니다.", HttpStatus.CONFLICT),
-    INVALID_DATE_RANGE("L009", "종료일자는 시작일자보다 이후여야 합니다.", HttpStatus.BAD_REQUEST);
+    INVALID_DATE_RANGE("L009", "종료일자는 시작일자보다 이후여야 합니다.", HttpStatus.BAD_REQUEST),
+    CLASSROOM_NOT_FOUND("L010", "존재하지 않는 강의실입니다.", HttpStatus.NOT_FOUND);
 
 
     private final String code;
