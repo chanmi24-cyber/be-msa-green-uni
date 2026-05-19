@@ -40,7 +40,7 @@ public class MemberController {
         MemberDto loginMember = MemberContext.get();
         memberService.updateMyProfile(loginMember.memberCode(), loginMember.role(), req, pic);
         return ResultResponse.builder()
-                .message("개인정보 수정")
+                .message("내 정보 수정을 완료했습니다")
                 .build();
     }
 }
