@@ -39,6 +39,11 @@ public class Course extends CreatedAt {
     @Column(name = "semester", nullable = false)
     private Integer semester; // 복합 Unique
 
+    // [추가] 수강정정 기간 취소 시 소프트 삭제 플래그 (수강신청 기간 취소는 물리 삭제)
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
+
     // mappedBy = "course" 는 Grade 엔터티 안에 course라는 필드가 주인이라는 뜻
     @OneToOne(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private Grade grade;
@@ -46,4 +51,9 @@ public class Course extends CreatedAt {
     //수강 정정 기간에 취소하면 해당 학생의 출석 데이터도 자동으로 같이 지우기
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attendance> attendances;
+
+    // [추가] 수강정정 기간 소프트 삭제
+    public void softDelete() {
+        this.isDeleted = true;
+    }
 }
