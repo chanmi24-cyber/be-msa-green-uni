@@ -182,11 +182,6 @@
     </select>
 
     <!-- LEC-07 학생: 수강신청한 강의 -->
-    <!--
-      [수정] 수강정정 기간 원본 목록 고정
-      - createdBefore 있음 (수강정정 기간): 정정 시작일 이전 신청분만 표시, is_deleted 무시 → 원본 목록 고정
-      - createdBefore 없음 (정정 종료 후): is_deleted = false 만 표시 → 최종 목록
-    -->
     <select id="findStudentMyLectures" resultMap="lectureListResMap">
         SELECT
         l.lecture_id    AS lectureId,
@@ -198,6 +193,7 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
+        <!-- [수정] 수강정정 기간엔 totalCount도 createdBefore 기준으로 계산 -->
         (SELECT COUNT(DISTINCT l2.lecture_id)
         FROM course c2
         JOIN lecture l2 ON c2.lecture_id = l2.lecture_id
@@ -206,7 +202,6 @@
         <if test="req.year != null">AND l2.year = #{req.year}</if>
         <if test="req.semester != null">AND l2.semester = #{req.semester}</if>
         <if test="req.createdBefore != null">AND c2.created_at &lt; #{req.createdBefore}</if>
-        <if test="req.createdBefore == null">AND c2.is_deleted = false</if>
         ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM course c
@@ -219,7 +214,6 @@
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
         <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
-        <if test="req.createdBefore == null">AND c.is_deleted = false</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{req.size} OFFSET #{req.startIdx}
     </select>

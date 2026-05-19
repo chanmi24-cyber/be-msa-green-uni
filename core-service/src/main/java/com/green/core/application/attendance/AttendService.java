@@ -195,9 +195,8 @@ public class AttendService {
         Long studentCode = MemberContext.get().memberCode();
 
         // 5. 수강신청 확인 (등록금 납부 → 재학 → 수강신청 순이므로 수강신청 내역만으로 충분)
-        // [수정] 소프트 삭제된 강의(정정 기간 취소)는 출석 불가
         Course course = attendEnrollmentRepository
-                .findByLecture_LectureIdAndStudentCodeAndIsDeletedFalse(lectureId, studentCode)
+                .findByLecture_LectureIdAndStudentCode(lectureId, studentCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "수강 신청하지 않은 강의입니다."));
 
         // [수정] 6-7. MAKEUP 세션: 원래 CANCEL 세션의 ABSENT → ATTEND 업데이트
@@ -324,7 +323,7 @@ public class AttendService {
         }
 
         // 수강생 전원 조회 (출석 기록 없는 학생도 포함)
-        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureIdAndIsDeletedFalse(lectureId);
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
 
         // 이 세션의 출석 기록 (studentCode → Attendance)
         Map<Long, Attendance> attendanceMap = attendanceRepository
@@ -379,7 +378,7 @@ public class AttendService {
         if (sessionOpt.isEmpty()) return List.of();
         AttendanceSession session = sessionOpt.get();
 
-        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureIdAndIsDeletedFalse(lectureId);
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
 
         Map<Long, Attendance> attendanceMap = attendanceRepository
                 .findByAttendsession_AttendsessionId(session.getAttendsessionId())
@@ -477,7 +476,7 @@ public class AttendService {
         Long lectureId = session.getLecture().getLectureId();
         LocalDate classDate = session.getClassDate();
 
-        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureIdAndIsDeletedFalse(lectureId);
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
         List<Long> attendedStudentCodes = attendanceRepository
                 .findStudentCodeByLectureIdAndClassDate(lectureId, classDate);
 
@@ -554,7 +553,7 @@ public class AttendService {
         attendanceCancelRepository.save(cancel);
 
         // [추가] 수강생 전원 ABSENT 처리 — 보강 미참석 시 결석으로 유지, 참석 시 ATTEND로 UPDATE
-        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureIdAndIsDeletedFalse(lectureId);
+        List<Course> enrollments = attendEnrollmentRepository.findByLecture_LectureId(lectureId);
         List<Attendance> absentList = enrollments.stream()
                 .map(e -> Attendance.builder()
                         .attendsession(session)
