@@ -79,7 +79,8 @@ public class CourseService {
                         currentYear, currentSemester, EnumApprovalStatus.APPROVED)
                 .stream()
                 .map(l -> {
-                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+                    // [수정] 소프트 삭제된 건 정원 미포함
+                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDeletedFalse(
                             l.getLectureId(), currentYear, currentSemester);
 
                     // 수업시간 및 강의실 정보
@@ -131,12 +132,14 @@ public class CourseService {
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 
+        // [수정] 소프트 삭제된 강의 제외
         List<MyCourseRes> courses = courseRepository
-                .findByStudentCodeAndYearAndSemester(studentCode, currentYear, currentSemester)
+                .findByStudentCodeAndYearAndSemesterAndIsDeletedFalse(studentCode, currentYear, currentSemester)
                 .stream()
                 .map(c -> {
                     Lecture l = c.getLecture();
-                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+                    // [수정] 소프트 삭제된 건 정원 미포함
+                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDeletedFalse(
                             l.getLectureId(), currentYear, currentSemester);
 
                     List<LectureSchedule> schedules = lectureScheduleRepository
@@ -256,9 +259,9 @@ public class CourseService {
 
         log.info("4. 학과/학년 조건 확인 완료");
 
-        // 이미 신청된 강의 확인
+        // 이미 신청된 강의 확인 — [수정] 소프트 삭제된 건 중복으로 보지 않음
         boolean alreadyEnrolled = courseRepository
-                .existsByStudentCodeAndLecture_LectureIdAndYearAndSemester(
+                .existsByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDeletedFalse(
                         studentCode, req.getLectureId(), currentYear, currentSemester);
         if (alreadyEnrolled) {
             throw new BusinessException(CourseErrorCode.COURSE_ALREADY_ENROLLED);
@@ -281,8 +284,8 @@ public class CourseService {
         }
         log.info("6. 시간표 중복 확인 완료");
 
-        // 수강 정원 초과 확인
-        int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+        // 수강 정원 초과 확인 — [수정] 소프트 삭제된 건 정원 미포함
+        int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDeletedFalse(
                 req.getLectureId(), currentYear, currentSemester);
         if (enrolledCount >= lecture.getMaxStd()) {
             throw new BusinessException(CourseErrorCode.COURSE_CAPACITY_EXCEEDED);
@@ -334,14 +337,22 @@ public class CourseService {
 
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
 
+        // [수정] 소프트 삭제된 건 재취소 불가
         Course course = courseRepository
-                .findByStudentCodeAndLecture_LectureIdAndYearAndSemester(
+                .findByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDeletedFalse(
                         studentCode, lectureId, currentYear, currentSemester)
                 .orElseThrow(() -> new BusinessException(CourseErrorCode.COURSE_NOT_FOUND));
 
-        // Course 삭제 시 Grade도 cascade로 함께 삭제됨 (Course 엔티티 @OneToOne cascade = ALL)
-        courseRepository.delete(course);
-        log.info("수강 신청 취소 완료 - lectureId: {}, studentCode: {}", lectureId, studentCode);
+        // [수정] 수강정정 기간: 소프트 삭제 (나의강의관리 원본 목록 보존)
+        //        수강신청 기간: 물리 삭제 (Grade, Attendance cascade 삭제)
+        if (schedulePeriodValidator.getCourseModificationStartDate().isPresent()) {
+            course.softDelete();
+            courseRepository.save(course);
+            log.info("수강 취소(소프트) 완료 - lectureId: {}, studentCode: {}", lectureId, studentCode);
+        } else {
+            courseRepository.delete(course);
+            log.info("수강 취소(물리) 완료 - lectureId: {}, studentCode: {}", lectureId, studentCode);
+        }
     }
 
     private int getCurrentSemester() {
