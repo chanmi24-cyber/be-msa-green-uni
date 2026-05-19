@@ -12,4 +12,10 @@ public interface AttendEnrollmentRepository extends JpaRepository<Course, Long> 
     List<Course> findByLecture_LectureId(Long lectureId);
 
     Optional<Course> findByLecture_LectureIdAndStudentCode(Long lectureId, Long studentCode);
+
+    // [추가] 학생이 수강 중인 강의 ID 목록 — getMyAttendance 세션 기반 조회용
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT c.lecture.lectureId FROM Course c WHERE c.studentCode = :studentCode")
+    List<Long> findLectureIdsByStudentCode(
+            @org.springframework.data.repository.query.Param("studentCode") Long studentCode);
 }

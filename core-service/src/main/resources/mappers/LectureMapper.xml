@@ -211,6 +211,7 @@
         AND l.status = 'APPROVED'
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
+        <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{req.size} OFFSET #{req.startIdx}
     </select>

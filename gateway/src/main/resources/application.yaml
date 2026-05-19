@@ -21,7 +21,8 @@ spring:
           cors: # cors 허용
             configurations:
               '[/**]':
-                allowed-origins: [ "http://localhost:5173", "http://localhost:5174" ]
+                # [수정] ngrok 터널 도메인 추가 — 모바일 테스트 시 CORS 차단 방지
+                allowed-origins: [ "http://localhost:5173", "http://localhost:5174", "https://bottom-gleaming-lather.ngrok-free.dev" ]
                 allowed-methods: [ "*" ]
                 allowed-headers: [ "*" ]
                 allow-credentials: true
