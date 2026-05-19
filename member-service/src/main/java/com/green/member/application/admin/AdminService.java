@@ -312,13 +312,13 @@ public class AdminService {
 
     // 학생 계정 개인 정보 수정
     @Transactional
-    public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req) {
+    public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req, MultipartFile pic) {
 
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
-        member.updateCommonByAdmin( req.getName(),req.getBirth() );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic) );
 
         // 학생 필드 업데이트
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
@@ -381,13 +381,13 @@ public class AdminService {
 
     // 교수 계정 정보 수정
     @Transactional
-    public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req) {
+    public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req, MultipartFile pic) {
 
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
-        member.updateCommonByAdmin( req.getName(),req.getBirth() );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic) );
 
         // 교수 필드 업데이트
         Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
@@ -422,7 +422,7 @@ public class AdminService {
 
     // 관리자 계정 정보 수정
     @Transactional
-    public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
+    public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req, MultipartFile pic) {
         adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
@@ -430,10 +430,7 @@ public class AdminService {
         LocalDate oldBirth = member.getBirth();
 
         // 공통 필드 업데이트
-        member.updateCommonByAdmin(
-                req.getName(),
-                req.getBirth()
-        );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic) );
 
         // MemberHistory 저장을 위한 변경된 필드만 수집
         Map<String, Object> before = new LinkedHashMap<>();
@@ -666,13 +663,27 @@ public class AdminService {
         }
     }
 
+    private String savePic(Long memberCode, MultipartFile pic) {
+        if (pic == null) return null;
+        String fileName = myFileUtil.makeRandomFileName(pic);
+        String middlePath = "member/" + memberCode;
+        myFileUtil.makeFolders(middlePath);
+        try {
+            myFileUtil.transferTo(pic, middlePath + "/" + fileName);
+        } catch (IOException e) {
+            log.error("파일 저장 실패: {}", e.getMessage());
+            return null;
+        }
+        return fileName;
+    }
+
     // 관리자 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<AdminHistoryRes> findStatusHistory(Long memberCode){
-        List<AdminHistory> histories = adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode);
-        if (histories.isEmpty()) {
+        if (!adminRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND);
         }
+        List<AdminHistory> histories = adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode);
         return histories.stream()
                 .map( h -> {
                     AdminHistoryRes res = new AdminHistoryRes();
