@@ -58,7 +58,8 @@ public class WebSecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins( List.of("http://localhost:5173", "http://localhost:5174", "http://192.168.0.31:5173", "https://localhost:5173", "https://localhost:5174", "https://192.168.0.31:5173") );
+        // [수정] ngrok 터널 도메인 추가 — 모바일 테스트 시 CORS 차단 방지
+        config.setAllowedOrigins( List.of("http://localhost:5173", "http://localhost:5174", "http://192.168.0.31:5173", "https://localhost:5173", "https://localhost:5174", "https://192.168.0.31:5173", "https://bottom-gleaming-lather.ngrok-free.dev") );
         config.setAllowedMethods( List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS") );
         config.setAllowedHeaders( List.of("*") );
         config.setAllowCredentials(true);
