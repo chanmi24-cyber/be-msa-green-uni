@@ -5,6 +5,7 @@
 <mapper namespace="com.green.core.application.lecture.mapper.EvaluationMapper">
 
     <!-- EVAL-01 학생: 내 강의평가 목록 -->
+    <!-- [수정] grade 테이블 JOIN 추가 — 성적기입 완료(grade_letter IS NOT NULL)된 강의만 표시 -->
     <select id="findStudentEvalList" resultType="com.green.core.application.lecture.model.EvalListRes">
         SELECT
         l.lecture_id,
@@ -18,9 +19,11 @@
         FROM course c
         JOIN lecture l ON c.lecture_id = l.lecture_id
         JOIN professor_cache pc ON l.member_code = pc.member_code
+        JOIN grade g ON g.course_id = c.course_id
         LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
+        AND g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
