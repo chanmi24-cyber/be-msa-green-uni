@@ -10,6 +10,7 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
+import com.green.member.application.student.model.MajorRequestRes;
 import com.green.member.application.student.model.StudentHistoryRes;
 import com.green.member.application.student.model.StudentMajorReq;
 import com.green.member.application.student.model.StudentProfileRes;
@@ -210,5 +211,29 @@ public class StudentService {
                 log.warn("기존 파일 삭제 실패: {}", e.getMessage());
             }
         }
+    }
+    // 학생 전공 변경 신청 목록 조회
+    @Transactional(readOnly = true)
+    public List<MajorRequestRes> findMajorRequests(Long memberCode){
+        if (!studentRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        List<MajorRequest> requests =
+               majorRequestRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode);
+        return requests.stream()
+                .map( h -> {
+                    String majorName = majorCacheRepository.findById(h.getTargetMajorId())
+                            .map(MajorCache::getName)
+                            .orElse(null);
+                    MajorRequestRes res = new MajorRequestRes();
+                    res.setRequestId(h.getRequestId());
+                    res.setType(h.getType());
+                    res.setTargetMajorName(majorName);
+                    res.setStatus(h.getStatus());
+                    res.setCreatedAt(h.getCreatedAt());
+                    return res;
+                })
+                .toList()
+                ;
     }
 }
