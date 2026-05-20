@@ -74,4 +74,12 @@ public class AdminTuitionController {
         tuitionService.updateTuitionPolicy(policyId, request, adminCode);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/tuition-policies/history")
+    public ResponseEntity<List<TuitionRes.PolicyHistoryRes>> getPolicyHistories(
+            @RequestParam Integer year,
+            @RequestParam Integer semester
+    ) {
+        return ResponseEntity.ok(tuitionService.getPolicyHistoryList(year, semester));
+    }
 }

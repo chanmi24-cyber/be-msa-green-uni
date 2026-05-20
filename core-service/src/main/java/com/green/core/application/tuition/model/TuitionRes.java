@@ -2,6 +2,7 @@ package com.green.core.application.tuition.model;
 
 import com.green.core.entity.tuition.Tuition;
 import com.green.core.entity.tuition.TuitionPolicy;
+import com.green.core.entity.tuition.TuitionPolicyHistory;
 import com.green.core.enumcode.EnumTuitionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -81,26 +82,43 @@ public class TuitionRes {
     }
 
     // API-TUI-11, 12: 등록금 정책 전체 조회/수정 전용 응답 스펙
+    // TuitionRes 클래스 내부의 PolicyRes 스펙 가이드라인 예시
     @Getter
     public static class PolicyRes {
-        private final Long policyId;
-        private final Integer year;
-        private final Integer semester;
-        private final Long collegeId;
-        private final String collegeName;
-        private final Long baseAmount;
-        private final LocalDateTime updatedAt;
-        private final String updatedBy;
+        private Long policyId;
+        private Long collegeId;
+        private String collegeName;
+        private Long baseAmount;
+        private Long updatedBy;
+        private LocalDateTime updatedAt;
 
         public PolicyRes(TuitionPolicy policy) {
             this.policyId = policy.getPolicyId();
-            this.year = policy.getYear();
-            this.semester = policy.getSemester();
-            this.collegeId = policy.getCollege().getCollegeId();
-            this.collegeName = policy.getCollege().getName();
             this.baseAmount = policy.getBaseAmount();
-            this.updatedAt = policy.getUpdatedAt(); // 부모 엔티티 CreatedUpdatedAt에서 인스턴스 자동 상속
-            this.updatedBy = policy.getUpdatorCode() != null ? String.valueOf(policy.getUpdatorCode()) : "SYSTEM";
+            this.updatedBy = policy.getUpdatorCode();
+            this.updatedAt = policy.getUpdatedAt(); // CreatedUpdatedAt 상속분 사용
+            if (policy.getCollege() != null) {
+                this.collegeId = policy.getCollege().getCollegeId();
+                this.collegeName = policy.getCollege().getName(); // 단과대학 명칭 매핑
+            }
+        }
+    }
+
+    @Getter
+    public static class PolicyHistoryRes {
+        private Long policyId;
+        private String collegeName;
+        private Long baseAmount;
+        private LocalDateTime createdAt;
+        private Long updatorCode;
+
+        // 파싱된 amount를 받는 생성자
+        public PolicyHistoryRes(TuitionPolicyHistory history, Long baseAmount) {
+            this.policyId = history.getTuitionPolicy().getPolicyId();
+            this.collegeName = history.getTuitionPolicy().getCollege().getName();
+            this.baseAmount = baseAmount; // 파싱된 금액 할당
+            this.createdAt = history.getCreatedAt();
+            this.updatorCode = history.getUpdatorCode();
         }
     }
 }
