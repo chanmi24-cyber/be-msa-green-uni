@@ -3,7 +3,10 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+<<<<<<< HEAD
 import com.green.common.exception.CommonErrorCode;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
@@ -594,6 +597,20 @@ public class AdminService {
                     .updatorCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
+<<<<<<< HEAD
+=======
+
+            // 퇴임이면 로그인 불가 처리
+            if (newStatus == EnumProfessorStatus.RETIREMENT) {
+                AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                        .memberCode(memberCode)
+                        .isActive(false)
+                        .eventType(EventType.E_UPDATED)
+                        .updateType(UpdateType.DEACTIVATE)
+                        .build();
+                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
+            }
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
         }
     }
 

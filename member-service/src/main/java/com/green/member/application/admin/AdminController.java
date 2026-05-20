@@ -7,6 +7,7 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
+<<<<<<< HEAD
 import com.green.member.application.professor.ProfessorService;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.ProfessorHistoryRes;
@@ -17,6 +18,14 @@ import com.green.member.application.student.StudentService;
 import com.green.member.application.student.model.StatusUpdateStudentReq;
 import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.application.student.model.StudentHistoryRes;
+=======
+import com.green.member.application.professor.model.ProfessorCreateReq;
+import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.professor.model.StatusUpdateProfessorReq;
+import com.green.member.application.student.StudentBatchService;
+import com.green.member.application.student.model.StatusUpdateStudentReq;
+import com.green.member.application.student.model.StudentCreateReq;
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.member.application.student.model.StudentListDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +50,11 @@ public class AdminController {
     private final StudentBatchService studentBatchService;
     private final ProfessorBatchService professorBatchService;
     private final AdminBatchService adminBatchService;
+<<<<<<< HEAD
     private final ProfessorService professorService;
     private final StudentService studentService;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -54,6 +66,7 @@ public class AdminController {
                 .build();
     }
 
+<<<<<<< HEAD
 
     @GetMapping("/students/{memberCode}/history")
     public ResultResponse<?> findStudentHistory(@PathVariable Long memberCode){
@@ -76,6 +89,125 @@ public class AdminController {
         List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 관리자 계정 상태 변경 이력 조회")
+=======
+    // 학생 회원 목록 조회
+    @GetMapping("/students")
+    public ResultResponse<?> findStudentList(){
+        List<StudentListDto> res = adminService.findStudents();
+        return ResultResponse.builder()
+                .message("학생 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 교수 회원 목록 조회
+    @GetMapping("/professors")
+    public ResultResponse<?> findProfessorList(){
+        List<ProfessorListDto> res = adminService.findProfessors();
+        return ResultResponse.builder()
+                .message("교수 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+    // 관리자 회원 목록 조회
+    @GetMapping("/admins")
+    public ResultResponse<?> findAdminList(){
+        List<AdminListDto> res = adminService.findAdmins();
+        return ResultResponse.builder()
+                .message("관리자 목록 조회 성공")
+                .data(res)
+                .build();
+    }
+
+    // 학생 일괄 등록 템플릿 다운로드
+    @GetMapping("/students/batch/template")
+    public ResponseEntity<byte[]> downloadStudentTemplate() throws IOException {
+        byte[] template = studentBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"student_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
+    // 교수 일괄 등록 템플릿 다운로드
+    @GetMapping("/professors/batch/template")
+    public ResponseEntity<byte[]> downloadProfessorTemplate() throws IOException {
+        byte[] template = professorBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"professor_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
+    // 관리자 일괄 등록 템플릿 다운로드
+    @GetMapping("/admins/batch/template")
+    public ResponseEntity<byte[]> downloadAdminTemplate() throws IOException {
+        byte[] template = adminBatchService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"admin_template.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(template);
+    }
+
+    // 학생 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/students/batch")
+    public ResultResponse<?> batchRegisterStudents(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("학생 일괄 등록 완료")
+                .data(studentBatchService.batchRegister(file))
+                .build();
+    }
+    // 교수 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/professors/batch")
+    public ResultResponse<?> batchRegisterProfessors(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("교수 일괄 등록 완료")
+                .data(professorBatchService.batchRegister(file))
+                .build();
+    }
+    // 관리자 일괄 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/admins/batch")
+    public ResultResponse<?> batchRegisterAdmins(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResultResponse.builder()
+                .message("관리자 일괄 등록 완료")
+                .data(adminBatchService.batchRegister(file))
+                .build();
+    }
+
+    // 학생 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/students")
+    public ResultResponse<?> createStudent(@RequestPart @Valid StudentCreateReq req,
+                                           @RequestPart(required = false) MultipartFile pic) {
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createStudent(req, pic, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("학생 정보 등록 성공했습니다")
+                .data(res)
+                .build();
+    }
+    // 교수 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/professors")
+    public ResultResponse<?> createProfessor(@RequestPart @Valid ProfessorCreateReq req,
+                                             @RequestPart(required = false) MultipartFile pic) {
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createProfessor(req, pic, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("교수 정보 등록 성공했습니다")
+                .data(res)
+                .build();
+    }
+    // 관리자 단건 등록
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/admins")
+    public ResultResponse<?> createAdmin(@RequestPart @Valid AdminCreateReq req,
+                                         @RequestPart(required = false) MultipartFile pic) {
+        MemberDto loginMember = MemberContext.get();
+        MemberCreateRes res = adminService.createAdmin(req, pic, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("관리자 정보 등록 성공했습니다")
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
                 .data(res)
                 .build();
     }

@@ -1,18 +1,27 @@
 package com.green.core.application.tuition;
 
+<<<<<<< HEAD
 import com.green.common.enumcode.EnumScheduleType;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.common.exception.BusinessException;
 import com.green.core.application.scholarship.ScholarshipRepository;
 import com.green.core.application.tuition.model.TuitionReq;
 import com.green.core.application.tuition.model.TuitionRes;
 import com.green.core.application.tuition.model.TuitionMailEvent;
+<<<<<<< HEAD
 import com.green.core.entity.cache.ScheduleCache;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.core.entity.scholarship.Scholarship;
 import com.green.core.entity.tuition.Tuition;
 import com.green.core.entity.tuition.TuitionMailLog;
 import com.green.core.entity.tuition.TuitionPolicy;
 import com.green.core.enumcode.EnumTuitionStatus;
+<<<<<<< HEAD
 import com.green.core.repository.ScheduleCacheRepository;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +47,10 @@ public class TuitionService {
     private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+<<<<<<< HEAD
     private final ScheduleCacheRepository scheduleCacheRepository;
+=======
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 
     // ==========================================
     // [학생] 서비스 로직
@@ -193,6 +205,7 @@ public class TuitionService {
         TuitionPolicy policy = tuitionPolicyRepository.findById(policyId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 등록금 정책이 존재하지 않습니다."));
 
+<<<<<<< HEAD
         // 1. 현재 활성화된 등록금 납부 일정 조회
         ScheduleCache tuitionSchedule = scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
@@ -206,6 +219,11 @@ public class TuitionService {
             if (now.isAfter(tuitionSchedule.getStartDate()) && now.isBefore(tuitionSchedule.getEndDate())) {
                 throw new IllegalStateException("현재 등록금 납부 기간 중이므로 정책을 수정할 수 없습니다.");
             }
+=======
+        // 명세서 조건: 이미 납부 마감 기한이 지난 과거의 정책이거나 수정 불가능 시점 조건 제약 (403 대응)
+        if (LocalDateTime.now().isAfter(LocalDateTime.of(policy.getYear(), 2, 28, 18, 0))) {
+            throw new IllegalStateException("이미 등록금 고지 및 수납 기한이 만료되어 수정할 수 없습니다.");
+>>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
         }
 
         policy.updateBaseAmount(request.getBaseAmount(), adminCode);
