@@ -190,7 +190,7 @@ public class StudentService {
 
         // 파일 저장
         if (file != null) {
-            String middlePath = "member/major/request/" + memberCode;
+            String middlePath = "request/major/" + memberCode;
             myFileUtil.makeFolders(middlePath);
             String fullFilePath = String.format("%s/%s", middlePath, savedFileName);
             try {
@@ -214,7 +214,7 @@ public class StudentService {
         // 첨부파일 있었다면 삭제
         if (request.getFile() != null) {
             try {
-                myFileUtil.deleteFile(String.format("member/major/request/%s/%s", memberCode, request.getFile()));
+                myFileUtil.deleteFile(String.format("request/major/%s/%s", memberCode, request.getFile()));
             } catch (Exception e) {
                 log.warn("기존 파일 삭제 실패: {}", e.getMessage());
             }
