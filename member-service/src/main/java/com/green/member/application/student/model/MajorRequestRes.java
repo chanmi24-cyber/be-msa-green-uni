@@ -13,6 +13,6 @@ public class MajorRequestRes {
     Long requestId;
     EnumMajorRequestType type;
     String targetMajorName;
-    EnumApprovalStatus status;
+    String status;
     LocalDateTime createdAt;
 }

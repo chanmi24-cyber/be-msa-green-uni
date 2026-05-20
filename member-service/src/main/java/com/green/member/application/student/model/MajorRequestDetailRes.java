@@ -16,7 +16,7 @@ public class MajorRequestDetailRes {
     Long requestId;
     EnumMajorRequestType type;
     String targetMajorName;
-    EnumApprovalStatus status;
+    String status;
     LocalDateTime createdAt;
     BigDecimal gpa;
     String reason;

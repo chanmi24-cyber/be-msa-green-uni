@@ -237,7 +237,7 @@ public class StudentService {
                     res.setRequestId(h.getRequestId());
                     res.setType(h.getType());
                     res.setTargetMajorName(majorName);
-                    res.setStatus(h.getStatus());
+                    res.setStatus(h.getStatus().getCode());
                     res.setCreatedAt(h.getCreatedAt());
                     return res;
                 })
@@ -255,7 +255,7 @@ public class StudentService {
                 .requestId(requestId)
                 .type(request.getType())
                 .targetMajorName(majorName)
-                .status(request.getStatus())
+                .status(request.getStatus().getCode())
                 .gpa(request.getGpa())
                 .reason(request.getReason())
                 .file(request.getFile())
@@ -275,7 +275,7 @@ public class StudentService {
             throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
         }
 
-        String filePath = String.format("member/major/request/%s/%s", memberCode, request.getFile());
+        String filePath = String.format("request/major/%s/%s", memberCode, request.getFile());
 
         File file = new File(myFileUtil.fileUploadPath, filePath);
         Resource resource = new FileSystemResource(file);
