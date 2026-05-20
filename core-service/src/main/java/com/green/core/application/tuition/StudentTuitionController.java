@@ -1,7 +1,6 @@
 package com.green.core.application.tuition;
 
 import com.green.common.auth.MemberContext;
-import com.green.core.application.tuition.model.TuitionReq;
 import com.green.core.application.tuition.model.TuitionRes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,28 +14,25 @@ import java.util.List;
 public class StudentTuitionController {
     private final TuitionService tuitionService;
 
-    // 1. 등록금 전체납부 이력 조회
-    @GetMapping
+    // API-TUI-01: 등록금 납부 내역 전체 조회
+    @GetMapping("/my")
     public ResponseEntity<List<TuitionRes>> getMyTuitionList() {
         Long studentCode = MemberContext.get().memberCode();
         return ResponseEntity.ok(tuitionService.getStudentTuitionList(studentCode));
     }
 
-    // 2. 등록금 납부 상세 조회 (이번 학기 고지서 확인)
-    @GetMapping("/detail")
-    public ResponseEntity<TuitionRes> getMyTuitionDetail(
-            @RequestParam Integer year,
-            @RequestParam Integer semester
-    ) {
+    // API-TUI-03: 등록금 납부 상세 조회 (Path 변수로 tuitionId 수신 구조 매핑)
+    @GetMapping("/{tuitionId}")
+    public ResponseEntity<TuitionRes.MyTuitionDetailRes> getMyTuitionDetail(@PathVariable Long tuitionId) {
         Long studentCode = MemberContext.get().memberCode();
-        return ResponseEntity.ok(tuitionService.getStudentTuitionDetail(studentCode, year, semester));
+        return ResponseEntity.ok(tuitionService.getStudentTuitionDetailByTuitionId(studentCode, tuitionId));
     }
 
-    // 3. 등록금 납부 신청
-    @PostMapping("/payment")
-    public ResponseEntity<Void> requestPayment(@RequestBody TuitionReq.PaymentRequest request) {
+    // API-TUI-07: 학생 납부 신청 (PATCH 매핑 및 pending 엔드포인트 주소 일치)
+    @PatchMapping("/{tuitionId}/pending")
+    public ResponseEntity<Void> requestPayment(@PathVariable Long tuitionId) {
         Long studentCode = MemberContext.get().memberCode();
-        tuitionService.requestTuitionPayment(studentCode, request);
+        tuitionService.requestTuitionPaymentPending(studentCode, tuitionId);
         return ResponseEntity.ok().build();
     }
 }
