@@ -3,12 +3,17 @@ package com.green.member.application.student;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+import com.green.member.application.admin.model.AdminStudentUpdateReq;
+import com.green.member.application.member.model.MemberCreateRes;
+import com.green.member.application.student.model.StudentCreateReq;
 import com.green.member.application.student.model.StudentHistoryRes;
+import com.green.member.application.student.model.StudentMajorReq;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,4 +33,16 @@ public class StudentController {
                 .data(res)
                 .build();
     }
+
+    // 전공 변경 신청
+    @PostMapping("/my/major/requests")
+    public ResultResponse<?> createStudent(@RequestPart @Valid StudentMajorReq req,
+                                           @RequestPart(required = false) MultipartFile file) {
+        MemberDto loginMember = MemberContext.get();
+        studentService.requestMajor(req, file, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("신청 성공했습니다")
+                .build();
+    }
+
 }

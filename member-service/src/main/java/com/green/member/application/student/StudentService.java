@@ -1,13 +1,20 @@
 package com.green.member.application.student;
 
+import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
+import com.green.common.kafka.member.GpaRequestEvent;
+import com.green.common.kafka.member.MemberTopic;
+import com.green.member.application.OutboxService;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.student.model.StudentHistoryRes;
+import com.green.member.application.student.model.StudentMajorReq;
 import com.green.member.application.student.model.StudentProfileRes;
+import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
+import com.green.member.entity.student.MajorRequest;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
@@ -17,7 +24,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -29,6 +39,9 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final StudentMajorRepository studentMajorRepository;
     private final StudentHistoryRepository studentHistoryRepository;
+    private final MajorRequestRepository majorRequestRepository;
+    private final OutboxService outboxService;
+    private final MyFileUtil myFileUtil;
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
@@ -103,5 +116,57 @@ public class StudentService {
                 })
                 .toList()
                 ;
+    }
+
+    // 학생 전공 변경 신청
+    @Transactional
+    public void requestMajor(StudentMajorReq req, MultipartFile file, Long memberCode){
+        // 회원 조회
+        Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
+
+        // 파일 검증 및 처리
+        if (file != null) {
+            if (file.getSize() > 5 * 1024 * 1024) {
+                throw new BusinessException(MemberErrorCode.FILE_TOO_LARGE);
+            }
+            if (!"application/pdf".equals(file.getContentType())) {
+                throw new BusinessException(MemberErrorCode.INVALID_FILE_TYPE);
+            }
+        }
+        String savedFileName = file == null ? null : myFileUtil.makeRandomFileName(file);
+
+        // major_request 저장
+        MajorRequest request = MajorRequest.builder()
+                .student(student)
+                .type(req.getType())
+                .targetMajorId(req.getTargetMajorId())
+                .reason(req.getReason())
+                .file(savedFileName)
+                .gpa(BigDecimal.ZERO)
+                .build();
+        MajorRequest newRequest = majorRequestRepository.save(request);
+
+        // GPA 조회 요청 이벤트 발행
+        outboxService.saveToOutbox(
+                MemberTopic.GPA_REQUEST,
+                newRequest.getRequestId(),
+                GpaRequestEvent.builder()
+                        .requestId(newRequest.getRequestId())
+                        .studentCode(memberCode)
+                        .eventType(EventType.E_CREATED)
+                        .build()
+        );
+
+        if (file != null) {
+            String middlePath = "member/major/request/" + memberCode;
+            myFileUtil.makeFolders(middlePath);
+            String fullFilePath = String.format("%s/%s", middlePath, savedFileName);
+            try {
+                myFileUtil.transferTo(file, fullFilePath);
+            } catch (IOException e) {
+                request.setFile(null);
+                log.error("파일 저장 실패: {}", e.getMessage());
+            }
+        }
     }
 }
