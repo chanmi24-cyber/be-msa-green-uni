@@ -3,6 +3,7 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
+import com.green.common.exception.CommonErrorCode;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
@@ -311,13 +312,13 @@ public class AdminService {
 
     // 학생 계정 개인 정보 수정
     @Transactional
-    public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req) {
+    public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req, MultipartFile pic) {
 
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
-        member.updateCommonByAdmin( req.getName(),req.getBirth() );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic, member.getPic()) );
 
         // 학생 필드 업데이트
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
@@ -341,7 +342,7 @@ public class AdminService {
         // 전공 변경 처리
         StudentMajor currentPrimaryMajor = studentMajorRepository
                 .findByStudent_MemberCodeAndTypeAndIsActiveTrue(memberCode, EnumMajorType.PRIMARY)
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
         boolean majorChanged = false;
         Long currentMajorId = currentPrimaryMajor.getMajorId();
         if (req.getMajorId() != null && !req.getMajorId().equals(currentMajorId)) {
@@ -356,7 +357,9 @@ public class AdminService {
             currentMajorId = req.getMajorId();
             majorChanged = true;
         }
-        memberHistoryService.save(memberCode, updaterCode, before);
+        if (!before.isEmpty()) {
+            memberHistoryService.save(memberCode, updaterCode, before);
+        }
 
         // StudentEvent Outbox 저장
         boolean nameChanged = req.getName() != null && !req.getName().equals(oldName);
@@ -380,13 +383,13 @@ public class AdminService {
 
     // 교수 계정 정보 수정
     @Transactional
-    public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req) {
+    public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req, MultipartFile pic) {
 
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
-        member.updateCommonByAdmin( req.getName(),req.getBirth() );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic, member.getPic()) );
 
         // 교수 필드 업데이트
         Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
@@ -400,7 +403,9 @@ public class AdminService {
         if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
         if (req.getDegree() != null && !req.getDegree().equals(oldDegree)) before.put("degree", oldDegree);
         if (req.getMajorId() != null && !req.getMajorId().equals(oldMajorId)) before.put("majorId", oldMajorId);
-        memberHistoryService.save(memberCode, updaterCode, before);
+        if (!before.isEmpty()) {
+            memberHistoryService.save(memberCode, updaterCode, before);
+        }
 
         // ProfessorEvent Outbox 저장
         boolean nameChanged = req.getName() != null && !req.getName().equals(oldName);
@@ -421,24 +426,24 @@ public class AdminService {
 
     // 관리자 계정 정보 수정
     @Transactional
-    public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req) {
+    public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req, MultipartFile pic) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         String oldName = member.getName();
         LocalDate oldBirth = member.getBirth();
 
         // 공통 필드 업데이트
-        member.updateCommonByAdmin(
-                req.getName(),
-                req.getBirth()
-        );
+        member.updateCommonByAdmin( req.getName(), req.getBirth(), savePic(memberCode, pic, member.getPic()) );
 
         // MemberHistory 저장을 위한 변경된 필드만 수집
         Map<String, Object> before = new LinkedHashMap<>();
         if (req.getName() != null && !req.getName().equals(oldName)) before.put("name", oldName);
         if (req.getBirth() != null && !req.getBirth().equals(oldBirth)) before.put("birth", oldBirth);
 
-        memberHistoryService.save(memberCode, updaterCode, before);
+        if (!before.isEmpty()) {
+            memberHistoryService.save(memberCode, updaterCode, before);
+        }
     }
 
     @Transactional
@@ -446,6 +451,13 @@ public class AdminService {
         Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         EnumAdminStatus oldStatus = admin.getStatus();
         EnumAdminStatus newStatus = req.getStatus();
+
+        if (oldStatus == EnumAdminStatus.RETIREMENT) {
+            throw new BusinessException(MemberErrorCode.ALREADY_RETIRED);
+        }
+        if (oldStatus == newStatus) {
+            throw new BusinessException(MemberErrorCode.SAME_STATUS);
+        }
 
         // 상태 변경
         admin.updateStatus(req.getStatus());
@@ -500,6 +512,19 @@ public class AdminService {
 
         String changeType;
 
+        if (req.getStatus() == null && req.getPosition() == null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (oldStatus == EnumProfessorStatus.RETIREMENT) {
+            throw new BusinessException(MemberErrorCode.ALREADY_DISMISSED);
+        }
+        if (req.getStatus() != null && req.getStatus() == oldStatus) {
+            throw new BusinessException(MemberErrorCode.SAME_STATUS);
+        }
+        if (req.getPosition() != null && req.getPosition() == oldPosition) {
+            throw new BusinessException(MemberErrorCode.SAME_STATUS);
+        }
+
         // 상태 변경
         if(req.getStatus() != null){
             professor.updateStatus(req.getStatus());
@@ -541,6 +566,17 @@ public class AdminService {
                     .updateType(UpdateType.STATUS)
                     .build();
             outboxService.saveToOutbox(MemberTopic.PROFESSOR, professor.getMemberCode(), professorEvent);
+
+            // 퇴임이면 로그인 불가 처리
+            if (newStatus == EnumProfessorStatus.RETIREMENT) {
+                AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                        .memberCode(memberCode)
+                        .isActive(false)
+                        .eventType(EventType.E_UPDATED)
+                        .updateType(UpdateType.DEACTIVATE)
+                        .build();
+                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
+            }
         }
 
         // 직위 변경
@@ -558,17 +594,6 @@ public class AdminService {
                     .updatorCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
-
-            // 퇴임이면 로그인 불가 처리
-            if (newStatus == EnumProfessorStatus.RETIREMENT) {
-                AuthMemberEvent authEvent = AuthMemberEvent.builder()
-                        .memberCode(memberCode)
-                        .isActive(false)
-                        .eventType(EventType.E_UPDATED)
-                        .updateType(UpdateType.DEACTIVATE)
-                        .build();
-                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
-            }
         }
     }
 
@@ -577,6 +602,13 @@ public class AdminService {
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         EnumStudentStatus oldStatus = student.getStatus();
         EnumStudentStatus newStatus = req.getStatus();
+
+        if (oldStatus == EnumStudentStatus.EXPULSION || oldStatus == EnumStudentStatus.QUIT) {
+            throw new BusinessException(MemberErrorCode.ALREADY_TERMINATED);
+        }
+        if (oldStatus == newStatus) {
+            throw new BusinessException(MemberErrorCode.SAME_STATUS);
+        }
 
         // 상태 변경
         student.updateStatus(req.getStatus());
@@ -612,6 +644,8 @@ public class AdminService {
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .reason(req.getReason())
+                .returnYear(req.getReturnYear())
+                .returnSemester(req.getReturnSemester())
                 .updatorCode(updaterCode)
                 .build();
         studentHistoryRepository.save(history);
@@ -637,11 +671,35 @@ public class AdminService {
         }
     }
 
+    private String savePic(Long memberCode, MultipartFile pic, String oldFileName) {
+        if (pic == null) return null;
+        if (oldFileName != null) {
+            try {
+                myFileUtil.deleteFile(String.format("member/%s/%s", memberCode, oldFileName));
+            } catch (Exception e) {
+                log.warn("기존 파일 삭제 실패: {}", e.getMessage());
+            }
+        }
+        String fileName = myFileUtil.makeRandomFileName(pic);
+        String middlePath = "member/" + memberCode;
+        myFileUtil.makeFolders(middlePath);
+        try {
+            myFileUtil.transferTo(pic, middlePath + "/" + fileName);
+        } catch (IOException e) {
+            log.error("파일 저장 실패: {}", e.getMessage());
+            return null;
+        }
+        return fileName;
+    }
+
     // 관리자 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<AdminHistoryRes> findStatusHistory(Long memberCode){
-        return adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode)
-                .stream()
+        if (!adminRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND);
+        }
+        List<AdminHistory> histories = adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode);
+        return histories.stream()
                 .map( h -> {
                     AdminHistoryRes res = new AdminHistoryRes();
                     res.setChangeType(h.getChangeType());
