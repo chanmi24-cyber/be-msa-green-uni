@@ -48,7 +48,7 @@ public class LectureService {
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
 
         // 강의개설 기간 체크
-        schedulePeriodValidator.checkCourseOpen();
+        schedulePeriodValidator.checkLectureRegistration();
 
         Major major = majorRepository.findById(req.getMajorId())
                 .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
@@ -159,7 +159,15 @@ public class LectureService {
     }
 
     // LEC-07 학생: 내 강의 목록
+    // [수정] 수강신청 기간: 빈 리스트
+    //        수강정정 기간: 정정 시작일 이전 신청분만 표시 (수강신청 확정 목록 고정)
+    //        정정 종료 후: 전체 목록 표시
     public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
+        if (schedulePeriodValidator.isCourseRegistrationPeriod()) {
+            return List.of();
+        }
+        schedulePeriodValidator.getCourseModificationStartDate()
+                .ifPresent(req::setCreatedBefore);
         return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
     }
 

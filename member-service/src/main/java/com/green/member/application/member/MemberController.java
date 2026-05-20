@@ -5,6 +5,7 @@ import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,12 +35,12 @@ public class MemberController {
     // 로그인 멤버 내 정보 수정
     @PatchMapping("/my")
     public ResultResponse<?> updateMyProfile(
-            @RequestPart MemberUpdateReq req,
+            @RequestPart @Valid MemberUpdateReq req,
             @RequestPart(required = false) MultipartFile pic) {
         MemberDto loginMember = MemberContext.get();
         memberService.updateMyProfile(loginMember.memberCode(), loginMember.role(), req, pic);
         return ResultResponse.builder()
-                .message("개인정보 수정")
+                .message("내 정보 수정을 완료했습니다")
                 .build();
     }
 }
