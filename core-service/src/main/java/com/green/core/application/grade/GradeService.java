@@ -91,9 +91,6 @@ public class GradeService {
     public void updateGrades(Long lectureId, List<GradeUpdateReq> reqList) {
         Long professorCode = MemberContext.get().memberCode();
 
-        // G001: 성적 입력 기간 확인
-        schedulePeriodValidator.checkGradeInput();
-
         // G002: 본인 강의 확인
         gradeLectureRepository.findByLectureIdAndMemberCode(lectureId, professorCode)
                 .orElseThrow(() -> new BusinessException(GradeErrorCode.NOT_PROFESSOR_LECTURE));
