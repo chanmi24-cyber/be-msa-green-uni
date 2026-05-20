@@ -9,6 +9,7 @@ import com.green.common.kafka.member.GpaRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.member.application.member.MemberRepository;
+import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.student.model.StudentHistoryRes;
 import com.green.member.application.student.model.StudentMajorReq;
 import com.green.member.application.student.model.StudentProfileRes;
@@ -43,6 +44,7 @@ public class StudentService {
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
     private final OutboxService outboxService;
+    private final SchedulePeriodValidator schedulePeriodValidator;
     private final MyFileUtil myFileUtil;
 
     // 학생 정보 조회
@@ -126,9 +128,11 @@ public class StudentService {
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
+        // 전공 변경 신청 기간 체크
+        schedulePeriodValidator.checkMajorChange();
+
         // 중복 신청 방지
-        if (majorRequestRepository.existsByStudent_MemberCodeAndTypeAndStatus(
-                memberCode, req.getType(), EnumApprovalStatus.PENDING)) {
+        if (majorRequestRepository.existsByStudent_MemberCodeAndTypeAndStatus( memberCode, req.getType(), EnumApprovalStatus.PENDING)) {
             throw new BusinessException(RequestErrorCode.ALREADY_PENDING_REQUEST);
         }
 
