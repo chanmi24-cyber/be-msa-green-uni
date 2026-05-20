@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum EnumChangeType implements EnumMapperType {
     INSERT("INSERT", "등록"),
     UPDATE("UPDATE", "수정"),
-    DELETE("DELETE", "삭제");
+    DELETE("DELETE", "삭제"),
+    CANCEL("CANCEL", "폐강");
 
     private final String code;
     private final String value;

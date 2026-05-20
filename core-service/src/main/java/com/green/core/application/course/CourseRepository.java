@@ -69,4 +69,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     // ENRL-02 수강신청 목록 조회
     Optional<Course> findByStudentCodeAndLecture_LectureId(Long studentCode, Long lectureId);
+
+
+    // 폐강 시 수강 학생 코드 목록 조회
+    List<Course> findByLecture_LectureIdAndYearAndSemester(
+            Long lectureId, Integer year, Integer semester
+    );
 }
