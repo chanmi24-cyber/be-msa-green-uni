@@ -1,5 +1,6 @@
 package com.green.member.kafka;
 
+import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.ScheduleEvent;
 
@@ -21,6 +22,8 @@ public class ScheduleConsumer {
     @Transactional
     @KafkaListener(topics = KafkaTopic.SCHEDULE, groupId = "member-service-group")
     public void consume(ScheduleEvent event) {
+        // MAJOR_CHANGE만 저장
+        if (event.getType() != EnumScheduleType.MAJOR_CHANGE) return;
         log.info("Schedule 이벤트 수신: {}", event);
 
         ScheduleCache cache = ScheduleCache.builder()
