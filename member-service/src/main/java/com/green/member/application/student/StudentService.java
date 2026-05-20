@@ -9,11 +9,9 @@ import com.green.common.kafka.member.GpaRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.member.application.member.MemberRepository;
+import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.schedule.SchedulePeriodValidator;
-import com.green.member.application.student.model.MajorRequestRes;
-import com.green.member.application.student.model.StudentHistoryRes;
-import com.green.member.application.student.model.StudentMajorReq;
-import com.green.member.application.student.model.StudentProfileRes;
+import com.green.member.application.student.model.*;
 import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
@@ -233,7 +231,27 @@ public class StudentService {
                     res.setCreatedAt(h.getCreatedAt());
                     return res;
                 })
-                .toList()
-                ;
+                .toList();
+    }
+    // 학생 전공 변경 신청서 상세 조회
+    @Transactional(readOnly = true)
+    public MajorRequestDetailRes findMajorRequest (Long requestId, Long memberCode){
+        MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode( requestId, memberCode )
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+        String majorName = majorCacheRepository.findById(request.getTargetMajorId())
+                .map(MajorCache::getName)
+                .orElse(null);
+        return MajorRequestDetailRes.builder()
+                .requestId(requestId)
+                .type(request.getType())
+                .targetMajorName(majorName)
+                .status(request.getStatus())
+                .gpa(request.getGpa())
+                .reason(request.getReason())
+                .file(request.getFile())
+                .approveReason(request.getApproveReason())
+                .rejectReason(request.getRejectReason())
+                .createdAt(request.getCreatedAt())
+                .build();
     }
 }
