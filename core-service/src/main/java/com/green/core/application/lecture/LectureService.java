@@ -13,6 +13,7 @@ import com.green.core.application.major.MajorRepository;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
+import com.green.core.exception.MajorErrorCode;
 import com.green.core.kafka.NotificationProducer;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class LectureService {
         schedulePeriodValidator.checkCourseOpen();
 
         Major major = majorRepository.findById(req.getMajorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         Lecture lecture = Lecture.builder()
                 .memberCode(memberDto.memberCode())  // MemberDto record라서 ()로 호출
@@ -72,7 +73,7 @@ public class LectureService {
 
         for (LectureCreateReq.ScheduleReq s : req.getSchedules()) {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
+                    .orElseThrow(() -> new BusinessException(LectureErrorCode.CLASSROOM_NOT_FOUND));
 
             // 수용인원 체크
             if (req.getMaxStd() > classroom.getCapacity()) {
@@ -158,7 +159,15 @@ public class LectureService {
     }
 
     // LEC-07 학생: 내 강의 목록
+    // [수정] 수강신청 기간: 빈 리스트
+    //        수강정정 기간: 정정 시작일 이전 신청분만 표시 (수강신청 확정 목록 고정)
+    //        정정 종료 후: 전체 목록 표시
     public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
+        if (schedulePeriodValidator.isCourseRegistrationPeriod()) {
+            return List.of();
+        }
+        schedulePeriodValidator.getCourseModificationStartDate()
+                .ifPresent(req::setCreatedBefore);
         return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
     }
 
@@ -229,13 +238,13 @@ public class LectureService {
 
         //수정로직
         Major major = majorRepository.findById(req.getMajorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과입니다."));
+                .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
         // 기존 스케줄 삭제 후 재등록
         lectureScheduleRepository.deleteAllByLecture(lecture);
         for (LectureDetailReq.ScheduleReq s : req.getSchedules()) {
             Classroom classroom = classroomRepository.findById(s.getRoomId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의실입니다."));
+                    .orElseThrow(() -> new BusinessException(LectureErrorCode.CLASSROOM_NOT_FOUND));
             LectureSchedule schedule = LectureSchedule.builder()
                     .lecture(lecture)
                     .classRoom(classroom)

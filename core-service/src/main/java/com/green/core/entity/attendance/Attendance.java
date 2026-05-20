@@ -41,4 +41,9 @@ public class Attendance extends CreatedUpdatedAt {
 
     @Column(name = "reason", length = 200)
     private String reason;
+
+    public void updateStatus(EnumAttendStatus status, String reason) {
+        this.status = status;
+        this.reason = reason;
+    }
 }

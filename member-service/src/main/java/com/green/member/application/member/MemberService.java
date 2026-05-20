@@ -108,6 +108,7 @@ public class MemberService {
                 myFileUtil.transferTo(pic, fullFilePath);
             } catch (IOException e) {
                 log.error("파일 저장 실패: {}", e.getMessage());
+                savedPicFileName = null;
             }
         }
 
@@ -134,6 +135,9 @@ public class MemberService {
 
         // 이메일 처리
         if(req.getEmail() != null && !req.getEmail().equals(oldEmail)){
+            if (memberRepository.existsByEmail(req.getEmail())) {
+                throw new BusinessException(MemberErrorCode.DUPLICATE_EMAIL);
+            }
 
             // AuthMemberEvent Outbox 저장
             AuthMemberEvent authEvent = AuthMemberEvent.builder()

@@ -1,4 +1,6 @@
 .env
+.claude
+CLAUDE.md
 
 HELP.md
 .gradle

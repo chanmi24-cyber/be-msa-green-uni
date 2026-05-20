@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,7 +21,6 @@ public class ScheduleNotificationScheduler {
     private final AcademicNotificationProducer notificationProducer;
 
     @Scheduled(cron = "0 * * * * *")
-    @Transactional
     public void sendScheduleNotifications() {
         LocalDate today = LocalDate.now();
         List<Schedule> schedules = scheduleRepository.findAll();
@@ -49,13 +47,13 @@ public class ScheduleNotificationScheduler {
         if (message == null) return;
 
         if (type == EnumScheduleType.SEMESTER_START) {
-            String url = buildUrl(type);
+            String url = buildUrl(type, schedule);
             notificationProducer.sendToRole(type.getCode() + "_START", message, EnumMemberRole.STUDENT, schedule.getScheduleId(), url);
             notificationProducer.sendToRole(type.getCode() + "_START", message, EnumMemberRole.PROFESSOR, schedule.getScheduleId(), url);
         } else {
             EnumMemberRole targetRole = resolveTargetRole(type);
             if (targetRole != null) {
-                notificationProducer.sendToRole(type.getCode() + "_START", message, targetRole, schedule.getScheduleId(), buildUrl(type));
+                notificationProducer.sendToRole(type.getCode() + "_START", message, targetRole, schedule.getScheduleId(), buildUrl(type, schedule));
             }
         }
         // 관리자 알림
@@ -64,8 +62,9 @@ public class ScheduleNotificationScheduler {
                 "[관리자] " + message,
                 EnumMemberRole.ADMIN,
                 schedule.getScheduleId(),
-                buildAdminUrl(type));
+                buildAdminUrl(type, schedule));
         schedule.markNotifiedStart();
+        scheduleRepository.save(schedule);
     }
 
     private void processDeadlineNotifications(Schedule schedule, LocalDate today, LocalDate startDate, LocalDate endDate) {
@@ -86,7 +85,7 @@ public class ScheduleNotificationScheduler {
             if (message != null) {
                 notificationProducer.sendToRole(
                         schedule.getType().getCode() + "_3DAYS",
-                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType()));
+                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
                 String adminThreeDaysMessage = buildAdminThreeDaysMessage(schedule.getType());
                 if (adminThreeDaysMessage != null) {
                     notificationProducer.sendToRole(
@@ -94,9 +93,10 @@ public class ScheduleNotificationScheduler {
                             adminThreeDaysMessage,
                             EnumMemberRole.ADMIN,
                             schedule.getScheduleId(),
-                            buildAdminUrl(schedule.getType()));
+                            buildAdminUrl(schedule.getType(), schedule));
                 }
                 schedule.markNotifiedThreeDaysBefore();
+                scheduleRepository.save(schedule);
             }
         }
 
@@ -106,7 +106,7 @@ public class ScheduleNotificationScheduler {
             if (message != null) {
                 notificationProducer.sendToRole(
                         schedule.getType().getCode() + "_LAST_DAY",
-                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType()));
+                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
                 String adminLastDayMessage = buildAdminLastDayMessage(schedule.getType());
                 if (adminLastDayMessage != null) {
                     notificationProducer.sendToRole(
@@ -114,9 +114,10 @@ public class ScheduleNotificationScheduler {
                             adminLastDayMessage,
                             EnumMemberRole.ADMIN,
                             schedule.getScheduleId(),
-                            buildAdminUrl(schedule.getType()));
+                            buildAdminUrl(schedule.getType(), schedule));
                 }
                 schedule.markNotifiedEnd();
+                scheduleRepository.save(schedule);
             }
         }
     }
@@ -202,26 +203,28 @@ public class ScheduleNotificationScheduler {
         };
     }
 
-    private String buildUrl(EnumScheduleType type) {
+    private String buildUrl(EnumScheduleType type, Schedule schedule) {
+        String qs = "?year=" + schedule.getYear() + "&semester=" + schedule.getSemester() + "&page=1";
         return switch (type) {
-            case COURSE_REGISTRATION -> "/api/core/student/courses";
-            case COURSE_MODIFICATION -> "/api/core/student/courses";
-            case GRADE_INPUT         -> "/";
-            case GRADE_VIEW          -> "/api/core/student/grades/my";
-            case GRADE_APPEAL        -> "/api/core/student/grades/appeal/my";
-            case LECTURE_EVALUATION  -> "/api/core/student/evaluations";
-            case TUITION_PAYMENT     -> "/api/core/student/tuitions/my";
-            case COURSE_OPEN         -> "/api/core/professor/lectures/my";
-            case MAJOR_CHANGE        -> "/api/member/student/my/status-requests";
+            case LECTURE_EVALUATION  -> "/evaluations" + qs;
+            case COURSE_OPEN         -> "/lectures/my" + qs;
+            case COURSE_REGISTRATION -> "/courses";
+            case COURSE_MODIFICATION -> "/courses";
+            case GRADE_INPUT         -> "/grades";
+            case GRADE_VIEW          -> "/grades/my";
+            case GRADE_APPEAL        -> "/grades/appeal/my";
+            case TUITION_PAYMENT     -> "/tuitions/my";
+            case MAJOR_CHANGE        -> "/members/major-request";
             case SEMESTER_START      -> "/";
             default -> "/";
         };
     }
 
-    private String buildAdminUrl(EnumScheduleType type) {
+    private String buildAdminUrl(EnumScheduleType type, Schedule schedule) {
+        String qs = "?year=" + schedule.getYear() + "&semester=" + schedule.getSemester() + "&page=1";
         return switch (type) {
-            case MAJOR_CHANGE    -> "/api/member/admin/status-requests";
-            case TUITION_PAYMENT -> "/api/core/admin/tuitions";
+            case MAJOR_CHANGE    -> "/members/major-request";
+            case TUITION_PAYMENT -> "/tuitions" + qs;
             default -> "/";
         };
     }

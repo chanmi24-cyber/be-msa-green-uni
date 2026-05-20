@@ -9,7 +9,8 @@ import lombok.*;
 import java.time.*;
 
 @Entity
-@Table(name = "attendance_session")
+@Table(name = "attendance_session",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"lecture_id", "class_date"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

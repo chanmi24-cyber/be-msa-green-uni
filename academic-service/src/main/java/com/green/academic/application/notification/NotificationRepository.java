@@ -13,11 +13,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     long countUnreadByMemberCodeOrRole(@Param("memberCode") Long memberCode, @Param("targetRole") String targetRole);
 
     @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberCode = :memberCode")
-    void readAllByMemberCode(@Param("memberCode") Long memberCode);
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberCode = :memberCode OR n.targetRole = :targetRole")
+    void readAllByMemberCodeOrRole(@Param("memberCode") Long memberCode, @Param("targetRole") String targetRole);
 
     @Modifying
-    @Query("DELETE FROM Notification n WHERE n.memberCode = :memberCode")
-    void deleteAllByMemberCode(@Param("memberCode") Long memberCode);
+    @Query("DELETE FROM Notification n WHERE n.memberCode = :memberCode OR n.targetRole = :targetRole")
+    void deleteAllByMemberCodeOrRole(@Param("memberCode") Long memberCode, @Param("targetRole") String targetRole);
 
 }
