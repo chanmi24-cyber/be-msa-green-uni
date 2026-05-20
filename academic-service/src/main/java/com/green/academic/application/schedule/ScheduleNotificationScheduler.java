@@ -126,7 +126,7 @@ public class ScheduleNotificationScheduler {
         return switch (type) {
             case COURSE_REGISTRATION, COURSE_MODIFICATION, GRADE_VIEW,
                  GRADE_APPEAL, LECTURE_EVALUATION, TUITION_PAYMENT, MAJOR_CHANGE -> EnumMemberRole.STUDENT;
-            case GRADE_INPUT, COURSE_OPEN -> EnumMemberRole.PROFESSOR;
+            case GRADE_INPUT, LECTURE_REGISTRATION -> EnumMemberRole.PROFESSOR;
             default -> null;
         };
     }
@@ -140,7 +140,7 @@ public class ScheduleNotificationScheduler {
             case GRADE_APPEAL -> "성적 이의신청 기간이 시작되었습니다.";
             case LECTURE_EVALUATION -> "강의평가 기간이 시작되었습니다.";
             case TUITION_PAYMENT -> "등록금 납부 기간이 시작되었습니다.";
-            case COURSE_OPEN -> "강의 개설 신청 기간이 시작되었습니다.";
+            case LECTURE_REGISTRATION -> "강의 개설 신청 기간이 시작되었습니다.";
             case MAJOR_CHANGE -> "전과 신청 기간이 시작되었습니다.";
             case SEMESTER_START -> semester + "학기가 시작되었습니다. 즐거운 대학생활 되세요!";
             default -> null;
@@ -155,7 +155,7 @@ public class ScheduleNotificationScheduler {
             case GRADE_APPEAL -> "성적 이의신청 마감 3일 전입니다.";
             case LECTURE_EVALUATION -> "강의평가 마감 3일 전입니다. 아직 평가하지 않은 강의를 평가해 주세요!";
             case TUITION_PAYMENT -> "등록금 납부 마감 3일 전입니다. 기한 내 납부해 주세요.";
-            case COURSE_OPEN -> "강의 개설 신청 마감 3일 전입니다.";
+            case LECTURE_REGISTRATION -> "강의 개설 신청 마감 3일 전입니다.";
             case MAJOR_CHANGE -> "전과 신청 마감 3일 전입니다.";
             default -> null;
         };
@@ -169,7 +169,7 @@ public class ScheduleNotificationScheduler {
             case GRADE_APPEAL -> "성적 이의신청 마지막 날입니다.";
             case LECTURE_EVALUATION -> "강의평가 마지막 날입니다. 지금 바로 평가해 주세요!";
             case TUITION_PAYMENT -> "등록금 납부 마지막 날입니다. 오늘까지 납부해 주세요.";
-            case COURSE_OPEN -> "강의 개설 신청 마지막 날입니다.";
+            case LECTURE_REGISTRATION -> "강의 개설 신청 마지막 날입니다.";
             case MAJOR_CHANGE -> "전과 신청 마지막 날입니다.";
             default -> null;
         };
@@ -181,7 +181,7 @@ public class ScheduleNotificationScheduler {
             case TUITION_PAYMENT     -> "[관리자] 등록금 납부 마감 3일 전입니다. 미납 학생을 확인해주세요.";
             case COURSE_REGISTRATION -> "[관리자] 수강신청 마감 3일 전입니다. 미신청 학생을 확인해주세요.";
             case LECTURE_EVALUATION  -> "[관리자] 강의평가 마감 3일 전입니다. 미평가 학생을 확인해주세요.";
-            case COURSE_OPEN         -> "[관리자] 강의 개설 신청 마감 3일 전입니다. 개설이 안된 강의가 있는지 확인해주세요.";
+            case LECTURE_REGISTRATION -> "[관리자] 강의 개설 신청 마감 3일 전입니다. 개설이 안된 강의가 있는지 확인해주세요.";
             case COURSE_MODIFICATION -> "[관리자] 수강정정 마감 3일 전입니다.";
             case GRADE_APPEAL        -> "[관리자] 성적 이의신청 마감 3일 전입니다.";
             case MAJOR_CHANGE        -> "[관리자] 전과 신청 마감 3일 전입니다.";
@@ -195,7 +195,7 @@ public class ScheduleNotificationScheduler {
             case TUITION_PAYMENT     -> "[관리자] 등록금 납부 마지막 날입니다. 미납 학생을 오늘까지 확인해주세요.";
             case COURSE_REGISTRATION -> "[관리자] 수강신청 마지막 날입니다. 미신청 학생을 오늘까지 확인해주세요.";
             case LECTURE_EVALUATION  -> "[관리자] 강의평가 마지막 날입니다. 미평가 학생을 오늘까지 확인해주세요.";
-            case COURSE_OPEN         -> "[관리자] 강의 개설 신청 마지막 날입니다. 개설이 안된 강의가 있는지 오늘까지 확인해주세요.";
+            case LECTURE_REGISTRATION -> "[관리자] 강의 개설 신청 마지막 날입니다. 개설이 안된 강의가 있는지 오늘까지 확인해주세요.";
             case COURSE_MODIFICATION -> "[관리자] 수강정정 마지막 날입니다.";
             case GRADE_APPEAL        -> "[관리자] 성적 이의신청 마지막 날입니다.";
             case MAJOR_CHANGE        -> "[관리자] 전과 신청 마지막 날입니다.";
@@ -207,7 +207,7 @@ public class ScheduleNotificationScheduler {
         String qs = "?year=" + schedule.getYear() + "&semester=" + schedule.getSemester() + "&page=1";
         return switch (type) {
             case LECTURE_EVALUATION  -> "/evaluations" + qs;
-            case COURSE_OPEN         -> "/lectures/my" + qs;
+            case LECTURE_REGISTRATION -> "/lectures/my" + qs;
             case COURSE_REGISTRATION -> "/courses";
             case COURSE_MODIFICATION -> "/courses";
             case GRADE_INPUT         -> "/grades";
