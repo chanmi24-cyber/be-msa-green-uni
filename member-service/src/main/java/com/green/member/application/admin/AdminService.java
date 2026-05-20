@@ -3,10 +3,7 @@ package com.green.member.application.admin;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
-<<<<<<< HEAD
 import com.green.common.exception.CommonErrorCode;
-=======
->>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.student.model.*;
 import com.green.member.exception.MemberErrorCode;
@@ -52,6 +49,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -597,20 +595,6 @@ public class AdminService {
                     .updatorCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
-<<<<<<< HEAD
-=======
-
-            // 퇴임이면 로그인 불가 처리
-            if (newStatus == EnumProfessorStatus.RETIREMENT) {
-                AuthMemberEvent authEvent = AuthMemberEvent.builder()
-                        .memberCode(memberCode)
-                        .isActive(false)
-                        .eventType(EventType.E_UPDATED)
-                        .updateType(UpdateType.DEACTIVATE)
-                        .build();
-                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
-            }
->>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
         }
     }
 
@@ -668,13 +652,13 @@ public class AdminService {
         studentHistoryRepository.save(history);
 
         // StudentEvent Outbox 저장
-            StudentEvent studentEvent = StudentEvent.builder()
-                    .memberCode(student.getMemberCode())
-                    .status(student.getStatus().getCode())
-                    .eventType(EventType.E_UPDATED)
-                    .updateType(UpdateType.STATUS)
-                    .build();
-            outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
+        StudentEvent studentEvent = StudentEvent.builder()
+                .memberCode(student.getMemberCode())
+                .status(student.getStatus().getCode())
+                .eventType(EventType.E_UPDATED)
+                .updateType(UpdateType.STATUS)
+                .build();
+        outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
 
         // 자퇴/퇴학이면 로그인 불가 처리
         if (newStatus == EnumStudentStatus.EXPULSION || newStatus == EnumStudentStatus.QUIT) {
@@ -717,18 +701,7 @@ public class AdminService {
         }
         List<AdminHistory> histories = adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode);
         return histories.stream()
-                .map( h -> {
-                    AdminHistoryRes res = new AdminHistoryRes();
-                    res.setChangeType(h.getChangeType());
-                    res.setOldStatus(h.getOldStatus());
-                    res.setNewStatus(h.getNewStatus());
-                    res.setStartDate(h.getStartDate());
-                    res.setEndDate(h.getEndDate());
-                    res.setReason(h.getReason());
-                    res.setCreatedAt(h.getCreatedAt());
-                    return res;
-                })
-                .toList()
-                ;
+                .map(AdminHistoryRes::new)
+                .collect(Collectors.toList());
     }
 }
