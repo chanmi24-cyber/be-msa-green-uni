@@ -18,8 +18,6 @@ public enum MemberErrorCode implements ErrorCode {
     , ALREADY_RETIRED("M008", "이미 퇴사한 회원입니다.", HttpStatus.BAD_REQUEST)
     , ALREADY_DISMISSED("M009", "이미 퇴임한 교수입니다.", HttpStatus.BAD_REQUEST)
     , ALREADY_TERMINATED("M010", "퇴학 또는 자퇴 처리된 학생입니다.", HttpStatus.BAD_REQUEST)
-    , FILE_TOO_LARGE("M011", "파일 크기는 5MB 이하여야 합니다.", HttpStatus.BAD_REQUEST)
-    , INVALID_FILE_TYPE("M012", "서류는 PDF 파일만 업로드 가능합니다.", HttpStatus.BAD_REQUEST)
     ;
     private final String code;
     private final String message;

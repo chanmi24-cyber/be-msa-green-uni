@@ -1,6 +1,7 @@
 package com.green.member.application.student;
 
 import com.green.common.constants.EventType;
+import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
@@ -20,6 +21,7 @@ import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.application.major.MajorCacheRepository;
+import com.green.member.exception.RequestErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -124,13 +126,29 @@ public class StudentService {
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
+        // 중복 신청 방지
+        if (majorRequestRepository.existsByStudent_MemberCodeAndTypeAndStatus(
+                memberCode, req.getType(), EnumApprovalStatus.PENDING)) {
+            throw new BusinessException(RequestErrorCode.ALREADY_PENDING_REQUEST);
+        }
+
+        // 전공 검증
+        majorCacheRepository.findById(req.getTargetMajorId()) // 존재하지 않는 학과라면
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND));
+        List<StudentMajor> activeMajors = studentMajorRepository.findByStudent_MemberCodeAndIsActiveTrue(memberCode);
+        boolean alreadyInMajor = activeMajors.stream()
+                .anyMatch(m -> m.getMajorId().equals(req.getTargetMajorId()));
+        if (alreadyInMajor) { // 본인의 학과를 재신청한다면
+            throw new BusinessException(RequestErrorCode.ALREADY_IN_MAJOR);
+        }
+
         // 파일 검증 및 처리
         if (file != null) {
             if (file.getSize() > 5 * 1024 * 1024) {
-                throw new BusinessException(MemberErrorCode.FILE_TOO_LARGE);
+                throw new BusinessException(RequestErrorCode.FILE_TOO_LARGE);
             }
             if (!"application/pdf".equals(file.getContentType())) {
-                throw new BusinessException(MemberErrorCode.INVALID_FILE_TYPE);
+                throw new BusinessException(RequestErrorCode.INVALID_FILE_TYPE);
             }
         }
         String savedFileName = file == null ? null : myFileUtil.makeRandomFileName(file);
@@ -157,6 +175,7 @@ public class StudentService {
                         .build()
         );
 
+        // 파일 저장
         if (file != null) {
             String middlePath = "member/major/request/" + memberCode;
             myFileUtil.makeFolders(middlePath);
