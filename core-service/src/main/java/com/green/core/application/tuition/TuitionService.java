@@ -1,15 +1,18 @@
 package com.green.core.application.tuition;
 
+import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.scholarship.ScholarshipRepository;
 import com.green.core.application.tuition.model.TuitionReq;
 import com.green.core.application.tuition.model.TuitionRes;
 import com.green.core.application.tuition.model.TuitionMailEvent;
+import com.green.core.entity.cache.ScheduleCache;
 import com.green.core.entity.scholarship.Scholarship;
 import com.green.core.entity.tuition.Tuition;
 import com.green.core.entity.tuition.TuitionMailLog;
 import com.green.core.entity.tuition.TuitionPolicy;
 import com.green.core.enumcode.EnumTuitionStatus;
+import com.green.core.repository.ScheduleCacheRepository;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +38,7 @@ public class TuitionService {
     private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ScheduleCacheRepository scheduleCacheRepository;
 
     // ==========================================
     // [학생] 서비스 로직
@@ -189,9 +193,19 @@ public class TuitionService {
         TuitionPolicy policy = tuitionPolicyRepository.findById(policyId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 등록금 정책이 존재하지 않습니다."));
 
-        // 명세서 조건: 이미 납부 마감 기한이 지난 과거의 정책이거나 수정 불가능 시점 조건 제약 (403 대응)
-        if (LocalDateTime.now().isAfter(LocalDateTime.of(policy.getYear(), 2, 28, 18, 0))) {
-            throw new IllegalStateException("이미 등록금 고지 및 수납 기한이 만료되어 수정할 수 없습니다.");
+        // 1. 현재 활성화된 등록금 납부 일정 조회
+        ScheduleCache tuitionSchedule = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
+                .orElse(null);
+
+        // 2. 활성화된 일정이 존재하고, 현재 시간이 [시작일~종료일] 사이인 경우에만 수정 차단
+        if (tuitionSchedule != null) {
+            LocalDateTime now = LocalDateTime.now();
+
+            // 현재 시간이 시작일 이후(isAfter)이면서 종료일 이전(isBefore)인지 확인
+            if (now.isAfter(tuitionSchedule.getStartDate()) && now.isBefore(tuitionSchedule.getEndDate())) {
+                throw new IllegalStateException("현재 등록금 납부 기간 중이므로 정책을 수정할 수 없습니다.");
+            }
         }
 
         policy.updateBaseAmount(request.getBaseAmount(), adminCode);
