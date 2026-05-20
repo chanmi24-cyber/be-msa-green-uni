@@ -21,11 +21,17 @@ spring:
           cors: # cors 허용
             configurations:
               '[/**]':
-                allowed-origins: [ "http://localhost:5173", "http://localhost:5174" ]
+                # [수정] ngrok 터널 도메인 추가 — 모바일 테스트 시 CORS 차단 방지
+                allowed-origins: [ "http://localhost:5173", "http://localhost:5174", "https://bottom-gleaming-lather.ngrok-free.dev" ]
                 allowed-methods: [ "*" ]
                 allowed-headers: [ "*" ]
                 allow-credentials: true
                 max-age: 3600
+
+          # 파일 업로드 크기 제한
+          http:
+            codec:
+              max-in-memory-size: 5MB
 
           # 라우팅 설정
           routes:
@@ -38,6 +44,11 @@ spring:
               uri: http://${SERVICE_HOST}:${MEMBER_PORT}
               predicates:
                 - Path=/api/member/**, /api/member/**
+
+            - id: member-file
+              uri: http://${SERVICE_HOST}:${MEMBER_PORT}
+              predicates:
+                - Path=/file/**
 
             - id: core-service
               uri: http://${SERVICE_HOST}:${CORE_PORT}
