@@ -36,13 +36,23 @@ public class StudentController {
 
     // 전공 변경 신청
     @PostMapping("/my/major/requests")
-    public ResultResponse<?> createStudent(@RequestPart @Valid StudentMajorReq req,
+    public ResultResponse<?> applyMajorRequest(@RequestPart @Valid StudentMajorReq req,
                                            @RequestPart(required = false) MultipartFile file) {
         MemberDto loginMember = MemberContext.get();
         studentService.requestMajor(req, file, loginMember.memberCode());
         return ResultResponse.builder()
-                .message("신청 성공했습니다")
+                .message("전공 변경 신청을 성공했습니다")
                 .build();
     }
+    // 전공 변경 신청 취소
+    @DeleteMapping("/my/major/requests/{requestId}")
+    public ResultResponse<?> deleteMajorRequest(@PathVariable("requestId") Long requestId){
+        MemberDto loginMember = MemberContext.get();
+        studentService.deleteMajorRequest(requestId, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 신청을 취소하였습니다")
+                .build();
+    }
+
 
 }

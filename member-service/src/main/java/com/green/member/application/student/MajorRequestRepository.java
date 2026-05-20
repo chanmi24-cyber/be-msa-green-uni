@@ -5,8 +5,10 @@ import com.green.member.entity.student.MajorRequest;
 import com.green.member.enumcode.EnumMajorRequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long> {
+import java.util.Optional;
 
+public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long> {
+    Optional<MajorRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
     boolean existsByStudent_MemberCodeAndTypeAndStatus(
             Long memberCode, EnumMajorRequestType type, EnumApprovalStatus status);
 }

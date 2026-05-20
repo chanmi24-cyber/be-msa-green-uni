@@ -192,4 +192,23 @@ public class StudentService {
             }
         }
     }
+
+    @Transactional
+    public void deleteMajorRequest(Long requestId, Long memberCode){
+        MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST)); // requestId와 memberCode 일치
+        if (request.getStatus() != EnumApprovalStatus.PENDING) { // 대기 상태일때만 취소 가능
+            throw new BusinessException(RequestErrorCode.NOT_CANCELLABLE);
+        }
+        // 신청 취소
+        request.cancel();
+        // 첨부파일 있었다면 삭제
+        if (request.getFile() != null) {
+            try {
+                myFileUtil.deleteFile(String.format("member/major/request/%s/%s", memberCode, request.getFile()));
+            } catch (Exception e) {
+                log.warn("기존 파일 삭제 실패: {}", e.getMessage());
+            }
+        }
+    }
 }
