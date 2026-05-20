@@ -48,7 +48,7 @@ public class LectureService {
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
 
         // 강의개설 기간 체크
-        schedulePeriodValidator.checkCourseOpen();
+        schedulePeriodValidator.checkLectureRegistration();
 
         Major major = majorRepository.findById(req.getMajorId())
                 .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));

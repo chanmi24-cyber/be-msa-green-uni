@@ -73,7 +73,7 @@ public class SchedulePeriodValidator {
     }
 
     // 강의개설신청 기간 체크
-    public void checkCourseOpen() {
+    public void checkLectureRegistration() {
         boolean isActive = scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.LECTURE_REGISTRATION)
                 .isPresent();
