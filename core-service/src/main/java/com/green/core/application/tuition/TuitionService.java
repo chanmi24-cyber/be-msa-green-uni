@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.enumcode.EnumChangeType; // 이력 보존용 추가
 import com.green.common.exception.BusinessException;
+import com.green.core.application.major.MajorRepository;
 import com.green.core.application.scholarship.ScholarshipRepository;
 import com.green.core.application.tuition.model.TuitionReq;
 import com.green.core.application.tuition.model.TuitionRes;
 import com.green.core.application.tuition.model.TuitionMailEvent;
 import com.green.core.entity.cache.ScheduleCache;
+import com.green.core.entity.cache.StudentCache;
+import com.green.core.entity.major.Major;
 import com.green.core.entity.scholarship.Scholarship;
 import com.green.core.entity.tuition.Tuition;
 import com.green.core.entity.tuition.TuitionMailLog;
@@ -17,6 +20,7 @@ import com.green.core.entity.tuition.TuitionPolicy;
 import com.green.core.entity.tuition.TuitionPolicyHistory; // 이력 엔티티 추가
 import com.green.core.enumcode.EnumTuitionStatus;
 import com.green.core.repository.ScheduleCacheRepository;
+import com.green.core.repository.StudentCacheRepository;
 import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +51,8 @@ public class TuitionService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ScheduleCacheRepository scheduleCacheRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final StudentCacheRepository studentCacheRepository;
+    private final MajorRepository majorRepository;
 
     // ==========================================
     // [학생] 서비스 로직
@@ -101,13 +109,33 @@ public class TuitionService {
     // ==========================================
 
     public Page<TuitionRes> getTuitionListForAdmin(Integer year, Integer semester, EnumTuitionStatus status, Pageable pageable) {
-        Page<Tuition> page;
-        if (status != null) {
-            page = tuitionRepository.findByYearAndSemesterAndStatus(year, semester, status, pageable);
-        } else {
-            page = tuitionRepository.findByYearAndSemester(year, semester, pageable);
-        }
-        return page.map(TuitionRes::new);
+        Page<Tuition> tuitionPage = (status != null)
+                ? tuitionRepository.findByYearAndSemesterAndStatus(year, semester, status, pageable)
+                : tuitionRepository.findByYearAndSemester(year, semester, pageable);
+
+        // 1. 필요한 학생 memberCode 리스트 추출
+        List<Long> memberCodes = tuitionPage.getContent().stream()
+                .map(Tuition::getStudentCode)
+                .collect(Collectors.toList());
+
+        // 2. StudentCache에서 데이터 일괄 조회 (가정: studentCacheRepository 존재)
+        Map<Long, StudentCache> studentMap = studentCacheRepository.findAllById(memberCodes).stream()
+                .collect(Collectors.toMap(StudentCache::getMemberCode, s -> s));
+
+        // 3. [추가] 필요한 모든 majorId 추출 후 학과 이름 매핑
+        Set<Long> majorIds = studentMap.values().stream()
+                .map(StudentCache::getMajorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, String> majorNameMap = majorRepository.findAllById(majorIds).stream()
+                .collect(Collectors.toMap(Major::getMajorId, Major::getName));
+
+        // 4. 결합하여 DTO 생성 (TuitionRes에 majorName을 넘겨줌)
+        return tuitionPage.map(t -> {
+            StudentCache sc = studentMap.get(t.getStudentCode());
+            String majorName = (sc != null) ? majorNameMap.get(sc.getMajorId()) : "학과 정보 없음";
+            return new TuitionRes(t, sc, majorName);
+        });
     }
 
     @Transactional

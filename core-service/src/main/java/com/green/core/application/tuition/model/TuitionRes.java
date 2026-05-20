@@ -1,5 +1,6 @@
 package com.green.core.application.tuition.model;
 
+import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.tuition.Tuition;
 import com.green.core.entity.tuition.TuitionPolicy;
 import com.green.core.entity.tuition.TuitionPolicyHistory;
@@ -15,6 +16,9 @@ public class TuitionRes {
     private final Long studentCode;
     private final Integer year;
     private final Integer semester;
+    private final String studentName;
+    private final String deptName;
+    private final Integer academicYear;
     private final String collegeName;
     private final Long baseAmount;
     private final Long totalDiscount;
@@ -23,11 +27,22 @@ public class TuitionRes {
     private final LocalDateTime paidAt;
     private final LocalDateTime deadline;
 
-    public TuitionRes(Tuition tuition) {
+    //만약 TuitionRes에 파라미터가 3개인 생성자만 있다면, TuitionRes::new가 호출할 수 있는 Tuition만 받는 생성자가 존재하지 않습니다. 따라서 추가 필요.
+    public TuitionRes(Tuition t) {
+        this(t, null, "학과 정보 없음");
+    }
+
+    // 학생 정보까지 포함하는 생성자
+    public TuitionRes(Tuition tuition, StudentCache student, String majorName) {
         this.tuitionId = tuition.getTuitionId();
         this.studentCode = tuition.getStudentCode();
         this.year = tuition.getYear();
         this.semester = tuition.getSemester();
+
+        this.studentName = (student != null) ? student.getName() : null;
+        this.deptName = majorName; // 학과ID 대신 실제 이름 할당
+        this.academicYear = (student != null) ? student.getAcademicYear() : null;
+
         this.collegeName = tuition.getTuitionPolicy().getCollege().getName();
         this.baseAmount = tuition.getBaseAmount();
         this.totalDiscount = tuition.getTotalDiscount();
