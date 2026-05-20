@@ -19,6 +19,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,7 @@ public class TuitionService {
     private final TuitionRepository tuitionRepository;
     private final TuitionPolicyRepository tuitionPolicyRepository;
     private final TuitionMailLogRepository tuitionMailLogRepository;
-    private final ScholarshipRepository scholarshipRepository; // 2. 장학금 레포지토리 정상 주입
+    private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -39,54 +40,53 @@ public class TuitionService {
     // [학생] 서비스 로직
     // ==========================================
 
-    /**
-     * 1. 등록금 전체납부 조회
-     */
     public List<TuitionRes> getStudentTuitionList(Long studentCode) {
         return tuitionRepository.findByStudentCodeOrderByYearDescSemesterDesc(studentCode).stream()
                 .map(TuitionRes::new)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 2. 등록금 납부 상세 조회 (장학금 여부에 따라 유연하게 실시간 차감 연산)
-     */
     @Transactional
-    public TuitionRes getStudentTuitionDetail(Long studentCode, Integer year, Integer semester) {
-        // 해당 학기 기본 고지서 내역 조회
-        Tuition tuition = tuitionRepository.findByStudentCodeAndYearAndSemester(studentCode, year, semester)
-                .orElseThrow(() -> new IllegalArgumentException("해당 학기의 등록금 정보가 존재하지 않습니다."));
+    public TuitionRes.MyTuitionDetailRes getStudentTuitionDetailByTuitionId(Long studentCode, Long tuitionId) {
+        Tuition tuition = tuitionRepository.findById(tuitionId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 고지서가 존재하지 않습니다."));
 
-        // [수정] DB에서 이 학기에 수혜받은 장학금 목록(다자녀, 보훈 등)을 다이렉트로 조회
+        // 명세서 조건: 본인 외 타인 내역 조회 시도 제한 (403 대응)
+        if (!tuition.getStudentCode().equals(studentCode)) {
+            throw new IllegalArgumentException("본인의 등록금 내역만 상세 조회할 수 있습니다.");
+        }
+
+        // 장학금 수혜 동적 업데이트 연동
         List<Scholarship> studentScholarships = scholarshipRepository
-                .findByStudentCodeAndYearAndSemester(studentCode, year, semester);
+                .findByStudentCodeAndYearAndSemester(studentCode, tuition.getYear(), tuition.getSemester());
 
-        // 여러 개의 장학 금액을 전부 더함 (예: 30만 + 30만 = 60만)
-        long calculatedDiscount = studentScholarships.stream()
-                .mapToLong(Scholarship::getScholarshipAmount)
-                .sum();
+        long calculatedDiscount = studentScholarships.stream().mapToLong(Scholarship::getScholarshipAmount).sum();
 
-        // 장학 금액 변동(또는 신규 반영)이 있다면 엔티티 상태를 실시간 업데이트하여 유연하게 계산
         if (tuition.getTotalDiscount() != calculatedDiscount) {
             long finalAmount = Math.max(0, tuition.getBaseAmount() - calculatedDiscount);
             tuition.updateScholarshipDeduction(calculatedDiscount, finalAmount);
         }
 
-        return new TuitionRes(tuition);
+        return new TuitionRes.MyTuitionDetailRes(tuition);
     }
 
-    /**
-     * 3. 등록금 납부 신청
-     */
     @Transactional
-    public void requestTuitionPayment(Long studentCode, TuitionReq.PaymentRequest request) {
-        // [기간 검증] 등록금 납부 기간인지 체크 (SchedulePeriodValidator 활용)
-        schedulePeriodValidator.checkTuitionPayment();
+    public void requestTuitionPaymentPending(Long studentCode, Long tuitionId) {
+        schedulePeriodValidator.checkTuitionPayment(); // 기간 검증
 
-        Tuition tuition = tuitionRepository.findByStudentCodeAndYearAndSemester(studentCode, request.getYear(), request.getSemester())
-                .orElseThrow(() -> new IllegalArgumentException("등록금 고지 내역이 없습니다."));
+        Tuition tuition = tuitionRepository.findById(tuitionId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 등록금 고지 내역이 없습니다."));
 
-        // 가상계좌 발송 처리를 위해 상태를 PENDING(처리중)으로 변경하는 엔티티 비즈니스 메서드 호출
+        // 권한 예외 검증
+        if (!tuition.getStudentCode().equals(studentCode)) {
+            throw new IllegalArgumentException("본인의 등록금 고지서만 납부 신청이 가능합니다.");
+        }
+
+        // 명세서 조건: 이미 PENDING 이거나 PAID 상태일 때 예외 분기 (409 대응)
+        if (tuition.getStatus() == EnumTuitionStatus.PENDING || tuition.getStatus() == EnumTuitionStatus.PAID) {
+            throw new IllegalStateException("이미 신청 완료되었거나 납부가 완료된 상태입니다.");
+        }
+
         tuition.requestPayment();
     }
 
@@ -94,9 +94,6 @@ public class TuitionService {
     // [관리자] 서비스 로직
     // ==========================================
 
-    /**
-     * 1. 등록금 납부 목록 조회 (페이징 및 상태 검색)
-     */
     public Page<TuitionRes> getTuitionListForAdmin(Integer year, Integer semester, EnumTuitionStatus status, Pageable pageable) {
         Page<Tuition> page;
         if (status != null) {
@@ -107,41 +104,45 @@ public class TuitionService {
         return page.map(TuitionRes::new);
     }
 
-    /**
-     * 2. 등록금 납부 상태 변경
-     */
     @Transactional
     public void updateTuitionStatus(Long tuitionId, EnumTuitionStatus status, Long adminCode) {
         Tuition tuition = tuitionRepository.findById(tuitionId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 등록금 내역이 존재하지 않습니다."));
 
-        // [비즈니스 로직 추가] 만약 상태를 'PAID(납부완료)'나 'PENDING(처리중)' 등으로 변경하려고 할 때,
-        // 혹은 정산이 필요한 상태라면 실시간으로 장학금을 계산해서 고지서 금액을 먼저 업데이트해줍니다.
-        if (status == EnumTuitionStatus.PAID || status == EnumTuitionStatus.PENDING) {
+        // 명세서 조건: 이미 PAID 상태인데 또 PAID 하려고 할 때 예외 분기 (409 대응)
+        if (tuition.getStatus() == EnumTuitionStatus.PAID && status == EnumTuitionStatus.PAID) {
+            throw new IllegalStateException("이미 납부 완료(PAID) 처리된 학생입니다.");
+        }
 
-            // 이 학생이 해당 학기에 수혜받은 장학금 목록 조회
+        if (status == EnumTuitionStatus.PAID || status == EnumTuitionStatus.PENDING) {
             List<Scholarship> studentScholarships = scholarshipRepository
                     .findByStudentCodeAndYearAndSemester(tuition.getStudentCode(), tuition.getYear(), tuition.getSemester());
 
-            // 총 장학 금액 합산 (ex: 보훈 30만 + 다자녀 30만 = 60만)
-            long calculatedDiscount = studentScholarships.stream()
-                    .mapToLong(Scholarship::getScholarshipAmount)
-                    .sum();
-
-            // 최종 납부 금액 계산 (기본금액 - 장학금, 0원 미만 방지)
+            long calculatedDiscount = studentScholarships.stream().mapToLong(Scholarship::getScholarshipAmount).sum();
             long finalAmount = Math.max(0, tuition.getBaseAmount() - calculatedDiscount);
 
-            // 엔티티의 장학금 할인금액과 최종금액을 정산 업데이트
             tuition.updateScholarshipDeduction(calculatedDiscount, finalAmount);
         }
 
-        // 엔티티 내부 도메인 로직을 통해 상태(status) 변경 및 수정자 사번, 납부시간(PAID인 경우) 적재
         tuition.updateStatus(status, adminCode);
     }
 
-    /**
-     * 3. 등록금 미납자 메일 발송 (Kafka 이벤트 발행)
-     */
+    // API-TUI-05: 미납자 독촉 메일 미리보기 서비스
+    public TuitionRes.TuitionRemindRes previewReminderMails(Integer year, Integer semester) {
+        List<Tuition> unpaidList = tuitionRepository.findByYearAndSemesterAndStatus(year, semester, EnumTuitionStatus.UNPAID);
+        LocalDateTime deadline = unpaidList.isEmpty() ? LocalDateTime.now() : unpaidList.get(0).getDeadline();
+
+        return TuitionRes.TuitionRemindRes.builder()
+                .unpaidCount(unpaidList.size())
+                .year(year)
+                .semester(semester)
+                .dueDate(deadline)
+                .mailSubject(String.format("[그린대학교] %d년도 %d학기 등록금 미납 안내 고지", year, semester))
+                .mailFrom("academic-support@green.ac.kr")
+                .mailBodyPreview("<h3>안녕하세요, 그린대학교 학사지원팀입니다.</h3><p>귀하의 등록금이 미납 상태...</p>")
+                .build();
+    }
+
     @Transactional
     public void sendReminderEmailToUnpaidStudents(TuitionReq.MailSendRequest request, Long adminCode) {
         List<Tuition> unpaidList = tuitionRepository.findByYearAndSemesterAndStatus(
@@ -163,47 +164,44 @@ public class TuitionService {
                         .build();
 
                 kafkaTemplate.send("tuition-mail-topic", event);
-                log.info("등록금 미납 메일 발송 이벤트 발행 성공 - 학생코드: {}", tuition.getStudentCode());
             } catch (Exception e) {
                 isSuccess = false;
-                log.error("등록금 미납 메일 이벤트 발행 실패 - 학생코드: {}, 에러: {}", tuition.getStudentCode(), e.getMessage());
             }
 
-            TuitionMailLog mailLog = TuitionMailLog.builder()
+            tuitionMailLogRepository.save(TuitionMailLog.builder()
                     .tuition(tuition)
                     .recipientEmail(studentEmail)
                     .isSuccess(isSuccess)
                     .senderCode(adminCode)
-                    .build();
-
-            tuitionMailLogRepository.save(mailLog);
+                    .build());
         }
     }
 
-    /**
-     * 4. 기본 등록금 수정 (등록금 정책 테이블 수정)
-     */
+    // API-TUI-11: 등록금 정책 전체 조회 서비스
+    public List<TuitionRes.PolicyRes> getTuitionPolicyList() {
+        return tuitionPolicyRepository.findAll().stream()
+                .map(TuitionRes.PolicyRes::new)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void updateTuitionPolicy(Long policyId, TuitionReq.UpdatePolicyRequest request, Long adminCode) {
         TuitionPolicy policy = tuitionPolicyRepository.findById(policyId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 등록금 정책이 존재하지 않습니다."));
 
-        // 정책 엔티티 비즈니스 로직 호출
+        // 명세서 조건: 이미 납부 마감 기한이 지난 과거의 정책이거나 수정 불가능 시점 조건 제약 (403 대응)
+        if (LocalDateTime.now().isAfter(LocalDateTime.of(policy.getYear(), 2, 28, 18, 0))) {
+            throw new IllegalStateException("이미 등록금 고지 및 수납 기한이 만료되어 수정할 수 없습니다.");
+        }
+
         policy.updateBaseAmount(request.getBaseAmount(), adminCode);
     }
 
-    /**
-     * 안내 메일 HTML 템플릿 생성 유틸 메서드
-     */
     private String createTuitionTemplate(Tuition tuition) {
         return "<h3>안녕하세요, 그린대학교 학사지원팀입니다.</h3>" +
                 "<p>귀하의 " + tuition.getYear() + "년도 " + tuition.getSemester() + "학기 등록금이 현재 <strong>미납</strong> 상태입니다.</p>" +
                 "<ul>" +
-                "<li><strong>기본 등록금:</strong> " + String.format("%,d", tuition.getBaseAmount()) + "원</li>" +
-                "<li><strong>장학 할인 금액:</strong> " + String.format("%,d", tuition.getTotalDiscount()) + "원</li>" +
-                "<li><strong>최종 납부 금액:</strong> <span style='color:red;'>" + String.format("%,d", tuition.getFinalAmount()) + "원</span></li>" +
-                "<li><strong>납부 마감 기한:</strong> " + tuition.getDeadline().toString().replace("T", " ") + "까지</li>" +
-                "</ul>" +
-                "<p>기한 내에 등록금을 납부하지 않을 경우 학칙에 따라 미등록 제적 등 불이익을 받을 수 있으니 유의하시기 바랍니다.</p>";
+                "<li><strong>최종 납부 금액:</strong> " + String.format("%,d", tuition.getFinalAmount()) + "원</li>" +
+                "</ul>";
     }
 }
