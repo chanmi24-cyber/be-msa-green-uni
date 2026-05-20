@@ -36,10 +36,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
              AND sm_d.is_active = true
             LEFT JOIN major_cache mc_d
               ON mc_d.major_id = sm_d.major_id
-<<<<<<< HEAD
             ORDER BY m.member_code DESC
-=======
->>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
             """,
             nativeQuery = true
     )

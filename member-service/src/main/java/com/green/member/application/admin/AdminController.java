@@ -44,7 +44,6 @@ public class AdminController {
     private final ProfessorService professorService;
     private final StudentService studentService;
 
-    // 본인(관리자) 상태 변경 이력 조회
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
@@ -55,7 +54,7 @@ public class AdminController {
                 .build();
     }
 
-    // 관리자의 학생 계정 상태 변경 이력 조회
+
     @GetMapping("/students/{memberCode}/history")
     public ResultResponse<?> findStudentHistory(@PathVariable Long memberCode){
         List<StudentHistoryRes> res = studentService.findStudentHistory( memberCode );
@@ -64,8 +63,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
-    // 관리자의 교수 계정 상태 변경 이력 조회
     @GetMapping("/professors/{memberCode}/history")
     public ResultResponse<?> findProfessorHistory(@PathVariable Long memberCode){
         List<ProfessorHistoryRes> res = professorService.findStatusHistory( memberCode );
@@ -74,13 +71,21 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
-    // 관리자의 다른 관리자 계정 상태 변경 이력 조회
     @GetMapping("/admins/{memberCode}/history")
     public ResultResponse<?> findAdminHistory(@PathVariable Long memberCode){
         List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 관리자 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    // 회원 상세 정보 조회
+    @GetMapping("/{memberCode}")
+    public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
+        MemberProfileRes res = adminService.getMemberProfile(memberCode);
+        return ResultResponse.builder()
+                .message("회원 프로파일 조회")
                 .data(res)
                 .build();
     }
@@ -94,7 +99,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
     // 교수 회원 목록 조회
     @GetMapping("/professors")
     public ResultResponse<?> findProfessorList(){
@@ -104,7 +108,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
     // 관리자 회원 목록 조회
     @GetMapping("/admins")
     public ResultResponse<?> findAdminList(){
@@ -124,7 +127,6 @@ public class AdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(template);
     }
-
     // 교수 일괄 등록 템플릿 다운로드
     @GetMapping("/professors/batch/template")
     public ResponseEntity<byte[]> downloadProfessorTemplate() throws IOException {
@@ -134,7 +136,6 @@ public class AdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(template);
     }
-
     // 관리자 일괄 등록 템플릿 다운로드
     @GetMapping("/admins/batch/template")
     public ResponseEntity<byte[]> downloadAdminTemplate() throws IOException {
@@ -154,7 +155,6 @@ public class AdminController {
                 .data(studentBatchService.batchRegister(file))
                 .build();
     }
-
     // 교수 일괄 등록
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/professors/batch")
@@ -164,7 +164,6 @@ public class AdminController {
                 .data(professorBatchService.batchRegister(file))
                 .build();
     }
-
     // 관리자 일괄 등록
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/admins/batch")
@@ -187,7 +186,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
     // 교수 단건 등록
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/professors")
@@ -200,7 +198,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
     // 관리자 단건 등록
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/admins")
@@ -210,16 +207,6 @@ public class AdminController {
         MemberCreateRes res = adminService.createAdmin(req, pic, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("관리자 정보 등록 성공했습니다")
-                .data(res)
-                .build();
-    }
-
-    // 회원 상세 정보 조회
-    @GetMapping("/{memberCode}")
-    public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
-        MemberProfileRes res = adminService.getMemberProfile(memberCode);
-        return ResultResponse.builder()
-                .message("회원 프로파일 조회")
                 .data(res)
                 .build();
     }
@@ -235,7 +222,6 @@ public class AdminController {
                 .message("관리자 계정 정보 수정 성공")
                 .build();
     }
-
     // 교수 계정 정보 수정
     @PatchMapping("/professors/{memberCode}")
     public ResultResponse<?> updateProfessorProfile(@PathVariable Long memberCode,
@@ -247,7 +233,6 @@ public class AdminController {
                 .message("교수 계정 정보 수정 성공")
                 .build();
     }
-
     // 학생 계정 정보 수정
     @PatchMapping("/students/{memberCode}")
     public ResultResponse<?> updateStudentProfile(@PathVariable Long memberCode,
@@ -269,7 +254,6 @@ public class AdminController {
                 .message("관리자 계정 상태 변경 및 이력 기록")
                 .build();
     }
-
     // 교수 계정 상태 변경
     @PatchMapping("/professors/{memberCode}/status")
     public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody StatusUpdateProfessorReq req) {
@@ -279,7 +263,6 @@ public class AdminController {
                 .message("교수 계정 상태 변경 및 이력 기록")
                 .build();
     }
-
     // 학생 계정 상태 변경
     @PatchMapping("/students/{memberCode}/status")
     public ResultResponse<?> updateStatus(@PathVariable Long memberCode, @RequestBody @Valid StatusUpdateStudentReq req) {
@@ -289,4 +272,5 @@ public class AdminController {
                 .message("학생 계정 상태 변경 및 이력 기록")
                 .build();
     }
+
 }

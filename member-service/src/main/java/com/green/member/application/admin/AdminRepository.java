@@ -18,10 +18,7 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
             FROM admin a
             JOIN member m
               ON m.member_code = a.member_code
-<<<<<<< HEAD
             ORDER BY m.member_code DESC
-=======
->>>>>>> 95876d71d3ce1fda294cad3633d43c2d46260e6d
             """,
             nativeQuery = true
     )
