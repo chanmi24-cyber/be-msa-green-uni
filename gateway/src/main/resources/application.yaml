@@ -28,6 +28,11 @@ spring:
                 allow-credentials: true
                 max-age: 3600
 
+          # 파일 업로드 크기 제한
+          http:
+            codec:
+              max-in-memory-size: 5MB
+
           # 라우팅 설정
           routes:
             - id: auth-service
@@ -39,6 +44,11 @@ spring:
               uri: http://${SERVICE_HOST}:${MEMBER_PORT}
               predicates:
                 - Path=/api/member/**, /api/member/**
+
+            - id: member-file
+              uri: http://${SERVICE_HOST}:${MEMBER_PORT}
+              predicates:
+                - Path=/file/**
 
             - id: core-service
               uri: http://${SERVICE_HOST}:${CORE_PORT}

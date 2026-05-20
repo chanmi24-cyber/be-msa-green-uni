@@ -8,6 +8,7 @@ import com.green.member.application.professor.model.ProfessorProfileRes;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
+import com.green.member.entity.professor.ProfessorHistory;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.application.major.MajorCacheRepository;
 import lombok.RequiredArgsConstructor;
@@ -64,8 +65,12 @@ public class ProfessorService {
     // 교수 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<ProfessorHistoryRes> findStatusHistory(Long memberCode){
-        return professorHistoryRepository.findByProfessor_MemberCodeOrderByCreatedAtDesc(memberCode)
-                .stream()
+        if (!professorRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND);
+        }
+        List<ProfessorHistory> histories =
+                professorHistoryRepository.findByProfessor_MemberCodeOrderByCreatedAtDesc(memberCode);
+        return histories.stream()
                 .map( h -> {
                     ProfessorHistoryRes res = new ProfessorHistoryRes();
                     res.setChangeType(h.getChangeType());

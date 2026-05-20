@@ -1,6 +1,7 @@
 package com.green.member.application.member.model;
 
 import com.green.common.enumcode.EnumBuilding;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,7 +14,7 @@ public class MemberUpdateReq {
     private String postcode;
     private String address;
     private String detailAddress;
-    private String pic;
+    @Email(message = "올바른 이메일 형식이 아닙니다")
     private String email;
 
     // 교수 전용 (nullable)
