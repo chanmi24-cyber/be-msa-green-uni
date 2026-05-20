@@ -16,7 +16,7 @@ public enum EnumScheduleType implements EnumMapperType {
     LECTURE_EVALUATION("LECTURE_EVALUATION", "강의평가"),
     TUITION_PAYMENT("TUITION_PAYMENT", "등록금납부"),
     LECTURE_REGISTRATION("LECTURE_REGISTRATION", "강의개설신청"),
-    MAJOR_CHANGE("MAJOR_CHANGE","전과변경신청"),
+    MAJOR_CHANGE("MAJOR_CHANGE","전공변경신청"),
     SEMESTER_START("SEMESTER_START", "학기시작"),
     ETC("ETC", "기타");
 
