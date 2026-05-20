@@ -49,7 +49,6 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -701,7 +700,18 @@ public class AdminService {
         }
         List<AdminHistory> histories = adminHistoryRepository.findByAdmin_MemberCodeOrderByCreatedAtDesc(memberCode);
         return histories.stream()
-                .map(AdminHistoryRes::new)
-                .collect(Collectors.toList());
+                .map( h -> {
+                    AdminHistoryRes res = new AdminHistoryRes();
+                    res.setChangeType(h.getChangeType());
+                    res.setOldStatus(h.getOldStatus());
+                    res.setNewStatus(h.getNewStatus());
+                    res.setStartDate(h.getStartDate());
+                    res.setEndDate(h.getEndDate());
+                    res.setReason(h.getReason());
+                    res.setCreatedAt(h.getCreatedAt());
+                    return res;
+                })
+                .toList()
+                ;
     }
 }
