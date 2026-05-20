@@ -21,6 +21,7 @@ public class MajorRequestDetailRes {
     BigDecimal gpa;
     String reason;
     String file;
+    String originalFileName;
     String approveReason;
     String rejectReason;
 }

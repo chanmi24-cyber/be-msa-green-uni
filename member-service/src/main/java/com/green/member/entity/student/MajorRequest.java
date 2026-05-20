@@ -38,6 +38,9 @@ public class MajorRequest extends CreatedUpdatedAt {
     @Column(name = "file")
     private String file;
 
+    @Column(name = "original_file_name")
+    private String originalFileName;
+
     @Column(name = "gpa", nullable = false)
     @Digits(integer = 1, fraction = 2)
     private BigDecimal gpa;

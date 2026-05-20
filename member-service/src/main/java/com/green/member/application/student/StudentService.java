@@ -28,8 +28,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -163,6 +172,7 @@ public class StudentService {
                 .targetMajorId(req.getTargetMajorId())
                 .reason(req.getReason())
                 .file(savedFileName)
+                .originalFileName(file != null ? file.getOriginalFilename() : null)
                 .gpa(BigDecimal.ZERO)
                 .build();
         MajorRequest newRequest = majorRequestRepository.save(request);
@@ -191,7 +201,7 @@ public class StudentService {
             }
         }
     }
-
+    // 내 전공 변경 신청 취소
     @Transactional
     public void deleteMajorRequest(Long requestId, Long memberCode){
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
@@ -249,9 +259,39 @@ public class StudentService {
                 .gpa(request.getGpa())
                 .reason(request.getReason())
                 .file(request.getFile())
+                .originalFileName(request.getOriginalFileName())
                 .approveReason(request.getApproveReason())
                 .rejectReason(request.getRejectReason())
                 .createdAt(request.getCreatedAt())
                 .build();
+    }
+
+    // 학생 전공 변경 신청서 파일 다운로드
+    public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
+        MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+
+        if (request.getFile() == null) {
+            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+        }
+
+        String filePath = String.format("member/major/request/%s/%s", memberCode, request.getFile());
+
+        File file = new File(myFileUtil.fileUploadPath, filePath);
+        Resource resource = new FileSystemResource(file);
+
+        if (!resource.exists()) {
+            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+        }
+
+        String downloadName = request.getOriginalFileName() != null
+                ? request.getOriginalFileName()
+                : request.getFile();
+        String encodedName = URLEncoder.encode(downloadName, StandardCharsets.UTF_8).replace("+", "%20");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedName)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }

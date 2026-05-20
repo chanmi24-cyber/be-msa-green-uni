@@ -14,6 +14,7 @@ public enum RequestErrorCode implements ErrorCode {
     , ALREADY_PENDING_REQUEST("R004", "이미 처리 중인 신청이 있습니다.", HttpStatus.CONFLICT)
     , NOT_MAJOR_REQUEST("R005", "존재하지 않는 신청서입니다.", HttpStatus.NOT_FOUND)
     , NOT_CANCELLABLE("R006", "취소할 수 없는 신청입니다.", HttpStatus.BAD_REQUEST)
+    , FILE_NOT_FOUND("R007", "첨부 파일이 존재하지 않습니다.", HttpStatus.NOT_FOUND)
     ;
     private final String code;
     private final String message;
