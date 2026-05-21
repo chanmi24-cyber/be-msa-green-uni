@@ -15,9 +15,6 @@ public interface EvaluationMapper {
     // 교수 - 내 강의 평가 목록
     List<EvalListRes> findProfessorEvalList(EvalListReq req);
 
-    // 평가 기간 조회
-    EvalPeriodRes findEvalPeriod(EvalPeriodReq req);
-
     // 교수 - 평가 상세
     ProEvalDetailRes findProEvalDetail(@Param("memberCode") Long memberCode,
                                        @Param("lectureId") Long lectureId);
@@ -28,6 +25,5 @@ public interface EvaluationMapper {
 
     // 교수 평가 상세 - 코멘트 목록 (XML resultMap collection용)
     List<String> findCommentsByLectureId(Long lectureId);
-
 
 }

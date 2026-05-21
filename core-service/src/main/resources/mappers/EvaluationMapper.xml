@@ -5,7 +5,6 @@
 <mapper namespace="com.green.core.application.lecture.mapper.EvaluationMapper">
 
     <!-- EVAL-01 학생: 내 강의평가 목록 -->
-    <!-- [수정] grade 테이블 JOIN 추가 — 성적기입 완료(grade_letter IS NOT NULL)된 강의만 표시 -->
     <select id="findStudentEvalList" resultType="com.green.core.application.lecture.model.EvalListRes">
         SELECT
         l.lecture_id,
@@ -13,21 +12,19 @@
         pc.name AS pro_name,
         l.year,
         l.semester,
-        ep.start_date,
-        ep.end_date,
+        sc.start_date AS start_date,
+        sc.end_date   AS end_date,
         (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_count,
-        (le.created_at IS NOT NULL) AS is_evaluated
+        (le.created_at IS NOT NULL) AS is_evaluated,
+        (g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0) AS has_grade
         FROM course c
         JOIN lecture l ON c.lecture_id = l.lecture_id
         JOIN professor_cache pc ON l.member_code = pc.member_code
         LEFT JOIN grade g ON g.course_id = c.course_id
-        LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
+        LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
+            AND sc.year = l.year AND sc.semester = l.semester
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
-        AND (
-            (l.end_date > NOW() AND g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0)
-            OR l.end_date &lt;= NOW()
-        )
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
@@ -40,28 +37,17 @@
         pc.name AS pro_name,
         l.year,
         l.semester,
-        ep.start_date,
-        ep.end_date,
+        sc.start_date AS start_date,
+        sc.end_date   AS end_date,
         (SELECT COUNT(*) FROM course c WHERE c.lecture_id = l.lecture_id) AS total_count
         FROM lecture l
         JOIN professor_cache pc ON l.member_code = pc.member_code
-        LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
+        LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
+            AND sc.year = l.year AND sc.semester = l.semester
         WHERE l.member_code = #{memberCode}
         AND l.end_date &lt; NOW()
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
-    </select>
-
-    <!-- EVAL-03 공통: 강의평가 기간 조회 -->
-    <select id="findEvalPeriod" resultType="com.green.core.application.lecture.model.EvalPeriodRes">
-        SELECT
-            year,
-            semester,
-            start_date,
-            end_date
-        FROM eval_period
-        WHERE year = #{year}
-          AND semester = #{semester}
     </select>
 
     <!-- EVAL-04 교수: 강의평가 상세 -->
@@ -84,19 +70,20 @@
             l.lecture_id,
             l.lecture_name,
             pc.name AS pro_name,
-            ep.start_date,
-            ep.end_date,
+            sc.start_date AS start_date,
+            sc.end_date   AS end_date,
             COUNT(le.evaluation_id)                                           AS response_count,
             (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_students,
             AVG(le.score)                                                     AS score,
             COUNT(le.comment)                                                 AS total_comments
         FROM lecture l
                  JOIN professor_cache pc ON l.member_code = pc.member_code
-                 LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
+                 LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
+                     AND sc.year = l.year AND sc.semester = l.semester
                  LEFT JOIN course c ON c.lecture_id = l.lecture_id
                  LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
         WHERE l.lecture_id = #{lectureId}
-        GROUP BY l.lecture_id, l.lecture_name, pc.name, ep.start_date, ep.end_date
+        GROUP BY l.lecture_id, l.lecture_name, pc.name, sc.start_date, sc.end_date
     </select>
 
     <select id="findCommentsByLectureId" resultType="String">
@@ -109,20 +96,22 @@
     </select>
 
     <!-- EVAL-05 학생: 강의평가 상세 -->
+    <!-- course 기준: 수강 안 한 경우 null → 404, 미작성이면 score/comment=null로 200 반환 -->
     <select id="findStdEvalDetail" resultType="com.green.core.application.lecture.model.StdEvalDetailRes">
         SELECT
             l.lecture_id,
             l.lecture_name,
             pc.name AS pro_name,
-            ep.start_date,
-            ep.end_date,
+            sc.start_date AS start_date,
+            sc.end_date   AS end_date,
             le.score,
             le.comment
-        FROM lecture_evaluation le
-                 JOIN course c ON le.course_id = c.course_id
+        FROM course c
                  JOIN lecture l ON c.lecture_id = l.lecture_id
                  JOIN professor_cache pc ON l.member_code = pc.member_code
-                 LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
+                 LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
+                     AND sc.year = l.year AND sc.semester = l.semester
+                 LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
           AND l.lecture_id = #{lectureId}
     </select>

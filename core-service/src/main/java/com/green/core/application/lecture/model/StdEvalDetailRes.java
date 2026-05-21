@@ -1,7 +1,7 @@
 package com.green.core.application.lecture.model;
 
 import lombok.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor @AllArgsConstructor @Builder
@@ -9,8 +9,8 @@ public class StdEvalDetailRes {
     private Long lectureId;
     private String lectureName;
     private String proName;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private Integer score;
     private String comment;
 }
