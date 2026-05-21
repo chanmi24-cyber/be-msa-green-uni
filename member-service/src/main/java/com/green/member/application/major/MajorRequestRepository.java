@@ -22,16 +22,20 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
     // 관리자 전공 변경 신청 목록 조회
     @Query(value = """
             SELECT mr.request_id       AS requestId,
-                   m.member_code       AS memberCode,
-                   m.name              AS studentName,
+                   ms.member_code       AS memberCode,
+                   ms.name              AS studentName,
+                   ma.name              AS updaterName,
                    mc.name             AS targetMajorName,
                    mc_current.name     AS currentMajorName,
                    mc_minor.name       AS currentMinorName,
                    mr.type             AS type,
                    mr.status           AS status,
+                   mr.academic_year    AS academicYear,
+                   mr.semester         AS semsester,
                    mr.created_at       AS createdAt
             FROM major_request mr
-            JOIN member m      ON m.member_code = mr.student_code
+            JOIN member ms      ON ms.member_code = mr.student_code
+            LEFT JOIN member ma      on ma.member_code = mr.updater_code
             JOIN major_cache mc ON mc.major_id  = mr.target_major_id
             JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
             LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
