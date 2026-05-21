@@ -5,6 +5,7 @@ import com.green.common.exception.FileErrorCode;
 import com.green.common.utils.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -23,6 +24,11 @@ import java.util.Set;
 public class FileService {
     private final FileUtil fileUtil;
 
+    // 서비스별 constants.file.max-size 값 사용
+    // 설정이 없으면 기본값 5MB(5242880 bytes) 적용
+    @Value("${constants.file.max-size:5242880}")
+    private long maxFileSize;
+
     // 서류 첨부 시 허용되는 확장자 목록 (PDF + 이미지)
     public static final Set<String> ALLOWED_DOCUMENT_EXTENSIONS = Set.of(".pdf", ".jpg", ".jpeg", ".png");
     // 프로필 사진 업로드 시 허용되는 확장자 목록 (이미지만)
@@ -33,7 +39,7 @@ public class FileService {
      *
      * 처리 순서:
      *   1) 파일이 비어 있으면 null 반환
-     *   2) 파일 크기가 5MB를 넘으면 예외 발생
+     *   2) 파일 크기가 최대 제한 용량을 넘으면 예외 발생
      *   3) 확장자와 실제 파일 내용이 허용 목록과 맞는지 확인 (validateFileType)
      *   4) 겹치지 않는 랜덤 파일 이름 생성 → 폴더 만들기 → 디스크에 저장
      *
@@ -46,8 +52,8 @@ public class FileService {
         // 파일이 없거나 비어 있으면 저장하지 않음
         if (file == null || file.isEmpty()) return null;
 
-        // 크기 제한: 5MB 초과 시 거부 (application.yaml 설정과 이중으로 막음)
-        if (file.getSize() > 5 * 1024 * 1024) {
+        // 크기 제한: application.yaml의 constants.file.max-size 값 초과 시 거부
+        if (file.getSize() > maxFileSize) {
             throw new BusinessException(FileErrorCode.FILE_TOO_LARGE);
         }
 
@@ -88,7 +94,6 @@ public class FileService {
     /**
      * 1단계 - 확장자 확인
      *   사용자가 보낸 파일 이름의 확장자가 허용 목록에 있는지 체크
-     *   (예: .exe, .sh 같은 위험한 파일을 걸러냄)
      *
      */
     private void validateFileType(MultipartFile file, Set<String> allowedExtensions) {
