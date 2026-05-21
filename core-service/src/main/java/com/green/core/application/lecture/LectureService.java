@@ -6,10 +6,12 @@ import com.green.common.enumcode.EnumChangeType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
+import com.green.core.application.course.CourseRepository;
 import com.green.core.application.lecture.mapper.LectureMapper;
 import com.green.core.application.lecture.model.*;
 import com.green.core.application.lecture.repository.*;
 import com.green.core.application.major.MajorRepository;
+import com.green.core.entity.course.Course;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
@@ -43,6 +45,7 @@ public class LectureService {
     private final LectureHistoryRepository lectureHistoryRepository;
     private final ObjectMapper objectMapper;
     private final NotificationProducer notificationProducer;
+    private final CourseRepository courseRepository;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -298,6 +301,56 @@ public class LectureService {
 
         //삭제로직
         lecture.delete();
+    }
+
+
+    //강의 수동폐강 로직
+    @Transactional
+    public void cancelLecture(MemberDto memberDto, Long lectureId, String reason) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
+
+        if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_CANCELLABLE);
+        }
+
+        // 히스토리 저장
+        try {
+            String beforeData = objectMapper.writeValueAsString(Map.of(
+                    "lectureId", lecture.getLectureId(),
+                    "lectureName", lecture.getLectureName(),
+                    "status", lecture.getStatus().getCode()
+            ));
+            lectureHistoryRepository.save(LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.CANCEL)
+                    .beforeData(beforeData)
+                    .changeReason(reason)
+                    .updatorCode(memberDto.memberCode())
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        // 상태 변경
+        lecture.updateStatus(EnumApprovalStatus.CANCELLED);
+
+        // 수강 학생들 알림 발송
+        int year = lecture.getYear();
+        int semester = lecture.getSemester();
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+                lectureId, year, semester);
+
+        for (Course course : courses) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(course.getStudentCode())
+                    .type("LECTURE_CANCELLED")
+                    .message("수강 중인 '" + lecture.getLectureName() + "' 강의가 폐강되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+        }
     }
 
 

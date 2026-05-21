@@ -1,15 +1,18 @@
 package com.green.core.application.lecture;
 
 import com.green.common.auth.MemberContext;
+import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.core.application.lecture.model.AdminLectureReq;
 import com.green.core.application.lecture.model.LectureApprovalReq;
 import com.green.core.application.lecture.model.MyLectureListRes;
+import com.green.core.exception.LectureErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,6 +36,18 @@ public class AdminLectureController {
                 .message("강의 승인 관리 목록 조회 성공")
                 .data(lectureService.getAdminLectures(req))
                 .build();
+    }
+
+    @PatchMapping("/{lectureId}/cancel")
+    public ResultResponse<?> cancelLecture(@PathVariable Long lectureId,
+                                           @RequestBody(required = false) Map<String, String> body) {
+        MemberDto memberDto = MemberContext.get();
+        String reason = (body != null) ? body.get("reason") : null;
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException(LectureErrorCode.CANCEL_REASON_REQUIRED);
+        }
+        lectureService.cancelLecture(memberDto, lectureId, reason);
+        return ResultResponse.builder().message("강의 폐강 처리 완료").build();
     }
 
 }
