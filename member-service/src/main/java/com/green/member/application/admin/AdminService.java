@@ -27,7 +27,7 @@ import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
-import com.green.member.configuration.MyFileUtil;
+import com.green.member.application.file.FileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
@@ -59,7 +59,7 @@ public class AdminService {
     private final StudentMajorRepository studentMajorRepository;
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
-    private final MyFileUtil myFileUtil;
+    private final FileUtil fileUtil;
     private final MemberService memberService;
     private final OutboxService outboxService;
     private final MemberHistoryService memberHistoryService;
@@ -86,7 +86,7 @@ public class AdminService {
     // 회원 계정 등록. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
         // 파일 처리
-        String savedPicFileName = pic == null ? null : myFileUtil.makeRandomFileName(pic);
+        String savedPicFileName = pic == null ? null : fileUtil.makeRandomFileName(pic);
 
         // 입학 연도
         int entryYear = req.getEntryDate().getYear();
@@ -139,10 +139,10 @@ public class AdminService {
         // 파일 저장
         if (pic != null) {
             String middlePath = "member/" + memberCode;
-            myFileUtil.makeFolders(middlePath);
+            fileUtil.makeFolders(middlePath);
             String fullFilePath = String.format("%s/%s", middlePath, savedPicFileName);
             try {
-                myFileUtil.transferTo(pic, fullFilePath);
+                fileUtil.transferTo(pic, fullFilePath);
             } catch (IOException e) {
                 newMember.setPic(null);
                 log.error("파일 저장 실패: {}", e.getMessage());
@@ -675,16 +675,16 @@ public class AdminService {
         if (pic == null) return null;
         if (oldFileName != null) {
             try {
-                myFileUtil.deleteFile(String.format("member/%s/%s", memberCode, oldFileName));
+                fileUtil.deleteFile(String.format("member/%s/%s", memberCode, oldFileName));
             } catch (Exception e) {
                 log.warn("기존 파일 삭제 실패: {}", e.getMessage());
             }
         }
-        String fileName = myFileUtil.makeRandomFileName(pic);
+        String fileName = fileUtil.makeRandomFileName(pic);
         String middlePath = "member/" + memberCode;
-        myFileUtil.makeFolders(middlePath);
+        fileUtil.makeFolders(middlePath);
         try {
-            myFileUtil.transferTo(pic, middlePath + "/" + fileName);
+            fileUtil.transferTo(pic, middlePath + "/" + fileName);
         } catch (IOException e) {
             log.error("파일 저장 실패: {}", e.getMessage());
             return null;

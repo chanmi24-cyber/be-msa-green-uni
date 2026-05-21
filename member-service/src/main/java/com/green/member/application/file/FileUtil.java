@@ -1,4 +1,4 @@
-package com.green.member.configuration;
+package com.green.member.application.file;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,10 +11,10 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-public class MyFileUtil {
+public class FileUtil {
     public final String fileUploadPath;
 
-    public MyFileUtil(@Value("${constants.file.directory}") String fileUploadPath){
+    public FileUtil(@Value("${constants.file.directory}") String fileUploadPath){
         this.fileUploadPath = fileUploadPath;
     }
 
@@ -29,24 +29,29 @@ public class MyFileUtil {
         }
     }
 
-    //파일명에서 .포함한 확장자 리턴
+    // 파일명에서 '.' 포함 소문자 확장자 반환 (없으면 빈 문자열)
     public String getExt(String fileName) {
-        return fileName.substring( fileName.lastIndexOf(".") );
+        if (fileName == null) return "";
+        int dotIdx = fileName.lastIndexOf(".");
+        return dotIdx == -1 ? "" : fileName.substring(dotIdx).toLowerCase();
     }
 
-    //랜덤 파일명 리턴
+    // UUID 기반 랜덤 파일명 반환 (확장자 없음)
     public String makeRandomFileName() {
         return UUID.randomUUID().toString();
     }
 
-    //랜덤파일명 + 확장자 리턴
+    // UUID 기반 랜덤 파일명 + 소문자 확장자 반환
     public String makeRandomFileName(String originalFileName) {
         return makeRandomFileName() + getExt(originalFileName);
     }
 
-    //랜덤파일명 + 확장자 리턴
+    // MultipartFile의 원본 파일명이 null이거나 빈 값이면 확장자 없이 UUID만 반환
     public String makeRandomFileName(MultipartFile mf) {
         String originalFileName = mf.getOriginalFilename();
+        if (originalFileName == null || originalFileName.isBlank()) {
+            return makeRandomFileName();
+        }
         return makeRandomFileName(originalFileName);
     }
 
