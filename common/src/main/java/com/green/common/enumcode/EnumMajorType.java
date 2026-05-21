@@ -9,7 +9,6 @@ import lombok.*;
 public enum EnumMajorType implements EnumMapperType {
 
     PRIMARY("PRIMARY", "주전공"),
-    //    DOUBLE("DOUBLE", "복수전공"),
     MINOR("MINOR", "부전공");
 
     private final String code;

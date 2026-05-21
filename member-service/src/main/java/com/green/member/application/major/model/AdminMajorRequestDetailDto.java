@@ -8,6 +8,8 @@ public interface AdminMajorRequestDetailDto {
     Long getMemberCode();
     String getStudentName();
     String getTargetMajorName();
+    String getCurrentMajorName();
+    String getCurrentMinorName();
     String getType();
     String getStatus();
     BigDecimal getGpa();

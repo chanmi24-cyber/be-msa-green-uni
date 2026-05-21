@@ -273,7 +273,7 @@ public class AdminController {
                 .build();
     }
     // 전공 변경 신청 목록 조회
-    @GetMapping("/major-requests")
+    @GetMapping("/requests/major")
     public ResultResponse<?> findAllMajorRequests() {
         List<AdminMajorRequestListRes> res = adminService.findMajorRequests();
         return ResultResponse.builder()

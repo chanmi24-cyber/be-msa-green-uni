@@ -5,7 +5,6 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
@@ -23,6 +22,9 @@ public class AdminMajorRequestDetailRes {
     String approveReason;
     String rejectReason;
     String updaterName;
+    Integer academicYear;
+    Integer semester;
+    String currentMajorName;
+    String currentMinorName;
     LocalDateTime createdAt;
-    List<CurrentMajorDto> currentMajors;
 }

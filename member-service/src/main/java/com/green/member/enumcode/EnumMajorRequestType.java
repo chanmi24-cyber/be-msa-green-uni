@@ -10,7 +10,7 @@ import lombok.*;
 @Getter
 @RequiredArgsConstructor
 public enum EnumMajorRequestType implements EnumMapperType {
-    DOUBLE("DOUBLE", "복수전공"),
+    MINOR("MINOR", "부전공"),
     TRANSFER("TRANSFER", "전과");
 
     private final String code;

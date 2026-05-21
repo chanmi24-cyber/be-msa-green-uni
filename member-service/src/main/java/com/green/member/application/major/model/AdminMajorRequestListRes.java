@@ -7,6 +7,8 @@ public interface AdminMajorRequestListRes {
     Long getMemberCode();
     String getStudentName();
     String getTargetMajorName();
+    String getCurrentMajorName();
+    String getCurrentMinorName();
     String getType();
     String getStatus();
     LocalDateTime getCreatedAt();

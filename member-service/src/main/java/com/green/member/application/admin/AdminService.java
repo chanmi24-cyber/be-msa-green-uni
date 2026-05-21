@@ -6,7 +6,6 @@ import com.green.common.enumcode.*;
 import com.green.common.exception.CommonErrorCode;
 import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
-import com.green.member.application.major.model.CurrentMajorDto;
 import com.green.member.application.major.model.AdminMajorRequestDetailDto;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.professor.model.ProfessorListDto;
@@ -706,15 +705,11 @@ public class AdminService {
         return majorRequestRepository.findAllByFilter();
     }
 
-    // 전공 변경 신청 상세 조회
+    // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
     @Transactional(readOnly = true)
     public AdminMajorRequestDetailRes findMajorRequestDetail(Long requestId) {
-        // 쿼리 1: 신청 기본 정보 + 학생 정보 + 신청 전공명 + 처리 관리자명
         AdminMajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
-
-        // 쿼리 2: 해당 학생의 현재 활성 전공 목록
-        List<CurrentMajorDto> currentMajors = studentMajorRepository.findCurrentMajors(detail.getMemberCode());
 
         return AdminMajorRequestDetailRes.builder()
                 .requestId(detail.getRequestId())
@@ -730,8 +725,11 @@ public class AdminService {
                 .approveReason(detail.getApproveReason())
                 .rejectReason(detail.getRejectReason())
                 .updaterName(detail.getUpdaterName())
+                .academicYear(detail.getAcademicYear())
+                .semester(detail.getSemester())
+                .currentMajorName(detail.getCurrentMajorName())
+                .currentMinorName(detail.getCurrentMinorName())
                 .createdAt(detail.getCreatedAt())
-                .currentMajors(currentMajors)
                 .build();
     }
 
@@ -749,12 +747,15 @@ public class AdminService {
             throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
         }
         if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            if (req.getApproveReason() == null || req.getApproveReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
             request.approve(req.getApproveReason(), updaterCode);
 
             Long studentCode = request.getStudent().getMemberCode();
             Long targetMajorId = request.getTargetMajorId();
 
-            if (request.getType() == EnumMajorRequestType.DOUBLE) {
+            if (request.getType() == EnumMajorRequestType.MINOR) {
                 // 부전공: 기존 부전공이 있으면 비활성화, 없으면 무시 (처음 신청일 수 있음)
                 studentMajorRepository
                         .findByStudent_MemberCodeAndTypeAndIsActiveTrue(studentCode, EnumMajorType.MINOR)
@@ -764,6 +765,18 @@ public class AdminService {
                         .majorId(targetMajorId)
                         .type(EnumMajorType.MINOR)
                         .build());
+
+                // 부전공 승인: 부전공 변경 이벤트 발행
+                outboxService.saveToOutbox(
+                        MemberTopic.STUDENT,
+                        studentCode,
+                        StudentEvent.builder()
+                                .memberCode(studentCode)
+                                .minorId(targetMajorId)
+                                .eventType(EventType.E_UPDATED)
+                                .updateType(UpdateType.MAJOR_MINOR)
+                                .build()
+                );
 
             } else { // TRANSFER: 전과
                 // 기존 주전공 비활성화 후 새 주전공으로 교체
@@ -785,11 +798,14 @@ public class AdminService {
                                 .memberCode(studentCode)
                                 .majorId(targetMajorId)
                                 .eventType(EventType.E_UPDATED)
-                                .updateType(UpdateType.PROFILE)
+                                .updateType(UpdateType.MAJOR_TRANSFER)
                                 .build()
                 );
             }
         } else { // REJECTED: 반려
+            if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
             request.reject(req.getRejectReason(), updaterCode);
         }
     }

@@ -25,12 +25,16 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    m.member_code       AS memberCode,
                    m.name              AS studentName,
                    mc.name             AS targetMajorName,
+                   mc_current.name     AS currentMajorName,
+                   mc_minor.name       AS currentMinorName,
                    mr.type             AS type,
                    mr.status           AS status,
                    mr.created_at       AS createdAt
             FROM major_request mr
             JOIN member m      ON m.member_code = mr.student_code
             JOIN major_cache mc ON mc.major_id  = mr.target_major_id
+            JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
+            LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
             ORDER BY mr.created_at DESC
             """, nativeQuery = true)
     List<AdminMajorRequestListRes> findAllByFilter();
@@ -41,6 +45,8 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    m.member_code          AS memberCode,
                    m.name                 AS studentName,
                    mc.name                AS targetMajorName,
+                   mc_current.name     AS currentMajorName,
+                   mc_minor.name       AS currentMinorName,
                    mr.type                AS type,
                    mr.status              AS status,
                    mr.gpa                 AS gpa,
@@ -55,7 +61,9 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.created_at          AS createdAt
             FROM major_request mr
             JOIN member m       ON m.member_code  = mr.student_code
-            JOIN major_cache mc  ON mc.major_id   = mr.target_major_id
+            JOIN major_cache mc ON mc.major_id  = mr.target_major_id
+            JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
+            LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
             LEFT JOIN member um  ON um.member_code = mr.updater_code
             WHERE mr.request_id = :requestId
             """, nativeQuery = true)
