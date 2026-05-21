@@ -4,6 +4,7 @@ import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
+import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
 import com.green.common.kafka.member.GpaRequestEvent;
@@ -132,6 +133,11 @@ public class StudentService {
     public void requestMajor(StudentMajorReq req, MultipartFile file, Long memberCode){
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
+
+        // 재학/휴학 상태만 신청 가능
+        if (student.getStatus() != EnumStudentStatus.ENROLLED && student.getStatus() != EnumStudentStatus.ABSENCE) {
+            throw new BusinessException(RequestErrorCode.INELIGIBLE_STUDENT_STATUS);
+        }
 
         // 전공 변경 신청 기간 체크
         schedulePeriodValidator.checkMajorChange();
