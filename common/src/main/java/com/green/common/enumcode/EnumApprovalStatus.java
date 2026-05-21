@@ -11,7 +11,9 @@ import java.util.Arrays;
 public enum EnumApprovalStatus implements EnumMapperType {
     PENDING("PENDING", "대기"),
     APPROVED("APPROVED", "승인"),
-    REJECTED("REJECTED", "반려");
+    REJECTED("REJECTED", "반려"),
+    CANCELLED("CANCELLED", "취소")
+    ;
 
     private final String code;
     private final String value;

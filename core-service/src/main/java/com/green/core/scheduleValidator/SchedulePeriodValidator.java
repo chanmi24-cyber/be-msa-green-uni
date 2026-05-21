@@ -73,11 +73,11 @@ public class SchedulePeriodValidator {
     }
 
     // 강의개설신청 기간 체크
-    public void checkCourseOpen() {
+    public void checkLectureRegistration() {
         boolean isActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_OPEN)
+                .findByTypeAndIsActiveTrue(EnumScheduleType.LECTURE_REGISTRATION)
                 .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_OPEN_PERIOD);
+        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_LECTURE_REGISTRATION_PERIOD);
     }
 
     // 전과 신청 기간 체크

@@ -4,9 +4,9 @@ constants:
 
 school:
   network:
-    cidr: "192.168.0.0/24"
-    # /24는 앞에 32비트중 24비트를 가리고 뒤에남은 8비트 값만 바뀔수있다는 뜻
-    # 즉 192.168.0 까지는 동일하고 뒤에 .0 부분[본인기기정보]만 바뀌는값 허용
+    # 개발 기본값: 모든 IP 허용 (ngrok 경유 테스트용)
+    # 운영 배포 시 application-prod.yaml의 192.168.0.0/24 가 덮어씀
+    cidr: "0.0.0.0/0"
 
 mybatis:
   mapper-locations: classpath:mappers/**/*.xml
