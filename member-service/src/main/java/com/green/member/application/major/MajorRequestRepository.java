@@ -1,9 +1,10 @@
-package com.green.member.application.student;
+package com.green.member.application.major;
 
 import com.green.common.enumcode.EnumApprovalStatus;
-import com.green.member.application.admin.model.MajorRequestDetailDto;
-import com.green.member.application.admin.model.MajorRequestRes;
-import com.green.member.application.student.model.MajorRequestDetailRes;
+import com.green.member.application.major.model.AdminMajorRequestDetailDto;
+import com.green.member.application.major.model.AdminMajorRequestListRes;
+import com.green.member.application.major.model.StudentMajorRequestDetailRes;
+import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.entity.student.MajorRequest;
 import com.green.member.enumcode.EnumMajorRequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,7 +33,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             JOIN major_cache mc ON mc.major_id  = mr.target_major_id
             ORDER BY mr.created_at DESC
             """, nativeQuery = true)
-    List<MajorRequestRes> findAllByFilter();
+    List<AdminMajorRequestListRes> findAllByFilter();
 
     // 관리자 전공 변경 신청 상세 조회
     @Query(value = """
@@ -58,7 +59,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             LEFT JOIN member um  ON um.member_code = mr.updater_code
             WHERE mr.request_id = :requestId
             """, nativeQuery = true)
-    Optional<MajorRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);
+    Optional<AdminMajorRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);
 
     // 학생 본인 전공 변경 신청 목록 조회
     @Query(value = """
@@ -74,7 +75,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             WHERE mr.student_code = :memberCode
             ORDER BY mr.created_at DESC
             """, nativeQuery = true)
-    List<com.green.member.application.student.model.MajorRequestRes> findStudentMajorRequests(
+    List<StudentMajorRequestListRes> findStudentMajorRequests(
             @Param("memberCode") Long memberCode);
 
     // 학생 본인 전공 변경 신청 상세 조회
@@ -102,7 +103,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             WHERE mr.request_id  = :requestId
               AND mr.student_code = :memberCode
             """, nativeQuery = true)
-    Optional<MajorRequestDetailRes> findStudentMajorRequestDetail(
+    Optional<StudentMajorRequestDetailRes> findStudentMajorRequestDetail(
             @Param("requestId")  Long requestId,
             @Param("memberCode") Long memberCode);
 }

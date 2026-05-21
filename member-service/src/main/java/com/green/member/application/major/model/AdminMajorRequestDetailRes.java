@@ -1,26 +1,28 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.major.model;
 
-import com.green.member.enumcode.EnumMajorRequestType;
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@ToString
 @Builder
-public class MajorRequestDetailRes {
+public class AdminMajorRequestDetailRes {
     Long requestId;
-    EnumMajorRequestType type;
+    Long memberCode;
+    String studentName;
     String targetMajorName;
+    String type;
     String status;
-    LocalDateTime createdAt;
     BigDecimal gpa;
     String reason;
     String file;
     String originalFileName;
     String approveReason;
     String rejectReason;
+    String updaterName;
+    LocalDateTime createdAt;
+    List<CurrentMajorDto> currentMajors;
 }

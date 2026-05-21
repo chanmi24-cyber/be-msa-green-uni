@@ -1,8 +1,8 @@
-package com.green.member.application.student.model;
+package com.green.member.application.major.model;
 
 import java.time.LocalDateTime;
 
-public interface MajorRequestRes {
+public interface StudentMajorRequestListRes {
     Long getRequestId();
     String getType();
     String getTargetMajorName();

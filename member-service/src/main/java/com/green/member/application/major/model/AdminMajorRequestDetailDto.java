@@ -1,9 +1,9 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.major.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public interface MajorRequestDetailDto {
+public interface AdminMajorRequestDetailDto {
     Long getRequestId();
     Long getMemberCode();
     String getStudentName();

@@ -1,8 +1,8 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.major.model;
 
 import java.time.LocalDateTime;
 
-public interface MajorRequestRes {
+public interface AdminMajorRequestListRes {
     Long getRequestId();
     Long getMemberCode();
     String getStudentName();

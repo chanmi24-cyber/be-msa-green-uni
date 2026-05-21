@@ -3,6 +3,8 @@ package com.green.member.application.student;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+import com.green.member.application.major.model.StudentMajorRequestDetailRes;
+import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +56,7 @@ public class StudentController {
     @GetMapping("/requests/major")
     public ResultResponse<?> findMajorRequests() {
         MemberDto loginMember = MemberContext.get();
-        List<MajorRequestRes> res = studentService.findMajorRequests( loginMember.memberCode() );
+        List<StudentMajorRequestListRes> res = studentService.findMajorRequests( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -64,7 +66,7 @@ public class StudentController {
     @GetMapping("/requests/major/{requestId}")
     public ResultResponse<?> findMajorRequestsDetail(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        MajorRequestDetailRes res = studentService.findMajorRequest( requestId, loginMember.memberCode() );
+        StudentMajorRequestDetailRes res = studentService.findMajorRequest( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 전공 변경 신청서 상세 조회")
                 .data(res)

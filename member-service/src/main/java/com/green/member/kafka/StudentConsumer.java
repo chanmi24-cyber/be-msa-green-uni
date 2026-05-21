@@ -2,7 +2,7 @@ package com.green.member.kafka;
 
 import com.green.common.kafka.member.GpaResponseEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.member.application.student.MajorRequestRepository;
+import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.entity.student.MajorRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

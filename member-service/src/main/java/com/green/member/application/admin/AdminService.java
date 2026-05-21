@@ -4,13 +4,13 @@ import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
 import com.green.common.exception.CommonErrorCode;
-import com.green.member.application.admin.model.AdminMajorRequestDetailRes;
-import com.green.member.application.admin.model.AdminMajorRequestProcessReq;
-import com.green.member.application.admin.model.CurrentMajorDto;
-import com.green.member.application.admin.model.MajorRequestDetailDto;
-import com.green.member.application.admin.model.MajorRequestRes;
+import com.green.member.application.major.model.AdminMajorRequestDetailRes;
+import com.green.member.application.major.model.AdminMajorRequestProcessReq;
+import com.green.member.application.major.model.CurrentMajorDto;
+import com.green.member.application.major.model.AdminMajorRequestDetailDto;
+import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.professor.model.ProfessorListDto;
-import com.green.member.application.student.MajorRequestRepository;
+import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.student.model.*;
 import com.green.member.entity.student.MajorRequest;
 import com.green.member.exception.MemberErrorCode;
@@ -702,7 +702,7 @@ public class AdminService {
 
     // 전공 변경 신청 목록 전체 조회
     @Transactional(readOnly = true)
-    public List<MajorRequestRes> findMajorRequests() {
+    public List<AdminMajorRequestListRes> findMajorRequests() {
         return majorRequestRepository.findAllByFilter();
     }
 
@@ -710,7 +710,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public AdminMajorRequestDetailRes findMajorRequestDetail(Long requestId) {
         // 쿼리 1: 신청 기본 정보 + 학생 정보 + 신청 전공명 + 처리 관리자명
-        MajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
+        AdminMajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
 
         // 쿼리 2: 해당 학생의 현재 활성 전공 목록
@@ -729,7 +729,7 @@ public class AdminService {
                 .originalFileName(detail.getOriginalFileName())
                 .approveReason(detail.getApproveReason())
                 .rejectReason(detail.getRejectReason())
-                .updatorName(detail.getUpdaterName())
+                .updaterName(detail.getUpdaterName())
                 .createdAt(detail.getCreatedAt())
                 .currentMajors(currentMajors)
                 .build();

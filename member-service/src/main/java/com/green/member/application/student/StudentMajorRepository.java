@@ -1,7 +1,7 @@
 package com.green.member.application.student;
 
 import com.green.common.enumcode.EnumMajorType;
-import com.green.member.application.admin.model.CurrentMajorDto;
+import com.green.member.application.major.model.CurrentMajorDto;
 import com.green.member.entity.student.StudentMajor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

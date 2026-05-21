@@ -1,9 +1,9 @@
-package com.green.member.application.student.model;
+package com.green.member.application.major.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public interface MajorRequestDetailRes {
+public interface StudentMajorRequestDetailRes {
     Long getRequestId();
     String getType();
     String getTargetMajorName();

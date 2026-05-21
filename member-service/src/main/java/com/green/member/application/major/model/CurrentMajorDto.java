@@ -1,4 +1,4 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.major.model;
 
 public interface CurrentMajorDto {
     String getMajorName();

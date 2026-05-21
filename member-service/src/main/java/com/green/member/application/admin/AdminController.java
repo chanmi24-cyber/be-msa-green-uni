@@ -4,7 +4,9 @@ import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.*;
-import com.green.member.application.admin.model.MajorRequestRes;
+import com.green.member.application.major.model.AdminMajorRequestDetailRes;
+import com.green.member.application.major.model.AdminMajorRequestProcessReq;
+import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
@@ -273,7 +275,7 @@ public class AdminController {
     // 전공 변경 신청 목록 조회
     @GetMapping("/major-requests")
     public ResultResponse<?> findAllMajorRequests() {
-        List<MajorRequestRes> res = adminService.findMajorRequests();
+        List<AdminMajorRequestListRes> res = adminService.findMajorRequests();
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)

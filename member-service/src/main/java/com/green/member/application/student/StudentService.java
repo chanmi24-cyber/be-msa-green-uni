@@ -10,6 +10,9 @@ import com.green.common.kafka.member.GpaRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
+import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.major.model.StudentMajorRequestDetailRes;
+import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.student.model.*;
@@ -218,7 +221,7 @@ public class StudentService {
     }
     // 내 전공 변경 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<MajorRequestRes> findMajorRequests(Long memberCode){
+    public List<StudentMajorRequestListRes> findMajorRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -227,7 +230,7 @@ public class StudentService {
 
     // 내 전공 변경 신청서 상세 조회
     @Transactional(readOnly = true)
-    public MajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
+    public StudentMajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
         return majorRequestRepository.findStudentMajorRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
     }

@@ -1,4 +1,4 @@
-package com.green.member.application.admin.model;
+package com.green.member.application.major.model;
 
 import com.green.common.enumcode.EnumApprovalStatus;
 import jakarta.validation.constraints.NotNull;
