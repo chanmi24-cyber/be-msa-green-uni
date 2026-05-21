@@ -21,6 +21,7 @@ import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -289,6 +290,11 @@ public class AdminController {
                 .message("전공 변경 신청 상세 조회")
                 .data(res)
                 .build();
+    }
+    // 전공 변경 신청서 파일 다운로드
+    @GetMapping("/requests/major/{requestId}/file")
+    public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
+        return adminService.findMajorRequestFile(requestId);
     }
     // 전공 변경 신청 처리 (승인/반려)
     @PatchMapping("/requests/major/{requestId}")

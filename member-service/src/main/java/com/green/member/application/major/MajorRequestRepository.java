@@ -59,10 +59,10 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.academic_year       AS academicYear,
                    mr.semester            AS semester,
                    mr.original_file_name  AS originalFileName,
-                   mr.approve_reason      AS approveReason,
                    mr.reject_reason       AS rejectReason,
                    um.name                AS updaterName,
-                   mr.created_at          AS createdAt
+                   mr.created_at          AS createdAt,
+                   mr.updated_at          AS updatedAt
             FROM major_request mr
             JOIN member m       ON m.member_code  = mr.student_code
             JOIN major_cache mc ON mc.major_id  = mr.target_major_id
@@ -101,7 +101,6 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.reason              AS reason,
                    mr.file                AS file,
                    mr.original_file_name  AS originalFileName,
-                   mr.approve_reason      AS approveReason,
                    mr.reject_reason       AS rejectReason,
                    mr.academic_year       AS academicYear,
                    mr.semester            AS semester,

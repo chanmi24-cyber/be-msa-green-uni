@@ -12,7 +12,6 @@ public interface StudentMajorRequestDetailRes {
     String getReason();
     String getFile();
     String getOriginalFileName();
-    String getApproveReason();
     String getRejectReason();
     Integer getAcademicYear();
     Integer getSemester();

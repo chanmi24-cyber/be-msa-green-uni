@@ -61,9 +61,6 @@ public class MajorRequest extends CreatedUpdatedAt {
     @Builder.Default
     private EnumApprovalStatus status = EnumApprovalStatus.PENDING;
 
-    @Column(name = "approve_reason")
-    private String approveReason;
-
     @Column(name = "reject_reason")
     private String rejectReason;
 
@@ -75,9 +72,8 @@ public class MajorRequest extends CreatedUpdatedAt {
     public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
 
     // 신청서 승인
-    public void approve(String approveReason, Long updaterCode) {
+    public void approve(Long updaterCode) {
         this.status = EnumApprovalStatus.APPROVED;
-        this.approveReason = approveReason;
         this.updaterCode = updaterCode;
     }
     // 신청서 반려

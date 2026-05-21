@@ -19,7 +19,6 @@ public class AdminMajorRequestDetailRes {
     String reason;
     String file;
     String originalFileName;
-    String approveReason;
     String rejectReason;
     String updaterName;
     Integer academicYear;
@@ -27,4 +26,5 @@ public class AdminMajorRequestDetailRes {
     String currentMajorName;
     String currentMinorName;
     LocalDateTime createdAt;
+    LocalDateTime updatedAt;
 }
