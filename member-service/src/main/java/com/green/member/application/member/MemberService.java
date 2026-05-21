@@ -10,7 +10,7 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
-import com.green.member.application.file.FileService;
+import com.green.common.file.FileService;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;

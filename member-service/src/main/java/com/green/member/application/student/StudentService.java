@@ -5,10 +5,11 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
+import com.green.common.exception.FileErrorCode;
 import com.green.common.kafka.member.GpaRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
-import com.green.member.application.file.FileService;
+import com.green.common.file.FileService;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.student.model.*;
@@ -257,7 +258,7 @@ public class StudentService {
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
 
         if (request.getFile() == null) {
-            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
 
         // DB에 저장된 UUID 기반 파일명으로 경로 구성 (클라이언트 입력값 미사용 → path traversal 불가)
@@ -265,7 +266,7 @@ public class StudentService {
         Resource resource = fileService.getResource(filePath);
 
         if (!resource.exists()) {
-            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
 
         // 다운로드 파일명: 저장 시 살균된 원본 파일명 우선, 없으면 UUID 파일명 사용
