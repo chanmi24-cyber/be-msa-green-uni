@@ -279,7 +279,6 @@ public class AdminController {
                 .data(res)
                 .build();
     }
-
     // 전공 변경 신청 상세 조회
     @GetMapping("/requests/major/{requestId}")
     public ResultResponse<?> findMajorRequestDetail(@PathVariable Long requestId) {
@@ -287,6 +286,15 @@ public class AdminController {
         return ResultResponse.builder()
                 .message("전공 변경 신청 상세 조회")
                 .data(res)
+                .build();
+    }
+    // 전공 변경 신청 처리 (승인/반려)
+    @PatchMapping("/requests/major/{requestId}")
+    public ResultResponse<?> updateMajorRequest(@PathVariable Long requestId, @RequestBody @Valid AdminMajorRequestProcessReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.processMajorRequest( requestId , req, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 신청서 처리 완료")
                 .build();
     }
 

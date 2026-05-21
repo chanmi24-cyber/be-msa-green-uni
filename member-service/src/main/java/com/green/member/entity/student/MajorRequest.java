@@ -60,5 +60,18 @@ public class MajorRequest extends CreatedUpdatedAt {
 
     public void setFile(String file){ this.file = file; }
     public void updateGpa(BigDecimal gpa) { this.gpa = gpa; }
-    public void cancel() {this.status = EnumApprovalStatus.CANCELLED;}
+    public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
+
+    // 신청서 승인
+    public void approve(String approveReason, Long updatorCode) {
+        this.status = EnumApprovalStatus.APPROVED;
+        this.approveReason = approveReason;
+        this.updatorCode = updatorCode;
+    }
+    // 신청서 반려
+    public void reject(String rejectReason, Long updatorCode) {
+        this.status = EnumApprovalStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.updatorCode = updatorCode;
+    }
 }
