@@ -1,5 +1,7 @@
 package com.green.core.application.lecture.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class EvalListRes {
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long lectureId;
     private String lectureName;
     private String proName;
