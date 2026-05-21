@@ -7,6 +7,7 @@ import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
 import com.green.core.application.grade.model.GradeAppealReq;
 import com.green.core.application.grade.model.GradeAppealRes;
+import com.green.core.application.grade.model.GradeAppealStuListRes;
 import com.green.core.application.grade.model.GradeStudentDetailRes;
 import com.green.core.application.grade.model.GradeStudentRes;
 import com.green.core.application.grade.model.GradeUpdateReq;
@@ -295,6 +296,30 @@ public class GradeService {
                 gradeList,
                 new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
                         averageScore, averageGrade, majorRank, majorTotalCount));
+    }
+
+    // ── 학생 이의신청 내역 조회 (GET /student/grades/appeals/my) ─────────────────
+    @Transactional(readOnly = true)
+    public List<GradeAppealStuListRes> getStudentAppealList() {
+        Long studentCode = MemberContext.get().memberCode();
+        return gradeAppealRepository.findByMemberCodeWithLecture(studentCode)
+                .stream()
+                .map(a -> {
+                    var course  = a.getGrade().getCourse();
+                    var lecture = course.getLecture();
+                    return new GradeAppealStuListRes(
+                            a.getCourseId(),
+                            lecture.getLectureName(),
+                            course.getYear(),
+                            course.getSemester(),
+                            a.getReason(),
+                            a.getStatus().getValue(),
+                            a.getRejectReason(),
+                            a.getCreatedAt(),
+                            a.getProcessedAt()
+                    );
+                })
+                .toList();
     }
 
     // ── API-GPA-07: 이의신청 폼 사전 조회 (GET /student/grades/{gradeId}/appeal) ──
