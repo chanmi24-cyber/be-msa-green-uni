@@ -106,12 +106,6 @@ public class SchedulePeriodValidator {
                 .isPresent();
     }
 
-    // [추가] 강의평가 기간 활성화 여부 확인 (예외 없이 boolean 반환)
-    public boolean isLectureEvaluationPeriod() {
-        return scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.LECTURE_EVALUATION)
-                .isPresent();
-    }
 
     // 수강정정 기간 시작일 반환 (활성 상태인 경우에만)
     public Optional<LocalDateTime> getCourseModificationStartDate() {
