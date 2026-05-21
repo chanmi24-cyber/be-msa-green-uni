@@ -729,7 +729,7 @@ public class AdminService {
                 .originalFileName(detail.getOriginalFileName())
                 .approveReason(detail.getApproveReason())
                 .rejectReason(detail.getRejectReason())
-                .updatorName(detail.getUpdatorName())
+                .updatorName(detail.getUpdaterName())
                 .createdAt(detail.getCreatedAt())
                 .currentMajors(currentMajors)
                 .build();
@@ -737,7 +737,7 @@ public class AdminService {
 
     // 전공 변경 신청 처리
     @Transactional
-    public void processMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long adminCode) {
+    public void processMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long updaterCode) {
         // APPROVED, REJECTED 외 상태는 처리 불가
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
@@ -749,7 +749,7 @@ public class AdminService {
             throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
         }
         if (req.getStatus() == EnumApprovalStatus.APPROVED) {
-            request.approve(req.getApproveReason(), adminCode);
+            request.approve(req.getApproveReason(), updaterCode);
 
             Long studentCode = request.getStudent().getMemberCode();
             Long targetMajorId = request.getTargetMajorId();
@@ -790,7 +790,7 @@ public class AdminService {
                 );
             }
         } else { // REJECTED: 반려
-            request.reject(req.getRejectReason(), adminCode);
+            request.reject(req.getRejectReason(), updaterCode);
         }
     }
 }

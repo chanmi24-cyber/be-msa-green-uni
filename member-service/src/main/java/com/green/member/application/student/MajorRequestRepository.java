@@ -46,6 +46,8 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.gpa                 AS gpa,
                    mr.reason              AS reason,
                    mr.file                AS file,
+                   mr.academic_year       AS academicYear,
+                   mr.semester            AS semester,
                    mr.original_file_name  AS originalFileName,
                    mr.approve_reason      AS approveReason,
                    mr.reject_reason       AS rejectReason,
@@ -54,7 +56,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             FROM major_request mr
             JOIN member m       ON m.member_code  = mr.student_code
             JOIN major_cache mc  ON mc.major_id   = mr.target_major_id
-            LEFT JOIN member um  ON um.member_code = mr.updator_code
+            LEFT JOIN member um  ON um.member_code = mr.updater_code
             WHERE mr.request_id = :requestId
             """, nativeQuery = true)
     Optional<MajorRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);

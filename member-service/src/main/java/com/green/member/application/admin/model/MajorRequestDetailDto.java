@@ -16,6 +16,8 @@ public interface MajorRequestDetailDto {
     String getOriginalFileName();
     String getApproveReason();
     String getRejectReason();
-    String getUpdatorName();
+    String getUpdaterName();
+    Integer getAcademicYear();
+    Integer getSemester();
     LocalDateTime getCreatedAt();
 }

@@ -167,7 +167,7 @@ public class StudentService {
                     : null;
         }
 
-        // major_request 저장
+        // major_request 저장 (신청 당시 학년·학기 함께 기록)
         MajorRequest request = MajorRequest.builder()
                 .student(student)
                 .type(req.getType())
@@ -176,8 +176,19 @@ public class StudentService {
                 .file(savedFileName)
                 .originalFileName(originalFileName)
                 .gpa(BigDecimal.ZERO)
+                .academicYear(student.getAcademicYear())
+                .semester(student.getSemester())
+                .currentMajorId(activeMajors.stream()
+                        .filter(m -> m.getType() == EnumMajorType.PRIMARY)
+                        .map(StudentMajor::getMajorId)
+                        .findFirst()
+                        .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND)))
+                .currentMinorId(activeMajors.stream()
+                        .filter(m -> m.getType() == EnumMajorType.MINOR)
+                        .map(StudentMajor::getMajorId).findFirst().orElse(null))
                 .build();
         MajorRequest newRequest = majorRequestRepository.save(request);
+
 
         // GPA 조회 요청 이벤트 발행
         outboxService.saveToOutbox(
