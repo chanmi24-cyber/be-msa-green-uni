@@ -1,4 +1,7 @@
 .env
+.claude
+CLAUDE.md
+.env_prod
 
 HELP.md
 .gradle
