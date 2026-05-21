@@ -8,13 +8,10 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum RequestErrorCode implements ErrorCode {
-    FILE_TOO_LARGE("R001", "파일 크기는 5MB 이하여야 합니다.", HttpStatus.BAD_REQUEST)
-    , INVALID_FILE_TYPE("R002", "서류는 PDF, JPG, JPEG, PNG 파일만 업로드 가능합니다.", HttpStatus.BAD_REQUEST)
-    , ALREADY_IN_MAJOR("R003", "이미 소속된 학과입니다.", HttpStatus.BAD_REQUEST)
-    , ALREADY_PENDING_REQUEST("R004", "이미 처리 중인 신청이 있습니다.", HttpStatus.CONFLICT)
-    , NOT_MAJOR_REQUEST("R005", "존재하지 않는 신청서입니다.", HttpStatus.NOT_FOUND)
-    , NOT_CANCELLABLE("R006", "취소할 수 없는 신청입니다.", HttpStatus.BAD_REQUEST)
-    , FILE_NOT_FOUND("R007", "첨부 파일이 존재하지 않습니다.", HttpStatus.NOT_FOUND)
+    ALREADY_PENDING_REQUEST("R001", "이미 처리 중인 신청이 있습니다.", HttpStatus.CONFLICT)
+    , NOT_MAJOR_REQUEST("R002", "존재하지 않는 신청서입니다.", HttpStatus.NOT_FOUND)
+    , NOT_CANCELLABLE("R003", "취소할 수 없는 신청입니다.", HttpStatus.BAD_REQUEST)
+    , ALREADY_IN_MAJOR("R004", "이미 소속된 학과입니다.", HttpStatus.BAD_REQUEST)
     ;
     private final String code;
     private final String message;
