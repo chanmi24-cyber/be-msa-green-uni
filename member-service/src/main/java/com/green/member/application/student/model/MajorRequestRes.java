@@ -1,18 +1,13 @@
 package com.green.member.application.student.model;
 
-import com.green.common.enumcode.EnumApprovalStatus;
-import com.green.member.enumcode.EnumMajorRequestType;
-import lombok.Data;
-import lombok.ToString;
-
 import java.time.LocalDateTime;
 
-@Data
-@ToString
-public class MajorRequestRes {
-    Long requestId;
-    EnumMajorRequestType type;
-    String targetMajorName;
-    String status;
-    LocalDateTime createdAt;
+public interface MajorRequestRes {
+    Long getRequestId();
+    String getType();
+    String getTargetMajorName();
+    String getStatus();
+    Integer getAcademicYear();
+    Integer getSemester();
+    LocalDateTime getCreatedAt();
 }

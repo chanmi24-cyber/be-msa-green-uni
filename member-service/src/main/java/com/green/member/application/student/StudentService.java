@@ -167,7 +167,7 @@ public class StudentService {
                     : null;
         }
 
-        // major_request 저장 (신청 당시 학년·학기 함께 기록)
+        // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
         MajorRequest request = MajorRequest.builder()
                 .student(student)
                 .type(req.getType())
@@ -216,53 +216,23 @@ public class StudentService {
             fileService.delete(String.format("request/major/%s/%s", memberCode, request.getFile()));
         }
     }
-    // 학생 전공 변경 신청 목록 조회
+    // 내 전공 변경 신청 목록 조회
     @Transactional(readOnly = true)
     public List<MajorRequestRes> findMajorRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
-        List<MajorRequest> requests =
-               majorRequestRepository.findByStudent_MemberCodeOrderByCreatedAtDesc(memberCode);
-        return requests.stream()
-                .map( h -> {
-                    String majorName = majorCacheRepository.findById(h.getTargetMajorId())
-                            .map(MajorCache::getName)
-                            .orElse(null);
-                    MajorRequestRes res = new MajorRequestRes();
-                    res.setRequestId(h.getRequestId());
-                    res.setType(h.getType());
-                    res.setTargetMajorName(majorName);
-                    res.setStatus(h.getStatus().getCode());
-                    res.setCreatedAt(h.getCreatedAt());
-                    return res;
-                })
-                .toList();
-    }
-    // 학생 전공 변경 신청서 상세 조회
-    @Transactional(readOnly = true)
-    public MajorRequestDetailRes findMajorRequest (Long requestId, Long memberCode){
-        MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode( requestId, memberCode )
-                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
-        String majorName = majorCacheRepository.findById(request.getTargetMajorId())
-                .map(MajorCache::getName)
-                .orElse(null);
-        return MajorRequestDetailRes.builder()
-                .requestId(requestId)
-                .type(request.getType())
-                .targetMajorName(majorName)
-                .status(request.getStatus().getCode())
-                .gpa(request.getGpa())
-                .reason(request.getReason())
-                .file(request.getFile())
-                .originalFileName(request.getOriginalFileName())
-                .approveReason(request.getApproveReason())
-                .rejectReason(request.getRejectReason())
-                .createdAt(request.getCreatedAt())
-                .build();
+        return majorRequestRepository.findStudentMajorRequests(memberCode);
     }
 
-    // 학생 전공 변경 신청서 파일 다운로드
+    // 내 전공 변경 신청서 상세 조회
+    @Transactional(readOnly = true)
+    public MajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
+        return majorRequestRepository.findStudentMajorRequestDetail(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+    }
+
+    // 내 전공 변경 신청서 파일 다운로드
     public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
         // 신청서 소유권 확인: requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
