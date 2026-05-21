@@ -20,4 +20,5 @@ public class EvalListRes {
     private Integer totalCount;
     private LocalDate startDate;
     private LocalDate endDate;
+    private Boolean isEvaluated;
 }

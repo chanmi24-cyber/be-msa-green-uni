@@ -15,15 +15,19 @@
         l.semester,
         ep.start_date,
         ep.end_date,
-        (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_count
+        (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_count,
+        (le.created_at IS NOT NULL) AS is_evaluated
         FROM course c
         JOIN lecture l ON c.lecture_id = l.lecture_id
         JOIN professor_cache pc ON l.member_code = pc.member_code
-        JOIN grade g ON g.course_id = c.course_id
+        LEFT JOIN grade g ON g.course_id = c.course_id
         LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
-        AND g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0
+        AND (
+            (l.end_date > NOW() AND g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0)
+            OR l.end_date &lt;= NOW()
+        )
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
@@ -44,7 +48,6 @@
         LEFT JOIN eval_period ep ON ep.year = l.year AND ep.semester = l.semester
         WHERE l.member_code = #{memberCode}
         AND l.end_date &lt; NOW()
-        AND ep.end_date &lt; NOW()
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
