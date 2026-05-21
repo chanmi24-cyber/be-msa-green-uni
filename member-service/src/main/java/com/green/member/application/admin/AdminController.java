@@ -4,6 +4,9 @@ import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.*;
+import com.green.member.application.major.model.AdminMajorRequestDetailRes;
+import com.green.member.application.major.model.AdminMajorRequestProcessReq;
+import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
@@ -14,10 +17,7 @@ import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentBatchService;
 import com.green.member.application.student.StudentService;
-import com.green.member.application.student.model.StatusUpdateStudentReq;
-import com.green.member.application.student.model.StudentCreateReq;
-import com.green.member.application.student.model.StudentHistoryRes;
-import com.green.member.application.student.model.StudentListDto;
+import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -270,6 +270,33 @@ public class AdminController {
         adminService.updateStudentStatus(memberCode, loginMember.memberCode(), req);
         return ResultResponse.builder()
                 .message("학생 계정 상태 변경 및 이력 기록")
+                .build();
+    }
+    // 전공 변경 신청 목록 조회
+    @GetMapping("/requests/major")
+    public ResultResponse<?> findAllMajorRequests() {
+        List<AdminMajorRequestListRes> res = adminService.findMajorRequests();
+        return ResultResponse.builder()
+                .message("전공 변경 신청 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+    // 전공 변경 신청 상세 조회
+    @GetMapping("/requests/major/{requestId}")
+    public ResultResponse<?> findMajorRequestDetail(@PathVariable Long requestId) {
+        AdminMajorRequestDetailRes res = adminService.findMajorRequestDetail(requestId);
+        return ResultResponse.builder()
+                .message("전공 변경 신청 상세 조회")
+                .data(res)
+                .build();
+    }
+    // 전공 변경 신청 처리 (승인/반려)
+    @PatchMapping("/requests/major/{requestId}")
+    public ResultResponse<?> updateMajorRequest(@PathVariable Long requestId, @RequestBody @Valid AdminMajorRequestProcessReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.processMajorRequest( requestId , req, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 신청서 처리 완료")
                 .build();
     }
 

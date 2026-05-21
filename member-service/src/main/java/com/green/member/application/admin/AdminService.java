@@ -4,9 +4,16 @@ import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
 import com.green.common.exception.CommonErrorCode;
+import com.green.member.application.major.model.AdminMajorRequestDetailRes;
+import com.green.member.application.major.model.AdminMajorRequestProcessReq;
+import com.green.member.application.major.model.AdminMajorRequestDetailDto;
+import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.student.model.*;
+import com.green.member.entity.student.MajorRequest;
 import com.green.member.exception.MemberErrorCode;
+import com.green.member.exception.RequestErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.ProfessorEvent;
@@ -37,6 +44,7 @@ import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
+import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +73,7 @@ public class AdminService {
     private final AdminHistoryRepository adminHistoryRepository;
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
+    private final MajorRequestRepository majorRequestRepository;
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
@@ -688,5 +697,116 @@ public class AdminService {
                 })
                 .toList()
                 ;
+    }
+
+    // 전공 변경 신청 목록 전체 조회
+    @Transactional(readOnly = true)
+    public List<AdminMajorRequestListRes> findMajorRequests() {
+        return majorRequestRepository.findAllByFilter();
+    }
+
+    // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
+    @Transactional(readOnly = true)
+    public AdminMajorRequestDetailRes findMajorRequestDetail(Long requestId) {
+        AdminMajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+
+        return AdminMajorRequestDetailRes.builder()
+                .requestId(detail.getRequestId())
+                .memberCode(detail.getMemberCode())
+                .studentName(detail.getStudentName())
+                .targetMajorName(detail.getTargetMajorName())
+                .type(detail.getType())
+                .status(detail.getStatus())
+                .gpa(detail.getGpa())
+                .reason(detail.getReason())
+                .file(detail.getFile())
+                .originalFileName(detail.getOriginalFileName())
+                .approveReason(detail.getApproveReason())
+                .rejectReason(detail.getRejectReason())
+                .updaterName(detail.getUpdaterName())
+                .academicYear(detail.getAcademicYear())
+                .semester(detail.getSemester())
+                .currentMajorName(detail.getCurrentMajorName())
+                .currentMinorName(detail.getCurrentMinorName())
+                .createdAt(detail.getCreatedAt())
+                .build();
+    }
+
+    // 전공 변경 신청 처리
+    @Transactional
+    public void processMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long updaterCode) {
+        // APPROVED, REJECTED 외 상태는 처리 불가
+        if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        MajorRequest request = majorRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+        // PENDING 상태만 처리 가능
+        if (request.getStatus() != EnumApprovalStatus.PENDING) {
+            throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
+        }
+        if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            if (req.getApproveReason() == null || req.getApproveReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            request.approve(req.getApproveReason(), updaterCode);
+
+            Long studentCode = request.getStudent().getMemberCode();
+            Long targetMajorId = request.getTargetMajorId();
+
+            if (request.getType() == EnumMajorRequestType.MINOR) {
+                // 부전공: 기존 부전공이 있으면 비활성화, 없으면 무시 (처음 신청일 수 있음)
+                studentMajorRepository
+                        .findByStudent_MemberCodeAndTypeAndIsActiveTrue(studentCode, EnumMajorType.MINOR)
+                        .ifPresent(m -> m.deactivate());
+                studentMajorRepository.save(StudentMajor.builder()
+                        .student(request.getStudent())
+                        .majorId(targetMajorId)
+                        .type(EnumMajorType.MINOR)
+                        .build());
+
+                // 부전공 승인: 부전공 변경 이벤트 발행
+                outboxService.saveToOutbox(
+                        MemberTopic.STUDENT,
+                        studentCode,
+                        StudentEvent.builder()
+                                .memberCode(studentCode)
+                                .minorId(targetMajorId)
+                                .eventType(EventType.E_UPDATED)
+                                .updateType(UpdateType.MAJOR_MINOR)
+                                .build()
+                );
+
+            } else { // TRANSFER: 전과
+                // 기존 주전공 비활성화 후 새 주전공으로 교체
+                studentMajorRepository
+                        .findByStudent_MemberCodeAndTypeAndIsActiveTrue(studentCode, EnumMajorType.PRIMARY)
+                        .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND))
+                        .deactivate();
+                studentMajorRepository.save(StudentMajor.builder()
+                        .student(request.getStudent())
+                        .majorId(targetMajorId)
+                        .type(EnumMajorType.PRIMARY)
+                        .build());
+
+                // 전과 승인: 주전공 변경 이벤트 발행
+                outboxService.saveToOutbox(
+                        MemberTopic.STUDENT,
+                        studentCode,
+                        StudentEvent.builder()
+                                .memberCode(studentCode)
+                                .majorId(targetMajorId)
+                                .eventType(EventType.E_UPDATED)
+                                .updateType(UpdateType.MAJOR_TRANSFER)
+                                .build()
+                );
+            }
+        } else { // REJECTED: 반려
+            if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            request.reject(req.getRejectReason(), updaterCode);
+        }
     }
 }

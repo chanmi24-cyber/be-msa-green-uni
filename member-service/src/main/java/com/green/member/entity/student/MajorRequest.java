@@ -29,6 +29,12 @@ public class MajorRequest extends CreatedUpdatedAt {
     @Column(name = "type", nullable = false, length = 20)
     private EnumMajorRequestType type;
 
+    @Column(name = "current_major_id", nullable = false)
+    private Long currentMajorId;
+
+    @Column(name = "current_minor_id")
+    private Long currentMinorId;
+
     @Column(name = "target_major_id", nullable = false)
     private Long targetMajorId;
 
@@ -37,6 +43,12 @@ public class MajorRequest extends CreatedUpdatedAt {
 
     @Column(name = "file")
     private String file;
+
+    @Column(name = "academic_year", nullable = false)
+    private Integer academicYear;
+
+    @Column(name = "semester", nullable = false)
+    private Integer semester;
 
     @Column(name = "original_file_name")
     private String originalFileName;
@@ -55,10 +67,23 @@ public class MajorRequest extends CreatedUpdatedAt {
     @Column(name = "reject_reason")
     private String rejectReason;
 
-    @Column(name = "updator_code")
-    private Long updatorCode;
+    @Column(name = "updater_code")
+    private Long updaterCode;
 
     public void setFile(String file){ this.file = file; }
     public void updateGpa(BigDecimal gpa) { this.gpa = gpa; }
-    public void cancel() {this.status = EnumApprovalStatus.CANCELLED;}
+    public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
+
+    // 신청서 승인
+    public void approve(String approveReason, Long updaterCode) {
+        this.status = EnumApprovalStatus.APPROVED;
+        this.approveReason = approveReason;
+        this.updaterCode = updaterCode;
+    }
+    // 신청서 반려
+    public void reject(String rejectReason, Long updaterCode) {
+        this.status = EnumApprovalStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.updaterCode = updaterCode;
+    }
 }
