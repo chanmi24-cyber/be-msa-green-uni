@@ -4,6 +4,7 @@ import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.*;
 import com.green.common.exception.CommonErrorCode;
+import com.green.common.exception.FileErrorCode;
 import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestDetailDto;
@@ -46,6 +47,8 @@ import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -675,7 +678,6 @@ public class AdminService {
         // 이미지 검증 후 저장 (JPG, JPEG, PNG만 허용)
         return fileService.save(pic, "member/" + memberCode, FileService.ALLOWED_IMAGE_EXTENSIONS);
     }
-
     // 관리자 상태 변경 이력 조회
     @Transactional(readOnly = true)
     public List<AdminHistoryRes> findStatusHistory(Long memberCode){
@@ -722,7 +724,6 @@ public class AdminService {
                 .reason(detail.getReason())
                 .file(detail.getFile())
                 .originalFileName(detail.getOriginalFileName())
-                .approveReason(detail.getApproveReason())
                 .rejectReason(detail.getRejectReason())
                 .updaterName(detail.getUpdaterName())
                 .academicYear(detail.getAcademicYear())
@@ -730,6 +731,7 @@ public class AdminService {
                 .currentMajorName(detail.getCurrentMajorName())
                 .currentMinorName(detail.getCurrentMinorName())
                 .createdAt(detail.getCreatedAt())
+                .updatedAt(detail.getUpdatedAt())
                 .build();
     }
 
@@ -747,10 +749,7 @@ public class AdminService {
             throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
         }
         if (req.getStatus() == EnumApprovalStatus.APPROVED) {
-            if (req.getApproveReason() == null || req.getApproveReason().isBlank()) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
-            }
-            request.approve(req.getApproveReason(), updaterCode);
+            request.approve(updaterCode);
 
             Long studentCode = request.getStudent().getMemberCode();
             Long targetMajorId = request.getTargetMajorId();
@@ -809,4 +808,18 @@ public class AdminService {
             request.reject(req.getRejectReason(), updaterCode);
         }
     }
+
+    // 전공 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> findMajorRequestFile(Long requestId) {
+        MajorRequest request = majorRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
+        if (request.getFile() == null) {
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
+        }
+        Long studentCode = request.getStudent().getMemberCode();
+        String filePath = String.format("request/major/%s/%s", studentCode, request.getFile());
+        return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
+
 }

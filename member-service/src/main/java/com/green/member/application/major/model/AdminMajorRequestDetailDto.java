@@ -16,10 +16,10 @@ public interface AdminMajorRequestDetailDto {
     String getReason();
     String getFile();
     String getOriginalFileName();
-    String getApproveReason();
     String getRejectReason();
     String getUpdaterName();
     Integer getAcademicYear();
     Integer getSemester();
     LocalDateTime getCreatedAt();
+    LocalDateTime getUpdatedAt();
 }

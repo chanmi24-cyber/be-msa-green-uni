@@ -12,8 +12,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 @Slf4j
@@ -78,6 +84,21 @@ public class FileService {
         //filePath: 최상위 폴더 기준 상대 경로
         File file = new File(fileUtil.getFileUploadPath(), filePath);
         return new FileSystemResource(file);
+    }
+
+    // filePath 경로의 파일을 Content-Disposition 다운로드 응답으로 반환
+    // originalFileName이 있으면 그 이름으로, 없으면 저장 파일명(UUID)으로 다운로드
+    public ResponseEntity<Resource> buildDownloadResponse(String filePath, String originalFileName) {
+        Resource resource = getResource(filePath);
+        if (!resource.exists()) {
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
+        }
+        String downloadName = originalFileName != null ? originalFileName : resource.getFilename();
+        String encodedName = URLEncoder.encode(downloadName, StandardCharsets.UTF_8).replace("+", "%20");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedName)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 
     // 지정한 경로의 파일을 삭제

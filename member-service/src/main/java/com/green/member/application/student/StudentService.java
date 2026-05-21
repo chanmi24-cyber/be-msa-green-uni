@@ -32,13 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -237,34 +233,15 @@ public class StudentService {
 
     // 내 전공 변경 신청서 파일 다운로드
     public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
-        // 신청서 소유권 확인: requestId + memberCode 조합으로 타인의 파일 접근 차단
+        // requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
-
         if (request.getFile() == null) {
             throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
-
-        // DB에 저장된 UUID 기반 파일명으로 경로 구성 (클라이언트 입력값 미사용 → path traversal 불가)
+        // DB의 UUID 파일명으로 경로 구성 (클라이언트 입력값 미사용 → path traversal 불가)
         String filePath = String.format("request/major/%s/%s", memberCode, request.getFile());
-        Resource resource = fileService.getResource(filePath);
-
-        if (!resource.exists()) {
-            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
-        }
-
-        // 다운로드 파일명: 저장 시 살균된 원본 파일명 우선, 없으면 UUID 파일명 사용
-        String downloadName = request.getOriginalFileName() != null
-                ? request.getOriginalFileName()
-                : request.getFile();
-        // RFC 5987 인코딩으로 한글/특수문자 파일명 안전 처리
-        String encodedName = URLEncoder.encode(downloadName, StandardCharsets.UTF_8).replace("+", "%20");
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedName)
-                // 브라우저가 파일을 직접 실행하지 않도록 OCTET_STREAM으로 강제 다운로드
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+        return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
     }
 
 }

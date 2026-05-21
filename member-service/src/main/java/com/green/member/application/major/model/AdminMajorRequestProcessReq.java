@@ -8,6 +8,5 @@ import lombok.Data;
 public class AdminMajorRequestProcessReq {
     @NotNull
     private EnumApprovalStatus status; // APPROVED 또는 REJECTED만 허용
-    private String approveReason;
     private String rejectReason;
 }
