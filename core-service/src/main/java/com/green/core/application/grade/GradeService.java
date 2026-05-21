@@ -5,17 +5,26 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
+import com.green.core.application.grade.model.GradeAppealReq;
+import com.green.core.application.grade.model.GradeAppealRes;
 import com.green.core.application.grade.model.GradeStudentDetailRes;
 import com.green.core.application.grade.model.GradeStudentRes;
 import com.green.core.application.grade.model.GradeUpdateReq;
 import com.green.core.entity.attendance.Attendance;
+import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.grade.Grade;
+import com.green.core.entity.grade.GradesAppeal;
 import com.green.core.entity.major.Major;
+import com.green.core.enumcode.EnumAppealStatus;
 import com.green.core.enumcode.EnumAttendStatus;
 import com.green.core.enumcode.EnumGradeLetter;
 import com.green.core.exception.GradeErrorCode;
+import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +40,9 @@ public class GradeService {
     private final GradeAttendRepository gradeAttendRepository;
     private final GradeLectureRepository gradeLectureRepository;
     private final GradeMajorRepository gradeMajorRepository;
+    private final GradeAppealRepository gradeAppealRepository;
     private final StudentCacheRepository studentCacheRepository;
+    private final ProfessorCacheRepository professorCacheRepository;
 
     // ── 교수 담당 강의 목록 조회 (성적 관리 강의 선택 화면용) ─────────────────────
     @Transactional(readOnly = true)
@@ -193,6 +204,14 @@ public class GradeService {
         StudentCache studentCache = studentCacheRepository.findById(studentCode).orElse(null);
         GradeStudentDetailRes.StudentInfo studentInfo = buildStudentInfo(studentCache);
 
+        // 이의신청 상태 일괄 조회 (courseId → appealStatus 문자열)
+        // → 각 GradeItem의 appealStatus 필드에 채워 프론트에서 버튼 상태 결정에 사용
+        List<Long> courseIds = grades.stream().map(Grade::getCourseId).toList();
+        Map<Long, String> appealStatusMap = gradeAppealRepository.findAllById(courseIds)
+                .stream()
+                .collect(Collectors.toMap(GradesAppeal::getCourseId,
+                        a -> a.getStatus().getValue()));
+
         List<GradeStudentDetailRes.GradeItem> gradeList = grades.stream().map(g -> {
             var course  = g.getCourse();
             var lecture = course.getLecture();
@@ -219,7 +238,7 @@ public class GradeService {
                     letter != null ? toGradePoint(letter) : null,
                     myRank,
                     totalCount,
-                    null
+                    appealStatusMap.get(g.getCourseId())
             );
         }).toList();
 
@@ -276,6 +295,76 @@ public class GradeService {
                 gradeList,
                 new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
                         averageScore, averageGrade, majorRank, majorTotalCount));
+    }
+
+    // ── API-GPA-07: 이의신청 폼 사전 조회 (GET /student/grades/{gradeId}/appeal) ──
+    @Transactional(readOnly = true)
+    public GradeAppealRes getAppealInfo(Long gradeId) {
+        Long studentCode = MemberContext.get().memberCode();
+
+        Grade grade = gradeRepository.findDetailById(gradeId)
+                .orElseThrow(() -> new BusinessException(GradeErrorCode.GRADE_NOT_FOUND));
+
+        // G021: 본인 성적 확인
+        if (!grade.getCourse().getStudentCode().equals(studentCode)) {
+            throw new BusinessException(GradeErrorCode.NOT_OWN_GRADE);
+        }
+
+        var lecture = grade.getCourse().getLecture();
+        var course  = grade.getCourse();
+
+        ProfessorCache professor = professorCacheRepository.findById(lecture.getMemberCode()).orElse(null);
+
+        StudentCache studentCache = studentCacheRepository.findById(studentCode).orElse(null);
+        Major major = studentCache != null
+                ? gradeMajorRepository.findWithCollegeById(studentCache.getMajorId()).orElse(null)
+                : null;
+
+        // 기존 이의신청 이력 조회 (없으면 null)
+        GradesAppeal existing = gradeAppealRepository.findById(gradeId).orElse(null);
+
+        return new GradeAppealRes(
+                lecture.getLectureName(),
+                course.getYear(),
+                course.getSemester(),
+                professor != null ? professor.getName() : null,
+                studentCode,
+                studentCache != null ? studentCache.getName()    : null,
+                major       != null ? major.getName()            : null,
+                studentCache != null ? studentCache.getAcademicYear() : null,
+                existing != null ? existing.getStatus().getValue() : null,
+                existing != null ? existing.getReason()            : null
+        );
+    }
+
+    // ── API-GPA-07: 이의신청 제출 (POST /student/grades/{gradeId}/appeal) ──────
+    @Transactional
+    public void submitAppeal(Long gradeId, GradeAppealReq req) {
+        Long studentCode = MemberContext.get().memberCode();
+
+        Grade grade = gradeRepository.findById(gradeId)
+                .orElseThrow(() -> new BusinessException(GradeErrorCode.GRADE_NOT_FOUND));
+
+        // G021: 본인 성적 확인
+        if (!grade.getCourse().getStudentCode().equals(studentCode)) {
+            throw new BusinessException(GradeErrorCode.NOT_OWN_GRADE);
+        }
+
+        GradesAppeal existing = gradeAppealRepository.findById(gradeId).orElse(null);
+
+        if (existing != null) {
+            // G024: 반려된 이의신청만 재신청 가능
+            if (existing.getStatus() != EnumAppealStatus.REJECTED) {
+                throw new BusinessException(GradeErrorCode.APPEAL_NOT_REJECTED);
+            }
+            existing.resubmit(req.getReason());
+        } else {
+            gradeAppealRepository.save(GradesAppeal.builder()
+                    .grade(grade)
+                    .memberCode(studentCode)
+                    .reason(req.getReason())
+                    .build());
+        }
     }
 
     private GradeStudentDetailRes.StudentInfo buildStudentInfo(StudentCache studentCache) {

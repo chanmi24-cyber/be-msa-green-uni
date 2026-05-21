@@ -1,8 +1,11 @@
 package com.green.core.application.grade;
 
 import com.green.common.model.ResultResponse;
+import com.green.core.application.grade.model.GradeAppealReq;
+import com.green.core.application.grade.model.GradeAppealRes;
 import com.green.core.application.grade.model.GradeStudentDetailRes;
 import com.green.core.application.grade.model.GradeStudentRes;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,5 +31,22 @@ public class StudentGradeController {
     public ResponseEntity<ResultResponse<GradeStudentDetailRes>> getStudentAllGrades() {
         return ResponseEntity.ok(
                 new ResultResponse<>("성적 상세 조회 성공", gradeService.getStudentAllGrades()));
+    }
+
+    // API-GPA-07: 이의신청 폼 사전 조회
+    @GetMapping("/{gradeId}/appeal")
+    public ResponseEntity<ResultResponse<GradeAppealRes>> getAppealInfo(
+            @PathVariable Long gradeId) {
+        return ResponseEntity.ok(
+                new ResultResponse<>("이의신청 정보 조회 성공", gradeService.getAppealInfo(gradeId)));
+    }
+
+    // API-GPA-07: 이의신청 제출
+    @PostMapping("/{gradeId}/appeal")
+    public ResponseEntity<ResultResponse<Void>> submitAppeal(
+            @PathVariable Long gradeId,
+            @RequestBody @Valid GradeAppealReq req) {
+        gradeService.submitAppeal(gradeId, req);
+        return ResponseEntity.ok(new ResultResponse<>("이의신청이 완료되었습니다.", null));
     }
 }
