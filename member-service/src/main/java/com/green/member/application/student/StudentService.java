@@ -5,14 +5,14 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
+import com.green.common.exception.FileErrorCode;
 import com.green.common.kafka.member.GpaRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
+import com.green.common.file.FileService;
 import com.green.member.application.member.MemberRepository;
-import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.student.model.*;
-import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.student.MajorRequest;
@@ -28,17 +28,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Slf4j
@@ -53,7 +51,7 @@ public class StudentService {
     private final MajorRequestRepository majorRequestRepository;
     private final OutboxService outboxService;
     private final SchedulePeriodValidator schedulePeriodValidator;
-    private final MyFileUtil myFileUtil;
+    private final FileService fileService;
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
@@ -154,16 +152,20 @@ public class StudentService {
             throw new BusinessException(RequestErrorCode.ALREADY_IN_MAJOR);
         }
 
-        // 파일 검증 및 처리
+        // 파일 검증 및 디스크 저장 (DB 저장 전에 처리하여 유효하지 않은 파일이 DB에 남지 않도록 함)
+        String savedFileName = null;
         if (file != null) {
-            if (file.getSize() > 5 * 1024 * 1024) {
-                throw new BusinessException(RequestErrorCode.FILE_TOO_LARGE);
-            }
-            if (!"application/pdf".equals(file.getContentType())) {
-                throw new BusinessException(RequestErrorCode.INVALID_FILE_TYPE);
-            }
+            savedFileName = fileService.save(file, "request/major/" + memberCode, FileService.ALLOWED_DOCUMENT_EXTENSIONS);
         }
-        String savedFileName = file == null ? null : myFileUtil.makeRandomFileName(file);
+
+        // 클라이언트 제공 파일명의 경로 구분자를 제거하여 파일명만 추출 (path traversal 방지)
+        String originalFileName = null;
+        if (file != null) {
+            String rawName = file.getOriginalFilename();
+            originalFileName = (rawName != null)
+                    ? Paths.get(rawName).getFileName().toString()
+                    : null;
+        }
 
         // major_request 저장
         MajorRequest request = MajorRequest.builder()
@@ -172,7 +174,7 @@ public class StudentService {
                 .targetMajorId(req.getTargetMajorId())
                 .reason(req.getReason())
                 .file(savedFileName)
-                .originalFileName(file != null ? file.getOriginalFilename() : null)
+                .originalFileName(originalFileName)
                 .gpa(BigDecimal.ZERO)
                 .build();
         MajorRequest newRequest = majorRequestRepository.save(request);
@@ -187,19 +189,6 @@ public class StudentService {
                         .eventType(EventType.E_CREATED)
                         .build()
         );
-
-        // 파일 저장
-        if (file != null) {
-            String middlePath = "request/major/" + memberCode;
-            myFileUtil.makeFolders(middlePath);
-            String fullFilePath = String.format("%s/%s", middlePath, savedFileName);
-            try {
-                myFileUtil.transferTo(file, fullFilePath);
-            } catch (IOException e) {
-                request.setFile(null);
-                log.error("파일 저장 실패: {}", e.getMessage());
-            }
-        }
     }
     // 내 전공 변경 신청 취소
     @Transactional
@@ -213,11 +202,7 @@ public class StudentService {
         request.cancel();
         // 첨부파일 있었다면 삭제
         if (request.getFile() != null) {
-            try {
-                myFileUtil.deleteFile(String.format("request/major/%s/%s", memberCode, request.getFile()));
-            } catch (Exception e) {
-                log.warn("기존 파일 삭제 실패: {}", e.getMessage());
-            }
+            fileService.delete(String.format("request/major/%s/%s", memberCode, request.getFile()));
         }
     }
     // 학생 전공 변경 신청 목록 조회
@@ -237,7 +222,7 @@ public class StudentService {
                     res.setRequestId(h.getRequestId());
                     res.setType(h.getType());
                     res.setTargetMajorName(majorName);
-                    res.setStatus(h.getStatus());
+                    res.setStatus(h.getStatus().getCode());
                     res.setCreatedAt(h.getCreatedAt());
                     return res;
                 })
@@ -255,7 +240,7 @@ public class StudentService {
                 .requestId(requestId)
                 .type(request.getType())
                 .targetMajorName(majorName)
-                .status(request.getStatus())
+                .status(request.getStatus().getCode())
                 .gpa(request.getGpa())
                 .reason(request.getReason())
                 .file(request.getFile())
@@ -268,30 +253,34 @@ public class StudentService {
 
     // 학생 전공 변경 신청서 파일 다운로드
     public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
+        // 신청서 소유권 확인: requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
 
         if (request.getFile() == null) {
-            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
 
-        String filePath = String.format("member/major/request/%s/%s", memberCode, request.getFile());
-
-        File file = new File(myFileUtil.fileUploadPath, filePath);
-        Resource resource = new FileSystemResource(file);
+        // DB에 저장된 UUID 기반 파일명으로 경로 구성 (클라이언트 입력값 미사용 → path traversal 불가)
+        String filePath = String.format("request/major/%s/%s", memberCode, request.getFile());
+        Resource resource = fileService.getResource(filePath);
 
         if (!resource.exists()) {
-            throw new BusinessException(RequestErrorCode.FILE_NOT_FOUND);
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
         }
 
+        // 다운로드 파일명: 저장 시 살균된 원본 파일명 우선, 없으면 UUID 파일명 사용
         String downloadName = request.getOriginalFileName() != null
                 ? request.getOriginalFileName()
                 : request.getFile();
+        // RFC 5987 인코딩으로 한글/특수문자 파일명 안전 처리
         String encodedName = URLEncoder.encode(downloadName, StandardCharsets.UTF_8).replace("+", "%20");
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedName)
+                // 브라우저가 파일을 직접 실행하지 않도록 OCTET_STREAM으로 강제 다운로드
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
     }
+
 }

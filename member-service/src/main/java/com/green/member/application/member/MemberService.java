@@ -3,7 +3,6 @@ package com.green.member.application.member;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumMemberRole;
-import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.BusinessException;
 import com.green.common.kafka.auth.AuthMemberEvent;
 import com.green.common.kafka.member.StudentEvent;
@@ -11,12 +10,12 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.member.application.admin.AdminRepository;
 import com.green.member.application.admin.model.AdminProfileRes;
+import com.green.common.file.FileService;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.member.model.MemberUpdateReq;
 import com.green.member.application.professor.ProfessorRepository;
 import com.green.member.application.professor.ProfessorService;
 import com.green.member.application.student.StudentService;
-import com.green.member.configuration.MyFileUtil;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -37,7 +35,7 @@ import java.util.Map;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final ProfessorRepository professorRepository;
-    private final MyFileUtil myFileUtil;
+    private final FileService fileService;
     private final MemberHistoryService memberHistoryService;
     private final OutboxService outboxService;
     private final StudentService studentService;
@@ -94,22 +92,10 @@ public class MemberService {
         if (pic != null) {
             // 기존 사진 삭제
             if (member.getPic() != null) {
-                try {
-                    myFileUtil.deleteFile(String.format("member/%s/%s", memberCode, member.getPic()));
-                } catch (Exception e) {
-                    log.warn("기존 파일 삭제 실패: {}", e.getMessage());
-                }
+                fileService.delete(String.format("member/%s/%s", memberCode, member.getPic()));
             }
-            savedPicFileName = myFileUtil.makeRandomFileName(pic);
-            String middlePath = "member/" + memberCode;
-            myFileUtil.makeFolders(middlePath);
-            String fullFilePath = String.format("%s/%s", middlePath, savedPicFileName);
-            try {
-                myFileUtil.transferTo(pic, fullFilePath);
-            } catch (IOException e) {
-                log.error("파일 저장 실패: {}", e.getMessage());
-                savedPicFileName = null;
-            }
+            // 이미지 파일 검증 후 저장 (JPG, JPEG, PNG만 허용)
+            savedPicFileName = fileService.save(pic, "member/" + memberCode, FileService.ALLOWED_IMAGE_EXTENSIONS);
         }
 
         String oldEmail = member.getEmail();

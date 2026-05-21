@@ -3,6 +3,7 @@ constants:
       prefix: /api/member
   file:
     directory: ${FILE_DIRECTORY}
+    max-size: 5242880
 
 server:
   port: 8080

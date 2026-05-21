@@ -27,7 +27,7 @@ import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.student.StudentHistoryRepository;
 import com.green.member.application.student.StudentMajorRepository;
 import com.green.member.application.student.StudentRepository;
-import com.green.member.configuration.MyFileUtil;
+import com.green.common.file.FileService;
 import com.green.member.entity.member.Admin;
 import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
@@ -44,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,7 +58,7 @@ public class AdminService {
     private final StudentMajorRepository studentMajorRepository;
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
-    private final MyFileUtil myFileUtil;
+    private final FileService fileService;
     private final MemberService memberService;
     private final OutboxService outboxService;
     private final MemberHistoryService memberHistoryService;
@@ -85,9 +84,6 @@ public class AdminService {
 
     // 회원 계정 등록. 공통 처리: member 저장 + memberCode 생성
     private Member createMember(MemberCreateReq req, MultipartFile pic, EnumMemberRole role) {
-        // 파일 처리
-        String savedPicFileName = pic == null ? null : myFileUtil.makeRandomFileName(pic);
-
         // 입학 연도
         int entryYear = req.getEntryDate().getYear();
 
@@ -115,6 +111,9 @@ public class AdminService {
         // memberCode 생성
         Long memberCode = Long.parseLong(entryYear + roleNum + String.format("%03d", seq));
 
+        // memberCode 확정 이후에 파일 검증·저장
+        String savedPicFileName = fileService.save(pic, "member/" + memberCode, FileService.ALLOWED_IMAGE_EXTENSIONS);
+
         // 생일 → 초기 비밀번호 (raw)
         String rawPassword = req.getBirth().toString().replace("-", "");
 
@@ -135,19 +134,6 @@ public class AdminService {
                 .build();
 
         Member newMember = memberRepository.save(member);
-
-        // 파일 저장
-        if (pic != null) {
-            String middlePath = "member/" + memberCode;
-            myFileUtil.makeFolders(middlePath);
-            String fullFilePath = String.format("%s/%s", middlePath, savedPicFileName);
-            try {
-                myFileUtil.transferTo(pic, fullFilePath);
-            } catch (IOException e) {
-                newMember.setPic(null);
-                log.error("파일 저장 실패: {}", e.getMessage());
-            }
-        }
 
         // AuthMemberEvent Outbox 저장
         AuthMemberEvent authEvent = AuthMemberEvent.builder()
@@ -673,23 +659,12 @@ public class AdminService {
 
     private String savePic(Long memberCode, MultipartFile pic, String oldFileName) {
         if (pic == null) return null;
+        // 기존 사진이 있으면 먼저 삭제
         if (oldFileName != null) {
-            try {
-                myFileUtil.deleteFile(String.format("member/%s/%s", memberCode, oldFileName));
-            } catch (Exception e) {
-                log.warn("기존 파일 삭제 실패: {}", e.getMessage());
-            }
+            fileService.delete(String.format("member/%s/%s", memberCode, oldFileName));
         }
-        String fileName = myFileUtil.makeRandomFileName(pic);
-        String middlePath = "member/" + memberCode;
-        myFileUtil.makeFolders(middlePath);
-        try {
-            myFileUtil.transferTo(pic, middlePath + "/" + fileName);
-        } catch (IOException e) {
-            log.error("파일 저장 실패: {}", e.getMessage());
-            return null;
-        }
-        return fileName;
+        // 이미지 검증 후 저장 (JPG, JPEG, PNG만 허용)
+        return fileService.save(pic, "member/" + memberCode, FileService.ALLOWED_IMAGE_EXTENSIONS);
     }
 
     // 관리자 상태 변경 이력 조회

@@ -5,6 +5,7 @@ import com.green.member.application.admin.model.MemberBatchRes;
 import com.green.member.application.member.model.MemberCreateReq;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,7 +19,10 @@ import java.util.regex.Pattern;
 
 public abstract class MemberBatchService<T extends MemberCreateReq> {
 
-    protected static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+    // 서비스별 application.yaml의 constants.file.max-size 값 사용
+    // 설정이 없으면 기본값 5MB(5242880 bytes) 적용
+    @Value("${constants.file.max-size:5242880}")
+    private long maxFileSize;
     protected static final int MAX_ROW_COUNT = 500;
     protected static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     protected static final Pattern TEL_PATTERN = Pattern.compile("^0\\d{9,10}$");
@@ -235,16 +239,25 @@ public abstract class MemberBatchService<T extends MemberCreateReq> {
         return "TRUE".equalsIgnoreCase(value) || "Y".equalsIgnoreCase(value);
     }
 
-    private void validateFile(MultipartFile file) {
+    private void validateFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어있습니다.");
         }
-        if (file.getSize() > MAX_FILE_SIZE) {
+        if (file.getSize() > maxFileSize) {
             throw new IllegalArgumentException("파일 크기는 5MB를 초과할 수 없습니다.");
         }
+        // 확장자 검사: 대소문자 구분 없이 .xlsx만 허용
         String name = file.getOriginalFilename();
-        if (name == null || !name.endsWith(".xlsx")) {
+        if (name == null || !name.toLowerCase().endsWith(".xlsx")) {
             throw new IllegalArgumentException("xlsx 파일만 허용됩니다.");
+        }
+        // magic bytes 검사: xlsx는 ZIP 포맷. 앞 4바이트가 PK 시그니처(50 4B 03 04)여야 함
+        // 파일 이름을 .xlsx로 위장한 다른 파일 유형을 파싱 전에 차단
+        byte[] header = file.getInputStream().readNBytes(4);
+        if (header.length < 4
+                || (header[0] & 0xFF) != 0x50 || (header[1] & 0xFF) != 0x4B
+                || (header[2] & 0xFF) != 0x03 || (header[3] & 0xFF) != 0x04) {
+            throw new IllegalArgumentException("올바른 xlsx 파일이 아닙니다.");
         }
     }
 
