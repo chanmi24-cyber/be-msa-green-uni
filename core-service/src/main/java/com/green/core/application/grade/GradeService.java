@@ -5,6 +5,7 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
+import com.green.core.application.grade.model.GradeStudentRes;
 import com.green.core.application.grade.model.GradeUpdateReq;
 import com.green.core.entity.attendance.Attendance;
 import com.green.core.entity.cache.StudentCache;
@@ -120,6 +121,79 @@ public class GradeService {
                     gradeLetter
             );
         }
+    }
+
+    // ── API-GPA-05: 학생 본인 성적 조회 ──────────────────────────────────────
+    @Transactional(readOnly = true)
+    public GradeStudentRes getStudentGrades(Integer year, Integer semester) {
+        Long studentCode = MemberContext.get().memberCode();
+
+        List<Grade> grades;
+        if (year != null && semester != null) {
+            grades = gradeRepository.findByStudentCodeAndYearAndSemester(studentCode, year, semester);
+        } else if (year != null) {
+            grades = gradeRepository.findByStudentCodeAndYear(studentCode, year);
+        } else {
+            grades = gradeRepository.findByStudentCode(studentCode);
+        }
+
+        List<GradeStudentRes.GradeItem> gradeList = grades.stream().map(g -> {
+            var course   = g.getCourse();
+            var lecture  = course.getLecture();
+            EnumGradeLetter letter = g.getGradeLetter();
+            return new GradeStudentRes.GradeItem(
+                    g.getCourseId(),
+                    course.getYear(),
+                    course.getSemester(),
+                    lecture.getLectureName(),
+                    lecture.getCredit(),
+                    lecture.getLectureType().getValue(),
+                    letter != null ? letter.getCode()   : null,
+                    letter != null ? toGradePoint(letter) : null
+            );
+        }).toList();
+
+        // summary: 성적이 입력된(lectureRating != null) 과목만 포함
+        List<GradeStudentRes.GradeItem> graded = gradeList.stream()
+                .filter(g -> g.getLectureRating() != null)
+                .toList();
+
+        double averageGpa    = 0.0;
+        int    convertedScore = 0;
+        int    totalCredits   = 0;
+
+        if (!graded.isEmpty()) {
+            double sumWeighted = graded.stream()
+                    .mapToDouble(g -> g.getLectureRating() * g.getLectureCredit())
+                    .sum();
+            int sumCredits = graded.stream()
+                    .mapToInt(GradeStudentRes.GradeItem::getLectureCredit)
+                    .sum();
+            averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
+            convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
+            totalCredits  = graded.stream()
+                    .filter(g -> !"F".equals(g.getLectureGrade()))
+                    .mapToInt(GradeStudentRes.GradeItem::getLectureCredit)
+                    .sum();
+        }
+
+        return new GradeStudentRes(gradeList,
+                new GradeStudentRes.Summary(averageGpa, convertedScore, totalCredits));
+    }
+
+    // 평점 변환: A+=4.5, A=4.0, B+=3.5, B=3.0, C+=2.5, C=2.0, D+=1.5, D=1.0, F=0.0
+    private double toGradePoint(EnumGradeLetter letter) {
+        return switch (letter) {
+            case A_PLUS -> 4.5;
+            case A      -> 4.0;
+            case B_PLUS -> 3.5;
+            case B      -> 3.0;
+            case C_PLUS -> 2.5;
+            case C      -> 2.0;
+            case D_PLUS -> 1.5;
+            case D      -> 1.0;
+            case F      -> 0.0;
+        };
     }
 
     // ── 출석 점수 자동 계산 ───────────────────────────────────────────────────
