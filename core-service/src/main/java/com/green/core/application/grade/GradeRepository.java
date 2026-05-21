@@ -67,6 +67,37 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
     @Query("SELECT COUNT(g) FROM Grade g WHERE g.course.lecture.lectureId = :lectureId")
     int countByLectureId(@Param("lectureId") Long lectureId);
 
+    // 학과 석차: 같은 학과 재학생 중 나보다 weighted GPA 높은 사람 수
+    @Query(value = """
+            SELECT COUNT(DISTINCT sq.student_code)
+            FROM (
+                SELECT c.student_code,
+                       SUM(g.total_score * l.credit) / NULLIF(SUM(l.credit), 0) AS avg_gpa
+                FROM grade g
+                INNER JOIN course c ON c.course_id = g.course_id
+                INNER JOIN lecture l ON l.lecture_id = c.lecture_id
+                INNER JOIN student_cache sc ON sc.member_code = c.student_code
+                WHERE sc.major_id = :majorId
+                  AND sc.status = 'ENROLLED'
+                  AND g.grade_letter IS NOT NULL
+                GROUP BY c.student_code
+            ) sq
+            WHERE sq.avg_gpa > :myGpa
+            """, nativeQuery = true)
+    int countMajorStudentsWithHigherGpa(@Param("majorId") Long majorId, @Param("myGpa") double myGpa);
+
+    // 학과 석차 분모: 같은 학과 재학생 중 성적이 입력된 학생 수
+    @Query(value = """
+            SELECT COUNT(DISTINCT c.student_code)
+            FROM grade g
+            INNER JOIN course c ON c.course_id = g.course_id
+            INNER JOIN student_cache sc ON sc.member_code = c.student_code
+            WHERE sc.major_id = :majorId
+              AND sc.status = 'ENROLLED'
+              AND g.grade_letter IS NOT NULL
+            """, nativeQuery = true)
+    int countMajorStudentsWithGrades(@Param("majorId") Long majorId);
+
     // 성적 점수 일괄 업데이트
     @Modifying
     @Query("UPDATE Grade g SET " +

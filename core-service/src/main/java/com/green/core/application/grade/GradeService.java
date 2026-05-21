@@ -5,16 +5,17 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
+import com.green.core.application.grade.model.GradeStudentDetailRes;
 import com.green.core.application.grade.model.GradeStudentRes;
 import com.green.core.application.grade.model.GradeUpdateReq;
 import com.green.core.entity.attendance.Attendance;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.grade.Grade;
+import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumAttendStatus;
 import com.green.core.enumcode.EnumGradeLetter;
 import com.green.core.exception.GradeErrorCode;
 import com.green.core.repository.StudentCacheRepository;
-import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,8 @@ public class GradeService {
     private final GradeRepository gradeRepository;
     private final GradeAttendRepository gradeAttendRepository;
     private final GradeLectureRepository gradeLectureRepository;
+    private final GradeMajorRepository gradeMajorRepository;
     private final StudentCacheRepository studentCacheRepository;
-    private final SchedulePeriodValidator schedulePeriodValidator;
 
     // ── 교수 담당 강의 목록 조회 (성적 관리 강의 선택 화면용) ─────────────────────
     @Transactional(readOnly = true)
@@ -179,6 +180,114 @@ public class GradeService {
 
         return new GradeStudentRes(gradeList,
                 new GradeStudentRes.Summary(averageGpa, convertedScore, totalCredits));
+    }
+
+
+    // ── API-GPA-06: 학생 전체 성적 상세조회 (GET /my/detail) ─────────────────
+    @Transactional(readOnly = true)
+    public GradeStudentDetailRes getStudentAllGrades() {
+        Long studentCode = MemberContext.get().memberCode();
+
+        List<Grade> grades = gradeRepository.findByStudentCode(studentCode);
+
+        StudentCache studentCache = studentCacheRepository.findById(studentCode).orElse(null);
+        GradeStudentDetailRes.StudentInfo studentInfo = buildStudentInfo(studentCache);
+
+        List<GradeStudentDetailRes.GradeItem> gradeList = grades.stream().map(g -> {
+            var course  = g.getCourse();
+            var lecture = course.getLecture();
+            EnumGradeLetter letter = g.getGradeLetter();
+            Integer myRank     = letter != null
+                    ? gradeRepository.countHigherScore(lecture.getLectureId(), g.getTotalScore()) + 1
+                    : null;
+            Integer totalCount = letter != null
+                    ? gradeRepository.countByLectureId(lecture.getLectureId())
+                    : null;
+            return new GradeStudentDetailRes.GradeItem(
+                    g.getCourseId(),
+                    course.getYear(),
+                    course.getSemester(),
+                    lecture.getLectureName(),
+                    lecture.getCredit(),
+                    lecture.getLectureType().getValue(),
+                    g.getMidScore(),
+                    g.getFinScore(),
+                    g.getAssignmentScore(),
+                    g.getAttendScore(),
+                    g.getTotalScore(),
+                    letter != null ? letter.getCode()    : null,
+                    letter != null ? toGradePoint(letter) : null,
+                    myRank,
+                    totalCount,
+                    null
+            );
+        }).toList();
+
+        List<GradeStudentDetailRes.GradeItem> graded = gradeList.stream()
+                .filter(g -> g.getLectureRating() != null)
+                .toList();
+
+        double averageGpa    = 0.0;
+        int    convertedScore = 0;
+        int    totalCredits   = 0;
+        double averageScore   = 0.0;
+        String averageGrade   = null;
+
+        if (!graded.isEmpty()) {
+            double sumWeighted = graded.stream()
+                    .mapToDouble(g -> g.getLectureRating() * g.getLectureCredit())
+                    .sum();
+            int sumCredits = graded.stream()
+                    .mapToInt(GradeStudentDetailRes.GradeItem::getLectureCredit)
+                    .sum();
+            averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
+            convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
+            totalCredits  = graded.stream()
+                    .filter(g -> !"F".equals(g.getLectureGrade()))
+                    .mapToInt(GradeStudentDetailRes.GradeItem::getLectureCredit)
+                    .sum();
+            averageScore  = Math.round(
+                    graded.stream().mapToInt(GradeStudentDetailRes.GradeItem::getTotalScore)
+                            .average().orElse(0.0) * 10.0) / 10.0;
+            averageGrade  = Grade.calcGradeLetter((int) averageScore).getCode();
+        }
+
+        int majorRank       = 1;
+        int majorTotalCount = 1;
+        if (studentCache != null) {
+            Long   majorId     = studentCache.getMajorId();
+            double sumWeighted = 0.0;
+            int    sumCredits  = 0;
+            for (Grade g : grades) {
+                if (g.getGradeLetter() != null) {
+                    int credit = g.getCourse().getLecture().getCredit();
+                    sumWeighted += (double) g.getTotalScore() * credit;
+                    sumCredits  += credit;
+                }
+            }
+            double myGpa    = sumCredits > 0 ? sumWeighted / sumCredits : 0.0;
+            majorTotalCount = gradeRepository.countMajorStudentsWithGrades(majorId);
+            majorRank       = gradeRepository.countMajorStudentsWithHigherGpa(majorId, myGpa) + 1;
+            if (majorTotalCount == 0) { majorTotalCount = 1; majorRank = 1; }
+        }
+
+        return new GradeStudentDetailRes(
+                studentInfo,
+                gradeList,
+                new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
+                        averageScore, averageGrade, majorRank, majorTotalCount));
+    }
+
+    private GradeStudentDetailRes.StudentInfo buildStudentInfo(StudentCache studentCache) {
+        if (studentCache == null) return null;
+        Major major = gradeMajorRepository.findWithCollegeById(studentCache.getMajorId()).orElse(null);
+        return new GradeStudentDetailRes.StudentInfo(
+                studentCache.getName(),
+                major != null ? major.getName()              : null,
+                major != null ? major.getCollege().getName() : null,
+                studentCache.getAcademicYear(),
+                studentCache.getSemester()
+        );
     }
 
     // 평점 변환: A+=4.5, A=4.0, B+=3.5, B=3.0, C+=2.5, C=2.0, D+=1.5, D=1.0, F=0.0
