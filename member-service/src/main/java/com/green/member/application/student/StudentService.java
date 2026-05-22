@@ -18,14 +18,14 @@ import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.major.model.StudentMajorRequestReq;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
+import com.green.member.application.status.StatusRequestRepository;
+import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
-import com.green.member.entity.student.MajorRequest;
-import com.green.member.entity.student.Student;
-import com.green.member.entity.student.StudentHistory;
-import com.green.member.entity.student.StudentMajor;
+import com.green.member.entity.student.*;
 import com.green.member.enumcode.EnumMajorRequestType;
+import com.green.member.enumcode.EnumStatusRequestType;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.application.major.MajorCacheRepository;
 import com.green.member.exception.RequestErrorCode;
@@ -55,6 +55,7 @@ public class StudentService {
     private final OutboxService outboxService;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final FileService fileService;
+    private final StatusRequestRepository statusRequestRepository;
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
@@ -266,6 +267,59 @@ public class StudentService {
         // DB의 UUID 파일명으로 경로 구성 (클라이언트 입력값 미사용 → path traversal 불가)
         String filePath = String.format("request/major/%s/%s", memberCode, request.getFile());
         return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
+
+    // 학생 학적 변경 신청
+    @Transactional
+    public void requestStatus(StudentStatusRequestReq req, MultipartFile file, Long memberCode){
+        Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
+
+        // 재학/휴학 상태만 신청 가능 (졸업, 자퇴, 퇴학 등은 차단)
+        if (student.getStatus() != EnumStudentStatus.ENROLLED && student.getStatus() != EnumStudentStatus.ABSENCE) {
+            throw new BusinessException(RequestErrorCode.INELIGIBLE_STUDENT_STATUS);
+        }
+
+        // 중복 신청 방지 (PENDING 신청이 하나라도 있으면 차단)
+        if (statusRequestRepository.existsByStudent_MemberCodeAndStatus(memberCode, EnumApprovalStatus.PENDING)) {
+            throw new BusinessException(RequestErrorCode.ALREADY_PENDING_REQUEST);
+        }
+
+        // 자퇴: 재학, 휴학 상태 모두 가능
+        // 휴학: 재학 상태만 가능
+        if (req.getType() == EnumStatusRequestType.ABSENCE && student.getStatus() != EnumStudentStatus.ENROLLED) {
+            throw new BusinessException(RequestErrorCode.INVALID_STATUS_REQUEST_TYPE);
+        }
+        // 복학: 휴학 상태만 가능
+        if (req.getType() == EnumStatusRequestType.RETURN && student.getStatus() != EnumStudentStatus.ABSENCE) {
+            throw new BusinessException(RequestErrorCode.INVALID_STATUS_REQUEST_TYPE);
+        }
+
+        // 파일 검증 및 디스크 저장
+        String savedFileName = null;
+        if (file != null) {
+            savedFileName = fileService.save(file, "request/status/" + memberCode, FileService.ALLOWED_DOCUMENT_EXTENSIONS);
+        }
+        String originalFileName = null;
+        if (file != null) {
+            String rawName = file.getOriginalFilename();
+            originalFileName = (rawName != null)
+                    ? Paths.get(rawName).getFileName().toString()
+                    : null;
+        }
+
+        StatusRequest request = StatusRequest.builder()
+                .student(student)
+                .type(req.getType())
+                .reason(req.getReason())
+                .file(savedFileName)
+                .originalFileName(originalFileName)
+                .academicYear(student.getAcademicYear())
+                .semester(student.getSemester())
+                .startDate(req.getStartDate())
+                .returnYear(req.getReturnYear())
+                .returnSemester(req.getReturnSemester())
+                .build();
+        statusRequestRepository.save(request);
     }
 
 }

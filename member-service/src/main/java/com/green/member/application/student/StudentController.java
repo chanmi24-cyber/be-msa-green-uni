@@ -7,6 +7,7 @@ import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.major.model.StudentMajorRequestReq;
+import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,17 @@ public class StudentController {
         return ResultResponse.builder()
                 .message("전공 변경 이력 조회")
                 .data(res)
+                .build();
+    }
+
+    // 학적 변경 신청
+    @PostMapping("/requests/status")
+    public ResultResponse<?> applyStatusRequest(@RequestPart @Valid StudentStatusRequestReq req,
+                                               @RequestPart(required = false) MultipartFile file) {
+        MemberDto loginMember = MemberContext.get();
+        studentService.requestStatus(req, file, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("학적 변경 신청이 완료되었습니다.")
                 .build();
     }
 }
