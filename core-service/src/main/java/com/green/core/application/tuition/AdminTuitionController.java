@@ -82,4 +82,10 @@ public class AdminTuitionController {
     ) {
         return ResponseEntity.ok(tuitionService.getPolicyHistoryList(year, semester));
     }
+
+    // API-TUI-14: 등록금 납부 기간 조회
+    @GetMapping("/tuition-schedule/payment-period")
+    public ResponseEntity<TuitionRes.PaymentPeriodRes> getPaymentPeriod() {
+        return ResponseEntity.ok(tuitionService.getTuitionPaymentPeriod());
+    }
 }

@@ -1,7 +1,7 @@
 package com.green.auth.application.email;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import jakarta.mail.MessagingException;
@@ -14,7 +14,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 public class EmailSender {
     private final JavaMailSender mailSender;
 
-    // 1. 기존 메서드: 본인인증 전용 (인증코드 템플릿 조립)
+    // 1. 기존 메서드: 본인인증 전용 (잘 작동하는 기준 소스)
     public void sendHtmlMail(String to, String subject, String authCode) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -25,18 +25,6 @@ public class EmailSender {
         String htmlContent = getVerificationCodeTemplate(authCode);
 
         helper.setText(htmlContent, true);
-
-        mailSender.send(message);
-    }
-
-    // 2. 새로 추가한 메서드: 외부 도메인(등록금 등)에서 가공해 온 HTML 본문을 그대로 발송
-    public void sendRawHtmlMail(String to, String subject, String htmlContent) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true); // core에서 넘겨받은 HTML 템플릿을 그대로 주입!
 
         mailSender.send(message);
     }

@@ -136,4 +136,12 @@ public class TuitionRes {
             this.updatorCode = history.getUpdatorCode();
         }
     }
+
+    @Getter
+    @AllArgsConstructor
+    public static class PaymentPeriodRes {
+        private boolean isPaymentPeriod;
+        private LocalDateTime startDate;
+        private LocalDateTime endDate;
+    }
 }
