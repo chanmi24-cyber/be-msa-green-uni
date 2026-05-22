@@ -314,7 +314,10 @@ public class LectureService {
     public List<TodayLectureRes> getTodayLectures(MemberDto memberDto) {
         String[] days = {"일", "월", "화", "수", "목", "금", "토"};
         String dayOfWeek = days[LocalDate.now().getDayOfWeek().getValue() % 7];
-        return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek);
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+        int semester = (month >= 3 && month <= 8) ? 1 : 2;
+        return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek, year, semester);
     }
 
 }

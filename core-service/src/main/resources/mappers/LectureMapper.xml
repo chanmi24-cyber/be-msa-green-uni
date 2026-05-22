@@ -389,6 +389,8 @@
         AND l.status = 'APPROVED'
         AND l.is_del = false
         AND ls.day_of_week = #{dayOfWeek}
+        AND l.year = #{year}
+        AND l.semester = #{semester}
         ORDER BY ls.start_period
     </select>
 </mapper>
