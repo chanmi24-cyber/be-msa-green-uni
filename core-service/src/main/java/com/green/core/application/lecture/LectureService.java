@@ -320,4 +320,29 @@ public class LectureService {
         return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek, year, semester);
     }
 
+    // 관리자 승인대기 목록 및 건수 (대시보드용)
+    public Map<String, Object> getDashboardPendingLectures() {
+        // 1. 기존 매퍼가 사용하는 DTO 객체를 생성하고 값 세팅
+        AdminLectureReq req = new AdminLectureReq();
+        req.setStatus(EnumApprovalStatus.PENDING);
+        req.setSize(3);                            // 대시보드용 LIMIT 3
+        req.setStartIdx(0);                        // OFFSET 0
+        req.setLectureName(null);
+
+        // 2. 프로젝트 기존 타입(MyLectureListRes)으로 리스트 받아오기
+        List<MyLectureListRes> lectures = lectureMapper.findAdminLectures(req);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("lectures", lectures);
+
+        // 3. 전체 대기 건수 추출 (MyLectureListRes 내부에 정의된 getTotalCount 활용)
+        int totalCount = 0;
+        if (lectures != null && !lectures.isEmpty()) {
+            totalCount = lectures.get(0).getTotalCount();
+        }
+        result.put("totalCount", totalCount);
+
+        return result;
+    }
+
 }
