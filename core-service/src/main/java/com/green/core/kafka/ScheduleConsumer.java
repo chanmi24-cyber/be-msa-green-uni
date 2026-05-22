@@ -1,5 +1,6 @@
 package com.green.core.kafka;
 
+import com.green.core.application.lecture.LectureAutoCancelService;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.core.entity.cache.ScheduleCache;
@@ -18,7 +19,7 @@ import com.green.common.kafka.ScheduleEvent;
 public class ScheduleConsumer {
 
     private final ScheduleCacheRepository scheduleCacheRepository;
-    private final LectureAutocancelService lectureAutoancelService;
+    private final LectureAutoCancelService lectureAutoCancelService;
 
     @Transactional
     @KafkaListener(topics = KafkaTopic.SCHEDULE, groupId = "core-service-group")
@@ -40,7 +41,7 @@ public class ScheduleConsumer {
         // 수강신청 기간 종료 시 자동 폐강 처리
         if (event.getType() == EnumScheduleType.COURSE_REGISTRATION
                 && !event.getIsActive()) {
-            lectureAutoancelService.autoCancelLectures(event.getYear(), event.getSemester());
+            lectureAutoCancelService.autoCancelLectures(event.getYear(), event.getSemester());
         }
     }
 }
