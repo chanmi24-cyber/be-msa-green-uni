@@ -12,6 +12,7 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
 import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.member.MemberRepository;
@@ -23,6 +24,7 @@ import com.green.member.entity.student.MajorRequest;
 import com.green.member.entity.student.Student;
 import com.green.member.entity.student.StudentHistory;
 import com.green.member.entity.student.StudentMajor;
+import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.application.major.MajorCacheRepository;
 import com.green.member.exception.RequestErrorCode;
@@ -139,11 +141,16 @@ public class StudentService {
             throw new BusinessException(RequestErrorCode.INELIGIBLE_STUDENT_STATUS);
         }
 
+        // 편입생은 전과 신청 불가
+        if (req.getType() == EnumMajorRequestType.TRANSFER && student.getIsTransfer()) {
+            throw new BusinessException(RequestErrorCode.TRANSFER_STUDENT_CANNOT_TRANSFER);
+        }
+
         // 전공 변경 신청 기간 체크
         schedulePeriodValidator.checkMajorChange();
 
-        // 중복 신청 방지
-        if (majorRequestRepository.existsByStudent_MemberCodeAndTypeAndStatus( memberCode, req.getType(), EnumApprovalStatus.PENDING)) {
+        // 중복 신청 방지 (타입 무관하게 PENDING 신청이 하나라도 있으면 차단)
+        if (majorRequestRepository.existsByStudent_MemberCodeAndStatus(memberCode, EnumApprovalStatus.PENDING)) {
             throw new BusinessException(RequestErrorCode.ALREADY_PENDING_REQUEST);
         }
 
@@ -230,6 +237,15 @@ public class StudentService {
         return majorRequestRepository.findStudentMajorRequests(memberCode);
     }
 
+    // 내 전공 변경 이력 조회
+    @Transactional(readOnly = true)
+    public List<StudentMajorHistoryRes> findMajorHistory(Long memberCode) {
+        if (!studentRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        return majorRequestRepository.findMajorHistoryByStudentCode(memberCode);
+    }
+
     // 내 전공 변경 신청서 상세 조회
     @Transactional(readOnly = true)
     public StudentMajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
@@ -238,6 +254,7 @@ public class StudentService {
     }
 
     // 내 전공 변경 신청서 파일 다운로드
+    @Transactional(readOnly = true)
     public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)

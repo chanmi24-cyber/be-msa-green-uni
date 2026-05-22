@@ -3,10 +3,11 @@ package com.green.member.application.major;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.member.application.major.model.AdminMajorRequestDetailDto;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
+import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
+import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.entity.student.MajorRequest;
-import com.green.member.enumcode.EnumMajorRequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,8 +17,7 @@ import java.util.Optional;
 
 public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long> {
     Optional<MajorRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
-    boolean existsByStudent_MemberCodeAndTypeAndStatus(
-            Long memberCode, EnumMajorRequestType type, EnumApprovalStatus status);
+    boolean existsByStudent_MemberCodeAndStatus(Long memberCode, EnumApprovalStatus status);
 
     // 관리자 전공 변경 신청 목록 조회
     @Query(value = """
@@ -31,7 +31,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.type             AS type,
                    mr.status           AS status,
                    mr.academic_year    AS academicYear,
-                   mr.semester         AS semsester,
+                   mr.semester         AS semester,
                    mr.created_at       AS createdAt
             FROM major_request mr
             JOIN member ms      ON ms.member_code = mr.student_code
@@ -117,4 +117,48 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
     Optional<StudentMajorRequestDetailRes> findStudentMajorRequestDetail(
             @Param("requestId")  Long requestId,
             @Param("memberCode") Long memberCode);
+
+    // 학생 전공 변경 이력 조회
+    @Query(value = """
+            SELECT mr.type                                              AS type,
+                   CASE
+                       WHEN mr.type = 'TRANSFER' THEN mc_current.name
+                       WHEN mr.type = 'MINOR'    THEN mc_minor.name
+                   END                                                 AS beforeName,
+                   mc_target.name                                      AS afterName,
+                   mr.academic_year                                    AS academicYear,
+                   mr.semester                                         AS semester,
+                   mr.updated_at                                       AS updatedAt
+            FROM major_request mr
+            JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
+            JOIN major_cache mc_target  ON mc_target.major_id  = mr.target_major_id
+            LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
+            WHERE mr.student_code = :memberCode
+              AND mr.status = 'APPROVED'
+            ORDER BY mr.updated_at ASC
+            """, nativeQuery = true)
+    List<StudentMajorHistoryRes> findMajorHistoryByStudentCode(@Param("memberCode") Long memberCode);
+
+    // 학생 전공 변경 이력 조회 (관리자용)
+    @Query(value = """
+            SELECT mr.type                                              AS type,
+                   CASE
+                       WHEN mr.type = 'TRANSFER' THEN mc_current.name
+                       WHEN mr.type = 'MINOR'    THEN mc_minor.name
+                   END                                                 AS beforeName,
+                   mc_target.name                                      AS afterName,
+                   mr.academic_year                                    AS academicYear,
+                   mr.semester                                         AS semester,
+                   m.name                                              AS updaterName,
+                   mr.updated_at                                       AS updatedAt
+            FROM major_request mr
+            JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
+            JOIN major_cache mc_target  ON mc_target.major_id  = mr.target_major_id
+            LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
+            LEFT JOIN member m           ON m.member_code = mr.updater_code
+            WHERE mr.student_code = :memberCode
+              AND mr.status = 'APPROVED'
+            ORDER BY mr.updated_at ASC
+            """, nativeQuery = true)
+    List<AdminStudentMajorHistoryRes> findMajorHistoryByStudentCodeForAdmin(@Param("memberCode") Long memberCode);
 }

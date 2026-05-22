@@ -3,6 +3,7 @@ package com.green.member.application.student;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
+import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.student.model.*;
@@ -77,5 +78,16 @@ public class StudentController {
     public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
         return studentService.findMajorRequestFile(requestId, loginMember.memberCode());
+    }
+
+    // 내 전공 변경 이력 조회
+    @GetMapping("/history/major")
+    public ResultResponse<?> findMajorHistory() {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentMajorHistoryRes> res = studentService.findMajorHistory(loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 이력 조회")
+                .data(res)
+                .build();
     }
 }

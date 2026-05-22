@@ -7,6 +7,7 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
+import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
@@ -31,7 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-
 
 @Slf4j
 @RestController
@@ -61,6 +61,16 @@ public class AdminController {
         List<StudentHistoryRes> res = studentService.findStudentHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 학생 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    @GetMapping("/students/{memberCode}/history/major")
+    public ResultResponse<?> findStudentMajorHistory(@PathVariable Long memberCode) {
+        MemberDto loginMember = MemberContext.get();
+        List<AdminStudentMajorHistoryRes> res = adminService.findStudentMajorHistory(memberCode, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("관리자의 학생 전공 변경 이력 조회")
                 .data(res)
                 .build();
     }
@@ -276,7 +286,8 @@ public class AdminController {
     // 전공 변경 신청 목록 조회
     @GetMapping("/requests/major")
     public ResultResponse<?> findAllMajorRequests() {
-        List<AdminMajorRequestListRes> res = adminService.findMajorRequests();
+        MemberDto loginMember = MemberContext.get();
+        List<AdminMajorRequestListRes> res = adminService.findMajorRequests( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -285,7 +296,8 @@ public class AdminController {
     // 전공 변경 신청 상세 조회
     @GetMapping("/requests/major/{requestId}")
     public ResultResponse<?> findMajorRequestDetail(@PathVariable Long requestId) {
-        AdminMajorRequestDetailRes res = adminService.findMajorRequestDetail(requestId);
+        MemberDto loginMember = MemberContext.get();
+        AdminMajorRequestDetailRes res = adminService.findMajorRequestDetail( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청 상세 조회")
                 .data(res)
@@ -294,13 +306,14 @@ public class AdminController {
     // 전공 변경 신청서 파일 다운로드
     @GetMapping("/requests/major/{requestId}/file")
     public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
-        return adminService.findMajorRequestFile(requestId);
+        MemberDto loginMember = MemberContext.get();
+        return adminService.findMajorRequestFile( requestId, loginMember.memberCode() );
     }
     // 전공 변경 신청 처리 (승인/반려)
     @PatchMapping("/requests/major/{requestId}")
     public ResultResponse<?> updateMajorRequest(@PathVariable Long requestId, @RequestBody @Valid AdminMajorRequestProcessReq req) {
         MemberDto loginMember = MemberContext.get();
-        adminService.processMajorRequest( requestId , req, loginMember.memberCode());
+        adminService.processMajorRequest( requestId , req, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청서 처리 완료")
                 .build();

@@ -18,6 +18,7 @@ public enum MemberErrorCode implements ErrorCode {
     , ALREADY_RETIRED("M008", "이미 퇴사한 회원입니다.", HttpStatus.BAD_REQUEST)
     , ALREADY_DISMISSED("M009", "이미 퇴임한 교수입니다.", HttpStatus.BAD_REQUEST)
     , ALREADY_TERMINATED("M010", "퇴학 또는 자퇴 처리된 학생입니다.", HttpStatus.BAD_REQUEST)
+    , ADMIN_NOT_EMPLOYED("M011", "처리 권한이 없습니다.", HttpStatus.FORBIDDEN)
     ;
     private final String code;
     private final String message;
