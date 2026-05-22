@@ -24,6 +24,7 @@ import com.green.common.constants.EventType;
 import com.green.common.kafka.NotificationEvent;
 
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -300,6 +301,24 @@ public class LectureService {
         lecture.delete();
     }
 
+    // DASH-11 시간표
+    public List<MyLectureListRes> getProfessorTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findProfessorTimetable(memberDto.memberCode(), year, semester);
+    }
+
+    public List<MyLectureListRes> getStudentTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findStudentTimetable(memberDto.memberCode(), year, semester);
+    }
+
+    // DASH교수: 오늘 강의 목록
+    public List<TodayLectureRes> getTodayLectures(MemberDto memberDto) {
+        String[] days = {"일", "월", "화", "수", "목", "금", "토"};
+        String dayOfWeek = days[LocalDate.now().getDayOfWeek().getValue() % 7];
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+        int semester = (month >= 3 && month <= 8) ? 1 : 2;
+        return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek, year, semester);
+    }
 
 
 }

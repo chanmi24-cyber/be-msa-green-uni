@@ -651,13 +651,13 @@ public class AdminService {
         studentHistoryRepository.save(history);
 
         // StudentEvent Outbox 저장
-            StudentEvent studentEvent = StudentEvent.builder()
-                    .memberCode(student.getMemberCode())
-                    .status(student.getStatus().getCode())
-                    .eventType(EventType.E_UPDATED)
-                    .updateType(UpdateType.STATUS)
-                    .build();
-            outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
+        StudentEvent studentEvent = StudentEvent.builder()
+                .memberCode(student.getMemberCode())
+                .status(student.getStatus().getCode())
+                .eventType(EventType.E_UPDATED)
+                .updateType(UpdateType.STATUS)
+                .build();
+        outboxService.saveToOutbox(MemberTopic.STUDENT, student.getMemberCode(), studentEvent);
 
         // 자퇴/퇴학이면 로그인 불가 처리
         if (newStatus == EnumStudentStatus.EXPULSION || newStatus == EnumStudentStatus.QUIT) {

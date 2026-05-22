@@ -1,7 +1,7 @@
 package com.green.auth.application.email;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import jakarta.mail.MessagingException;
@@ -14,6 +14,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 public class EmailSender {
     private final JavaMailSender mailSender;
 
+    // 1. 기존 메서드: 본인인증 전용 (잘 작동하는 기준 소스)
     public void sendHtmlMail(String to, String subject, String authCode) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
