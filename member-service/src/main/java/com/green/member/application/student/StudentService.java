@@ -238,6 +238,7 @@ public class StudentService {
     }
 
     // 내 전공 변경 신청서 파일 다운로드
+    @Transactional(readOnly = true)
     public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)

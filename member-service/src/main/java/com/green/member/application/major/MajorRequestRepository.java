@@ -31,7 +31,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.type             AS type,
                    mr.status           AS status,
                    mr.academic_year    AS academicYear,
-                   mr.semester         AS semsester,
+                   mr.semester         AS semester,
                    mr.created_at       AS createdAt
             FROM major_request mr
             JOIN member ms      ON ms.member_code = mr.student_code

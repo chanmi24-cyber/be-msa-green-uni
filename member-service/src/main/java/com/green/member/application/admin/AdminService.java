@@ -703,13 +703,21 @@ public class AdminService {
 
     // 전공 변경 신청 목록 전체 조회
     @Transactional(readOnly = true)
-    public List<AdminMajorRequestListRes> findMajorRequests() {
+    public List<AdminMajorRequestListRes> findMajorRequests( Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
         return majorRequestRepository.findAllByFilter();
     }
 
     // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
     @Transactional(readOnly = true)
-    public AdminMajorRequestDetailRes findMajorRequestDetail(Long requestId) {
+    public AdminMajorRequestDetailRes findMajorRequestDetail( Long requestId, Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
         AdminMajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
 
@@ -738,6 +746,11 @@ public class AdminService {
     // 전공 변경 신청 처리
     @Transactional
     public void processMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long updaterCode) {
+        Admin admin = adminRepository.findById(updaterCode)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
         // APPROVED, REJECTED 외 상태는 처리 불가
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
@@ -811,7 +824,11 @@ public class AdminService {
 
     // 전공 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findMajorRequestFile(Long requestId) {
+    public ResponseEntity<Resource> findMajorRequestFile( Long requestId, Long memberCode) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
         MajorRequest request = majorRequestRepository.findById(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
         if (request.getFile() == null) {
