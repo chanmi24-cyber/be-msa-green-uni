@@ -6,6 +6,7 @@ import com.green.common.model.ResultResponse;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
+import com.green.member.application.major.model.StudentMajorRequestReq;
 import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class StudentController {
 
     // 전공 변경 신청
     @PostMapping("/requests/major")
-    public ResultResponse<?> applyMajorRequest(@RequestPart @Valid StudentMajorReq req,
+    public ResultResponse<?> applyMajorRequest(@RequestPart @Valid StudentMajorRequestReq req,
                                            @RequestPart(required = false) MultipartFile file) {
         MemberDto loginMember = MemberContext.get();
         studentService.requestMajor(req, file, loginMember.memberCode());

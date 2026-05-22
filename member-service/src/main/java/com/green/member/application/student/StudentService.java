@@ -15,6 +15,7 @@ import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
+import com.green.member.application.major.model.StudentMajorRequestReq;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.student.model.*;
@@ -132,7 +133,7 @@ public class StudentService {
 
     // 학생 전공 변경 신청
     @Transactional
-    public void requestMajor(StudentMajorReq req, MultipartFile file, Long memberCode){
+    public void requestMajor(StudentMajorRequestReq req, MultipartFile file, Long memberCode){
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
