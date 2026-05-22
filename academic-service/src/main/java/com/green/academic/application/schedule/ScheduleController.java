@@ -1,5 +1,6 @@
 package com.green.academic.application.schedule;
 
+import com.green.academic.application.schedule.model.ScheduleBannerRes;
 import com.green.academic.application.schedule.model.ScheduleListReq;
 import com.green.academic.application.schedule.model.ScheduleListRes;
 import com.green.common.enumcode.EnumScheduleType;
@@ -31,4 +32,12 @@ public class ScheduleController {
         Map<EnumScheduleType, Boolean> result = scheduleService.getActiveSchedules();
         return ResponseEntity.ok(new ResultResponse<>("학사일정 활성화 상태 조회 완료", result));
     }
+
+    // 배너용 진행중 학사일정
+    @GetMapping("/active/banner")
+    public ResponseEntity<ResultResponse<ScheduleBannerRes>> getActiveBannerSchedule() {
+        return ResponseEntity.ok(new ResultResponse<>("배너 학사일정 조회 완료",
+                scheduleService.getActiveBannerSchedule()));
+    }
+
 }

@@ -15,4 +15,8 @@ public interface LectureMapper {
     LectureDetailRes findProAdmLectureDetail(Long lectureId);
     LectureDetailRes findStudentLectureDetail(Long lectureId);
 
+    //대시보드 시간표용
+    List<MyLectureListRes> findProfessorTimetable(@Param("memberCode") Long memberCode, @Param("year") Integer year, @Param("semester") Integer semester);
+    List<MyLectureListRes> findStudentTimetable(@Param("memberCode") Long memberCode, @Param("year") Integer year, @Param("semester") Integer semester);
+
 }

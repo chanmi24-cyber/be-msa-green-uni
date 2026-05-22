@@ -300,6 +300,14 @@ public class LectureService {
         lecture.delete();
     }
 
+    // DASH-11 시간표
+    public List<MyLectureListRes> getProfessorTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findProfessorTimetable(memberDto.memberCode(), year, semester);
+    }
+
+    public List<MyLectureListRes> getStudentTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findStudentTimetable(memberDto.memberCode(), year, semester);
+    }
 
 
 }

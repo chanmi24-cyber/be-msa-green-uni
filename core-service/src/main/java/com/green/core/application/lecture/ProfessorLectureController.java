@@ -70,5 +70,15 @@ public class ProfessorLectureController {
     }
 
 
+    @GetMapping("/my/timetable")
+    public ResultResponse<List<MyLectureListRes>> getProfessorTimetable(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer semester) {
+        MemberDto memberDto = MemberContext.get();
+        return ResultResponse.<List<MyLectureListRes>>builder()
+                .message("교수 시간표 조회 성공")
+                .data(lectureService.getProfessorTimetable(memberDto, year, semester))
+                .build();
+    }
 
 }

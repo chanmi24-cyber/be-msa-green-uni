@@ -327,4 +327,45 @@
         WHERE l.lecture_id = #{lectureId}
     </select>
 
+    <!-- DASH-11 교수 시간표 -->
+    <select id="findProfessorTimetable" resultMap="myLectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.member_code   AS memberCode,
+        l.lecture_name  AS lectureName,
+        pc.name         AS proName,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM lecture l
+        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
+        <include refid="scheduleJoins"/>
+        WHERE l.member_code = #{memberCode}
+        AND l.status = 'APPROVED'
+        AND l.is_del = false
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
+        ORDER BY l.lecture_id
+    </select>
+
+    <!-- DASH-11 학생 시간표 -->
+    <select id="findStudentTimetable" resultMap="lectureListResMap">
+        SELECT
+        l.lecture_id    AS lectureId,
+        l.lecture_name  AS lectureName,
+        pc.name         AS proName,
+        l.year,
+        l.semester,
+        <include refid="scheduleColumns"/>
+        FROM course c
+        JOIN lecture l               ON c.lecture_id = l.lecture_id
+        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
+        <include refid="scheduleJoins"/>
+        WHERE c.student_code = #{memberCode}
+        AND l.status = 'APPROVED'
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
+        ORDER BY l.lecture_id
+    </select>
+
 </mapper>
