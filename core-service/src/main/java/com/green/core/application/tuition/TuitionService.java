@@ -161,13 +161,11 @@ public class TuitionService {
 
     public TuitionRes.TuitionRemindRes previewReminderMails(Integer year, Integer semester) {
         List<Tuition> unpaidList = tuitionRepository.findByYearAndSemesterAndStatus(year, semester, EnumTuitionStatus.UNPAID);
-        LocalDateTime deadline = unpaidList.isEmpty() ? LocalDateTime.now() : unpaidList.get(0).getDeadline();
 
         return TuitionRes.TuitionRemindRes.builder()
                 .unpaidCount(unpaidList.size())
                 .year(year)
                 .semester(semester)
-                .dueDate(deadline)
                 .mailSubject(String.format("[그린대학교] %d년도 %d학기 등록금 미납 안내 고지", year, semester))
                 .mailFrom("academic-support@green.ac.kr")
                 .mailBodyPreview("<h3>안녕하세요, 그린대학교 학사지원팀입니다.</h3><p>귀하의 등록금이 현재 미납 상태이니 서둘러 미납해 주시길 바랍니다.</p>")

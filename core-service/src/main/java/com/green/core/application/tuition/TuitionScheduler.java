@@ -128,7 +128,6 @@ public class TuitionScheduler {
                     .totalDiscount(totalDiscount)
                     .finalAmount(Math.max(0L, finalAmount)) // Long 타입 리터럴 0L 적용
                     .status(EnumTuitionStatus.UNPAID)
-                    .deadline(deadline) // LocalDateTime 바인딩
                     .build();
 
             tuitionRepository.save(tuition);

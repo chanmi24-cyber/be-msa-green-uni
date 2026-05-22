@@ -53,9 +53,6 @@ public class Tuition extends CreatedAt {
     @Column(name = "updator_code")
     private Long updatorCode;
 
-    @Column(name = "deadline", nullable = false)
-    private LocalDateTime deadline;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default

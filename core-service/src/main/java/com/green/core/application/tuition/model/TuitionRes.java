@@ -25,7 +25,6 @@ public class TuitionRes {
     private final Long finalAmount;
     private final EnumTuitionStatus status;
     private final LocalDateTime paidAt;
-    private final LocalDateTime deadline;
 
     //만약 TuitionRes에 파라미터가 3개인 생성자만 있다면, TuitionRes::new가 호출할 수 있는 Tuition만 받는 생성자가 존재하지 않습니다. 따라서 추가 필요.
     public TuitionRes(Tuition t) {
@@ -49,7 +48,6 @@ public class TuitionRes {
         this.finalAmount = tuition.getFinalAmount();
         this.status = tuition.getStatus();
         this.paidAt = tuition.getPaidAt();
-        this.deadline = tuition.getDeadline();
     }
 
     // API-TUI-03: 학생 납부 상세 조회 전용 응답 스펙 (안내 문구 및 계좌번호 추가)
@@ -60,7 +58,6 @@ public class TuitionRes {
         private final Long totalDiscount;
         private final Long finalAmount;
         private final EnumTuitionStatus status;
-        private final LocalDateTime deadline;
         private final String virtualAccount;
         private final String message;
 
@@ -70,7 +67,6 @@ public class TuitionRes {
             this.totalDiscount = tuition.getTotalDiscount();
             this.finalAmount = tuition.getFinalAmount();
             this.status = tuition.getStatus();
-            this.deadline = tuition.getDeadline();
             this.virtualAccount = "그린은행 123-456-789012 (예금주: 그린대학교)";
 
             // 명세서 기재 조건: unpaid, pending, paid 상태별 문구 분기
