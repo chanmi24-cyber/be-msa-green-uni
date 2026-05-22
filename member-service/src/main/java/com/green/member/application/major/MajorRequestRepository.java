@@ -6,7 +6,6 @@ import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.entity.student.MajorRequest;
-import com.green.member.enumcode.EnumMajorRequestType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,8 +15,7 @@ import java.util.Optional;
 
 public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long> {
     Optional<MajorRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
-    boolean existsByStudent_MemberCodeAndTypeAndStatus(
-            Long memberCode, EnumMajorRequestType type, EnumApprovalStatus status);
+    boolean existsByStudent_MemberCodeAndStatus(Long memberCode, EnumApprovalStatus status);
 
     // 관리자 전공 변경 신청 목록 조회
     @Query(value = """
