@@ -40,7 +40,10 @@ public class ScheduleNotificationScheduler {
     }
 
     private void processStartNotification(Schedule schedule, LocalDate today, LocalDate startDate) {
-        if (schedule.getIsNotifiedStart() || today.isBefore(startDate)) return;
+        if (today.isBefore(startDate)) return;
+
+        int updated = scheduleRepository.markNotifiedStartIfFalse(schedule.getScheduleId());
+        if (updated == 0) return;
 
         EnumScheduleType type = schedule.getType();
         String message = buildStartMessage(type, schedule.getSemester());
@@ -63,8 +66,6 @@ public class ScheduleNotificationScheduler {
                 EnumMemberRole.ADMIN,
                 schedule.getScheduleId(),
                 buildAdminUrl(type, schedule));
-        schedule.markNotifiedStart();
-        scheduleRepository.save(schedule);
     }
 
     private void processDeadlineNotifications(Schedule schedule, LocalDate today, LocalDate startDate, LocalDate endDate) {
@@ -78,46 +79,46 @@ public class ScheduleNotificationScheduler {
 
         // 3일 전 알림 (기간이 3일 이상인 경우만)
         LocalDate threeDaysBefore = endDate.minusDays(3);
-        if (!schedule.getIsNotifiedThreeDaysBefore()
-                && today.equals(threeDaysBefore)
-                && !today.isBefore(startDate)) {
-            String message = buildThreeDaysMessage(schedule.getType());
-            if (message != null) {
-                notificationProducer.sendToRole(
-                        schedule.getType().getCode() + "_3DAYS",
-                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
-                String adminThreeDaysMessage = buildAdminThreeDaysMessage(schedule.getType());
-                if (adminThreeDaysMessage != null) {
+        if (today.equals(threeDaysBefore) && !today.isBefore(startDate)) {
+            int updated = scheduleRepository.markNotifiedThreeDaysBeforeIfFalse(schedule.getScheduleId());
+            if (updated > 0) {
+                String message = buildThreeDaysMessage(schedule.getType());
+                if (message != null) {
                     notificationProducer.sendToRole(
                             schedule.getType().getCode() + "_3DAYS",
-                            adminThreeDaysMessage,
-                            EnumMemberRole.ADMIN,
-                            schedule.getScheduleId(),
-                            buildAdminUrl(schedule.getType(), schedule));
+                            message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
+                    String adminThreeDaysMessage = buildAdminThreeDaysMessage(schedule.getType());
+                    if (adminThreeDaysMessage != null) {
+                        notificationProducer.sendToRole(
+                                schedule.getType().getCode() + "_3DAYS",
+                                adminThreeDaysMessage,
+                                EnumMemberRole.ADMIN,
+                                schedule.getScheduleId(),
+                                buildAdminUrl(schedule.getType(), schedule));
+                    }
                 }
-                schedule.markNotifiedThreeDaysBefore();
-                scheduleRepository.save(schedule);
             }
         }
 
         // 마지막 날 알림
-        if (!schedule.getIsNotifiedEnd() && today.equals(endDate)) {
-            String message = buildLastDayMessage(schedule.getType());
-            if (message != null) {
-                notificationProducer.sendToRole(
-                        schedule.getType().getCode() + "_LAST_DAY",
-                        message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
-                String adminLastDayMessage = buildAdminLastDayMessage(schedule.getType());
-                if (adminLastDayMessage != null) {
+        if (today.equals(endDate)) {
+            int updated = scheduleRepository.markNotifiedEndIfFalse(schedule.getScheduleId());
+            if (updated > 0) {
+                String message = buildLastDayMessage(schedule.getType());
+                if (message != null) {
                     notificationProducer.sendToRole(
                             schedule.getType().getCode() + "_LAST_DAY",
-                            adminLastDayMessage,
-                            EnumMemberRole.ADMIN,
-                            schedule.getScheduleId(),
-                            buildAdminUrl(schedule.getType(), schedule));
+                            message, targetRole, schedule.getScheduleId(), buildUrl(schedule.getType(), schedule));
+                    String adminLastDayMessage = buildAdminLastDayMessage(schedule.getType());
+                    if (adminLastDayMessage != null) {
+                        notificationProducer.sendToRole(
+                                schedule.getType().getCode() + "_LAST_DAY",
+                                adminLastDayMessage,
+                                EnumMemberRole.ADMIN,
+                                schedule.getScheduleId(),
+                                buildAdminUrl(schedule.getType(), schedule));
+                    }
                 }
-                schedule.markNotifiedEnd();
-                scheduleRepository.save(schedule);
             }
         }
     }

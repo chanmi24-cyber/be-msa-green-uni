@@ -38,6 +38,9 @@ public class MajorRequest extends CreatedUpdatedAt {
     @Column(name = "file")
     private String file;
 
+    @Column(name = "original_file_name")
+    private String originalFileName;
+
     @Column(name = "gpa", nullable = false)
     @Digits(integer = 1, fraction = 2)
     private BigDecimal gpa;
@@ -54,4 +57,8 @@ public class MajorRequest extends CreatedUpdatedAt {
 
     @Column(name = "updator_code")
     private Long updatorCode;
+
+    public void setFile(String file){ this.file = file; }
+    public void updateGpa(BigDecimal gpa) { this.gpa = gpa; }
+    public void cancel() {this.status = EnumApprovalStatus.CANCELLED;}
 }
