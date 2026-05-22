@@ -7,6 +7,7 @@ import com.green.member.application.admin.model.*;
 import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
+import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.member.model.MemberCreateRes;
 import com.green.member.application.member.model.MemberProfileRes;
 import com.green.member.application.professor.ProfessorBatchService;
@@ -60,6 +61,16 @@ public class AdminController {
         List<StudentHistoryRes> res = studentService.findStudentHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 학생 계정 상태 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    @GetMapping("/students/{memberCode}/history/major")
+    public ResultResponse<?> findStudentMajorHistory(@PathVariable Long memberCode) {
+        MemberDto loginMember = MemberContext.get();
+        List<AdminStudentMajorHistoryRes> res = adminService.findStudentMajorHistory(memberCode, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("관리자의 학생 전공 변경 이력 조회")
                 .data(res)
                 .build();
     }

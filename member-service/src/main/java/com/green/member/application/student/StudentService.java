@@ -12,6 +12,7 @@ import com.green.common.kafka.member.MemberTopic;
 import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
 import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.member.MemberRepository;
@@ -234,6 +235,15 @@ public class StudentService {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
         return majorRequestRepository.findStudentMajorRequests(memberCode);
+    }
+
+    // 내 전공 변경 이력 조회
+    @Transactional(readOnly = true)
+    public List<StudentMajorHistoryRes> findMajorHistory(Long memberCode) {
+        if (!studentRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        return majorRequestRepository.findMajorHistoryByStudentCode(memberCode);
     }
 
     // 내 전공 변경 신청서 상세 조회

@@ -9,6 +9,7 @@ import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestDetailDto;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
+import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.student.model.*;
@@ -837,6 +838,20 @@ public class AdminService {
         Long studentCode = request.getStudent().getMemberCode();
         String filePath = String.format("request/major/%s/%s", studentCode, request.getFile());
         return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
+
+    // 특정 학생의 전공 변경 이력 조회 (관리자용)
+    @Transactional(readOnly = true)
+    public List<AdminStudentMajorHistoryRes> findStudentMajorHistory(Long studentCode, Long adminCode) {
+        Admin admin = adminRepository.findById(adminCode)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        if (!studentRepository.existsById(studentCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
     }
 
 }
