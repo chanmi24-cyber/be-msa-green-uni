@@ -312,8 +312,8 @@ public class LectureService {
 
     // DASH교수: 오늘 강의 목록
     public List<TodayLectureRes> getTodayLectures(MemberDto memberDto) {
-        String[] days = {"", "일", "월", "화", "수", "목", "금", "토"};
-        String dayOfWeek = days[LocalDate.now().getDayOfWeek().getValue() % 7 + 1];
+        String[] days = {"일", "월", "화", "수", "목", "금", "토"};
+        String dayOfWeek = days[LocalDate.now().getDayOfWeek().getValue() % 7];
         return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek);
     }
 
