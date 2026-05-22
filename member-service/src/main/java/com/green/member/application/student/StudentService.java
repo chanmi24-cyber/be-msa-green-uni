@@ -19,6 +19,8 @@ import com.green.member.application.major.model.StudentMajorRequestReq;
 import com.green.member.application.member.MemberRepository;
 import com.green.member.application.schedule.SchedulePeriodValidator;
 import com.green.member.application.status.StatusRequestRepository;
+import com.green.member.application.status.model.StudentStatusRequestDetailRes;
+import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
 import com.green.member.entity.cache.MajorCache;
@@ -333,6 +335,20 @@ public class StudentService {
         if (request.getFile() != null) {
             fileService.delete(String.format("request/status/%s/%s", memberCode, request.getFile()));
         }
+    }
+    // 내 학적 변경 신청 목록 조회
+    @Transactional(readOnly = true)
+    public List<StudentStatusRequestListRes> findStatusRequests(Long memberCode){
+        if (!studentRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        return statusRequestRepository.findStudentStatusRequests(memberCode);
+    }
+    // 내 학적 변경 신청서 상세 조회
+    @Transactional(readOnly = true)
+    public StudentStatusRequestDetailRes findStatusRequest(Long requestId, Long memberCode){
+        return statusRequestRepository.findStudentStatusRequestDetail(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
     }
 
 }

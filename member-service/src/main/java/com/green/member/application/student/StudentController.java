@@ -7,6 +7,8 @@ import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.application.major.model.StudentMajorRequestReq;
+import com.green.member.application.status.model.StudentStatusRequestDetailRes;
+import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
 import jakarta.validation.Valid;
@@ -110,6 +112,26 @@ public class StudentController {
         studentService.deleteStatusRequest(requestId, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("학적 변경 신청을 취소하였습니다.")
+                .build();
+    }
+    // 학적 변경 신청서 목록 조회
+    @GetMapping("/requests/status")
+    public ResultResponse<?> findStatusRequests() {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentStatusRequestListRes> res = studentService.findStatusRequests( loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 학적 변경 신청 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+    // 학적 변경 신청 상세 조회
+    @GetMapping("/requests/status/{requestId}")
+    public ResultResponse<?> findStatusRequestsDetail(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        StudentStatusRequestDetailRes res = studentService.findStatusRequest( requestId, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 학적 변경 신청서 상세 조회")
+                .data(res)
                 .build();
     }
 }
