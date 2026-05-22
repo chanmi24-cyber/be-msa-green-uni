@@ -41,9 +41,9 @@ public class TuitionScheduler {
     private final ScholarshipRepository scholarshipRepository;
 
     /**
-     * FR-TUI-08: 매 학기 시작 전 (2월 1일, 8월 1일 00:00) 사전 고지 실행
+     * FR-TUI-08: 매 학기 시작 전 (2월 1일, 8월 1일 09:00) 사전 고지 실행
      */
-    @Scheduled(cron = "0 0 0 1 2,8 *")
+    @Scheduled(cron = "0 0 9 1 2,8 *")
     @Transactional
     public void createTuitionForAllEnrolledStudents() {
         LocalDateTime now = LocalDateTime.now();
