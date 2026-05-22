@@ -372,6 +372,48 @@ public class LectureService {
         }
     }
 
+    // 강의 담당 교수 변경
+    @Transactional
+    public void changeLectureProfessor(MemberDto memberDto, Long lectureId, String reason, Long newMemberCode) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
 
+        if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_CANCELLABLE);
+        }
+
+        try {
+            String beforeData = objectMapper.writeValueAsString(Map.of(
+                    "lectureId", lecture.getLectureId(),
+                    "lectureName", lecture.getLectureName(),
+                    "originalMemberCode", lecture.getMemberCode(),
+                    "newMemberCode", newMemberCode
+            ));
+            lectureHistoryRepository.save(LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("[교수변경] " + reason)
+                    .updatorCode(memberDto.memberCode())
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        lecture.changeProfessor(newMemberCode);
+
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+                lectureId, lecture.getYear(), lecture.getSemester());
+        for (Course course : courses) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(course.getStudentCode())
+                    .type("LECTURE_PROFESSOR_CHANGED")
+                    .message("'" + lecture.getLectureName() + "' 강의의 담당 교수가 변경되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+        }
+    }
 
 }

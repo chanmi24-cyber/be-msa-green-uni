@@ -19,7 +19,8 @@ public enum LectureErrorCode implements ErrorCode {
     INVALID_DATE_RANGE("L009", "종료일자는 시작일자보다 이후여야 합니다.", HttpStatus.BAD_REQUEST),
     CLASSROOM_NOT_FOUND("L010", "존재하지 않는 강의실입니다.", HttpStatus.NOT_FOUND),
     LECTURE_NOT_CANCELLABLE("L010", "승인된 강의만 폐강할 수 있습니다.", HttpStatus.CONFLICT),
-    CANCEL_REASON_REQUIRED("L011", "폐강 사유는 필수입니다.", HttpStatus.BAD_REQUEST);
+    CANCEL_REASON_REQUIRED("L011", "폐강 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
+    REPLACEMENT_PROFESSOR_REQUIRED("L012", "대체교수는 필수입니다.", HttpStatus.BAD_REQUEST);
 
 
     private final String code;
