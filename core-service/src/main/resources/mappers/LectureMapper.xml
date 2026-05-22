@@ -94,6 +94,8 @@
         <result property="maxStd" column="maxStd"/>
         <result property="rejectionReason" column="rejectionReason"/>
         <result property="rejectionAt" column="rejectionAt"/>
+        <result property="cancelReason" column="cancelReason"/>
+        <result property="cancelAt" column="cancelAt"/>
     </resultMap>
 
 
@@ -286,15 +288,24 @@
         l.member_code   AS memberCode,
         lrj.reason      AS rejectionReason,
         lrj.created_at AS rejectionAt,
+        lh.change_reason AS cancelReason,
+        lh.created_at    AS cancelAt,
         <include refid="scheduleColumns"/>
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
         LEFT JOIN lecture_rejection lrj ON lrj.rejection_id = (
-        SELECT rejection_id FROM lecture_rejection
-        WHERE lecture_id = l.lecture_id
-        ORDER BY created_at DESC
-        LIMIT 1
+            SELECT rejection_id FROM lecture_rejection
+            WHERE lecture_id = l.lecture_id
+            ORDER BY created_at DESC
+            LIMIT 1
+        )
+        LEFT JOIN lecture_history lh ON lh.history_id = (
+            SELECT history_id FROM lecture_history
+            WHERE lecture_id = l.lecture_id
+            AND change_type = 'CANCEL'
+            ORDER BY created_at DESC
+            LIMIT 1
         )
         <include refid="scheduleJoins"/>
         WHERE l.lecture_id = #{lectureId}
