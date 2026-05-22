@@ -19,4 +19,9 @@ public interface LectureMapper {
     List<MyLectureListRes> findProfessorTimetable(@Param("memberCode") Long memberCode, @Param("year") Integer year, @Param("semester") Integer semester);
     List<MyLectureListRes> findStudentTimetable(@Param("memberCode") Long memberCode, @Param("year") Integer year, @Param("semester") Integer semester);
 
+    //대시보드 교수오늘강의
+    List<TodayLectureRes> findTodayLectures(
+            @Param("memberCode") Long memberCode,
+            @Param("dayOfWeek") String dayOfWeek
+    );
 }

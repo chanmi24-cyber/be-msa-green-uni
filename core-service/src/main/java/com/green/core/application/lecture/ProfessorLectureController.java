@@ -81,4 +81,13 @@ public class ProfessorLectureController {
                 .build();
     }
 
+    @GetMapping("/my/today")
+    public ResultResponse<List<TodayLectureRes>> getTodayLectures() {
+        MemberDto memberDto = MemberContext.get();
+        return ResultResponse.<List<TodayLectureRes>>builder()
+                .message("오늘 강의 목록 조회 성공")
+                .data(lectureService.getTodayLectures(memberDto))
+                .build();
+    }
+
 }
