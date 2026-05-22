@@ -40,4 +40,11 @@ public class ScheduleController {
                 scheduleService.getActiveBannerSchedule()));
     }
 
+    // 배너용 진행중 학사일정 전체 목록 (슬라이더용)
+    @GetMapping("/active/banners")
+    public ResponseEntity<ResultResponse<List<ScheduleBannerRes>>> getActiveBannerSchedules() {
+        return ResponseEntity.ok(new ResultResponse<>("배너 학사일정 목록 조회 완료",
+                scheduleService.getActiveBannerSchedules()));
+    }
+
 }

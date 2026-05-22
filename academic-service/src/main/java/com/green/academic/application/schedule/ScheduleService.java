@@ -114,4 +114,17 @@ public class ScheduleService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
+    public List<ScheduleBannerRes> getActiveBannerSchedules() {
+        return scheduleRepository.findByIsActiveTrue().stream()
+                .filter(s -> s.getType() != EnumScheduleType.ETC)
+                .map(s -> ScheduleBannerRes.builder()
+                        .type(s.getType().getCode())
+                        .title(s.getTitle())
+                        .startDate(s.getStartDate().toLocalDate())
+                        .endDate(s.getEndDate().toLocalDate())
+                        .build())
+                .toList();
+    }
+
 }
