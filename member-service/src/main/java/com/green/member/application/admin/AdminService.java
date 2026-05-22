@@ -196,7 +196,7 @@ public class AdminService {
                 .oldStatus(null)
                 .newStatus(savedStudent.getStatus())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         // StudentEvent Outbox 저장
@@ -246,7 +246,7 @@ public class AdminService {
                 .newStatus(savedProfessor.getStatus())
                 .newPosition(savedProfessor.getPosition())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         // ProfessorEvent Outbox 저장
@@ -285,7 +285,7 @@ public class AdminService {
                 .oldStatus(null)
                 .newStatus(savedAdmin.getStatus())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         return MemberCreateRes.builder()
@@ -485,7 +485,7 @@ public class AdminService {
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .reason(req.getReason())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build();
         adminHistoryRepository.save(history);
 
@@ -553,7 +553,7 @@ public class AdminService {
                     .startDate(req.getStartDate())
                     .endDate(req.getEndDate())
                     .reason(req.getReason())
-                    .updatorCode(updaterCode)
+                    .updaterCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
 
@@ -590,7 +590,7 @@ public class AdminService {
                     .startDate(req.getStartDate())
                     .endDate(req.getEndDate())
                     .reason(req.getReason())
-                    .updatorCode(updaterCode)
+                    .updaterCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
         }
@@ -645,7 +645,7 @@ public class AdminService {
                 .reason(req.getReason())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build();
         studentHistoryRepository.save(history);
 

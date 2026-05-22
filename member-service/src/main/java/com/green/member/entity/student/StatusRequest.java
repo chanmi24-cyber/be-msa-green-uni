@@ -6,6 +6,8 @@ import com.green.member.enumcode.EnumStatusRequestType;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 @Entity
 @Table(name = "status_request")
 @Getter
@@ -32,6 +34,24 @@ public class StatusRequest extends CreatedUpdatedAt {
     @Column(name = "file")
     private String file;
 
+    @Column(name = "original_file_name")
+    private String originalFileName;
+
+    @Column(name = "academic_year")
+    private Integer academicYear;
+
+    @Column(name = "semester")
+    private Integer semester;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "return_year")
+    private Integer returnYear;
+
+    @Column(name = "return_semester")
+    private Integer returnSemester;
+
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumApprovalStatus status = EnumApprovalStatus.PENDING;
@@ -42,6 +62,6 @@ public class StatusRequest extends CreatedUpdatedAt {
     @Column(name = "reject_reason")
     private String rejectReason;
 
-    @Column(name = "updator_code")
-    private Long updatorCode;
+    @Column(name = "updater_code")
+    private Long updaterCode;
 }

@@ -53,6 +53,6 @@ public class StudentHistory extends CreatedAt {
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "updator_code", nullable = false)
-    private Long updatorCode;
+    @Column(name = "updater_code", nullable = false)
+    private Long updaterCode;
 }
