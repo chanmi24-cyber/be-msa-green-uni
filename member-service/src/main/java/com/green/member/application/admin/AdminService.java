@@ -13,6 +13,9 @@ import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.status.StatusRequestRepository;
+import com.green.member.application.status.model.AdminStatusRequestDetailDto;
+import com.green.member.application.status.model.AdminStatusRequestDetailRes;
+import com.green.member.application.status.model.AdminStatusRequestListRes;
 import com.green.member.application.student.model.*;
 import com.green.member.entity.student.*;
 import com.green.member.exception.MemberErrorCode;
@@ -853,7 +856,45 @@ public class AdminService {
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
     }
 
+    // 학적 변경 신청 목록 전체 조회
+    @Transactional(readOnly = true)
+    public List<AdminStatusRequestListRes> findStatusRequests(Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        return statusRequestRepository.findAllByFilter();
+    }
+    // 학적 변경 신청 상세 조회
+    @Transactional(readOnly = true)
+    public AdminStatusRequestDetailRes findStatusRequestDetail(Long requestId, Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        AdminStatusRequestDetailDto detail = statusRequestRepository.findDetailByRequestId(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
 
+        return AdminStatusRequestDetailRes.builder()
+                .requestId(detail.getRequestId())
+                .memberCode(detail.getMemberCode())
+                .studentName(detail.getStudentName())
+                .type(detail.getType())
+                .status(detail.getStatus())
+                .reason(detail.getReason())
+                .file(detail.getFile())
+                .originalFileName(detail.getOriginalFileName())
+                .rejectReason(detail.getRejectReason())
+                .updaterName(detail.getUpdaterName())
+                .academicYear(detail.getAcademicYear())
+                .returnYear(detail.getReturnYear())
+                .returnSemester(detail.getReturnSemester())
+                .semester(detail.getSemester())
+                .createdAt(detail.getCreatedAt())
+                .updatedAt(detail.getUpdatedAt())
+                .startDate(detail.getStartDate())
+                .build();
+    }
     // 학적 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> findStatusRequestFile( Long requestId, Long memberCode) {
