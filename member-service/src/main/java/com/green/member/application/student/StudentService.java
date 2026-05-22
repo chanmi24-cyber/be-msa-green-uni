@@ -350,5 +350,18 @@ public class StudentService {
         return statusRequestRepository.findStudentStatusRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
     }
+    // 내 학적 변경 신청서 파일 다운로드
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> findStatusRequestFile(Long requestId, Long memberCode) {
+        // requestId + memberCode 조합으로 타인의 파일 접근 차단
+        StatusRequest request = statusRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        if (request.getFile() == null) {
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
+        }
+        // DB의 UUID 파일명으로 경로 구성
+        String filePath = String.format("request/status/%s/%s", memberCode, request.getFile());
+        return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
 
 }

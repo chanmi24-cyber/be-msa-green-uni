@@ -134,4 +134,10 @@ public class StudentController {
                 .data(res)
                 .build();
     }
+    // 학적 변경 신청서 파일 다운로드
+    @GetMapping("/requests/status/{requestId}/file")
+    public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        return studentService.findStatusRequestFile(requestId, loginMember.memberCode());
+    }
 }

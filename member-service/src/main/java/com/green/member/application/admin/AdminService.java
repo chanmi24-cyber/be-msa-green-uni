@@ -12,8 +12,9 @@ import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.status.StatusRequestRepository;
 import com.green.member.application.student.model.*;
-import com.green.member.entity.student.MajorRequest;
+import com.green.member.entity.student.*;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.exception.RequestErrorCode;
 import com.green.common.exception.BusinessException;
@@ -42,9 +43,6 @@ import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.professor.ProfessorHistory;
-import com.green.member.entity.student.Student;
-import com.green.member.entity.student.StudentHistory;
-import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
@@ -78,6 +76,7 @@ public class AdminService {
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
+    private final StatusRequestRepository statusRequestRepository;
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
@@ -852,6 +851,24 @@ public class AdminService {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
+    }
+
+
+    // 학적 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> findStatusRequestFile( Long requestId, Long memberCode) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        StatusRequest request = statusRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        if (request.getFile() == null) {
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
+        }
+        Long studentCode = request.getStudent().getMemberCode();
+        String filePath = String.format("request/status/%s/%s", studentCode, request.getFile());
+        return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
     }
 
 }
