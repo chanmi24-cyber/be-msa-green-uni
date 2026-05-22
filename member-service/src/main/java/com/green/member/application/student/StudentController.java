@@ -103,4 +103,13 @@ public class StudentController {
                 .message("학적 변경 신청이 완료되었습니다.")
                 .build();
     }
+    // 학적 변경 신청 취소
+    @DeleteMapping("/requests/status/{requestId}")
+    public ResultResponse<?> deleteStatusRequest(@PathVariable("requestId") Long requestId){
+        MemberDto loginMember = MemberContext.get();
+        studentService.deleteStatusRequest(requestId, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("학적 변경 신청을 취소하였습니다.")
+                .build();
+    }
 }

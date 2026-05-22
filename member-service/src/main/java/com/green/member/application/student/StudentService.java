@@ -321,5 +321,18 @@ public class StudentService {
                 .build();
         statusRequestRepository.save(request);
     }
+    // 내 학적 변경 신청 취소
+    @Transactional
+    public void deleteStatusRequest(Long requestId, Long memberCode){
+        StatusRequest request = statusRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        if (request.getStatus() != EnumApprovalStatus.PENDING) {
+            throw new BusinessException(RequestErrorCode.NOT_CANCELLABLE);
+        }
+        request.cancel();
+        if (request.getFile() != null) {
+            fileService.delete(String.format("request/status/%s/%s", memberCode, request.getFile()));
+        }
+    }
 
 }
