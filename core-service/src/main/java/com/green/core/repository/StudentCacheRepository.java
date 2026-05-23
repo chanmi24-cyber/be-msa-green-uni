@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface StudentCacheRepository extends JpaRepository<StudentCache, Long> {
+    Optional<StudentCache> findByMemberCode(Long memberCode);
+
     @Modifying
     @Query("UPDATE StudentCache s SET s.email = :email WHERE s.memberCode = :memberCode")
     void updateEmail(@Param("memberCode") Long memberCode, @Param("email") String email);

@@ -100,4 +100,31 @@ public class ScheduleService {
         scheduleRepository.delete(schedule);
     }
 
+    @Transactional(readOnly = true)
+    public ScheduleBannerRes getActiveBannerSchedule() {
+        return scheduleRepository.findByIsActiveTrue().stream()
+                .filter(s -> s.getType() != EnumScheduleType.ETC)
+                .findFirst()
+                .map(s -> ScheduleBannerRes.builder()
+                        .type(s.getType().getCode())
+                        .title(s.getTitle())
+                        .startDate(s.getStartDate().toLocalDate())
+                        .endDate(s.getEndDate().toLocalDate())
+                        .build())
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScheduleBannerRes> getActiveBannerSchedules() {
+        return scheduleRepository.findByIsActiveTrue().stream()
+                .filter(s -> s.getType() != EnumScheduleType.ETC)
+                .map(s -> ScheduleBannerRes.builder()
+                        .type(s.getType().getCode())
+                        .title(s.getTitle())
+                        .startDate(s.getStartDate().toLocalDate())
+                        .endDate(s.getEndDate().toLocalDate())
+                        .build())
+                .toList();
+    }
+
 }
