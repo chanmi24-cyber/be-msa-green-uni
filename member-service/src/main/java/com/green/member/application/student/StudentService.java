@@ -322,6 +322,17 @@ public class StudentService {
                 .returnSemester(req.getReturnSemester())
                 .build();
         statusRequestRepository.save(request);
+
+        outboxService.saveToOutbox(
+                MemberTopic.GPA_REQUEST,
+                request.getRequestId(),
+                GpaRequestEvent.builder()
+                        .requestId(request.getRequestId())
+                        .studentCode(memberCode)
+                        .requestType("STATUS_REQUEST")
+                        .eventType(EventType.E_CREATED)
+                        .build()
+        );
     }
     // 내 학적 변경 신청 취소
     @Transactional

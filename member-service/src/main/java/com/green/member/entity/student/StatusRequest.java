@@ -56,6 +56,9 @@ public class StatusRequest extends CreatedUpdatedAt {
     @Builder.Default
     private EnumApprovalStatus status = EnumApprovalStatus.PENDING;
 
+    @Column(name = "total_credits")
+    private Integer totalCredits;
+
     @Column(name = "note")
     private String note;
 
@@ -66,6 +69,7 @@ public class StatusRequest extends CreatedUpdatedAt {
     private Long updaterCode;
 
     public void setFile(String file) { this.file = file; }
+    public void updateTotalCredits(Integer totalCredits) { this.totalCredits = totalCredits; }
     public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
 
     public void approve(String note, Long updaterCode) {

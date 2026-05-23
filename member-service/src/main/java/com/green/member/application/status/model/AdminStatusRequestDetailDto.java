@@ -7,6 +7,8 @@ public interface AdminStatusRequestDetailDto {
     Long getRequestId();
     Long getMemberCode();
     String getStudentName();
+    String getPhone();
+    String getEmail();
     String getType();
     String getStatus();
     String getReason();
@@ -21,4 +23,8 @@ public interface AdminStatusRequestDetailDto {
     LocalDate getStartDate();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
+    Integer getTotalCredits();
+    String getAcademicStatus();
+    String getCurrentMajorName();
+    String getCurrentMinorName();
 }

@@ -79,6 +79,8 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
             SELECT sr.request_id          AS requestId,
                    m.member_code          AS memberCode,
                    m.name                 AS studentName,
+                   m.tel                  AS phone,
+                   m.email                AS email,
                    sr.type                AS type,
                    sr.status              AS status,
                    sr.reason              AS reason,
@@ -92,10 +94,23 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    um.name                AS updaterName,
                    sr.start_date          AS startDate,
                    sr.created_at          AS createdAt,
-                   sr.updated_at          AS updatedAt
+                   sr.updated_at          AS updatedAt,
+                   sr.total_credits           AS totalCredits,
+                   s.status                  AS academicStatus,
+                   mc_current.name           AS currentMajorName,
+                   mc_minor.name             AS currentMinorName
             FROM status_request sr
-            JOIN member m       ON m.member_code  = sr.student_code
-            LEFT JOIN member um  ON um.member_code = sr.updater_code
+            JOIN member m           ON m.member_code  = sr.student_code
+            JOIN student s          ON s.member_code  = sr.student_code
+            LEFT JOIN member um     ON um.member_code = sr.updater_code
+            LEFT JOIN student_major sm_current ON sm_current.student_code = sr.student_code
+                                             AND sm_current.is_active = 1
+                                             AND sm_current.type = 'PRIMARY'
+            LEFT JOIN major_cache mc_current   ON mc_current.major_id = sm_current.major_id
+            LEFT JOIN student_major sm_minor   ON sm_minor.student_code = sr.student_code
+                                             AND sm_minor.is_active = 1
+                                             AND sm_minor.type = 'MINOR'
+            LEFT JOIN major_cache mc_minor     ON mc_minor.major_id = sm_minor.major_id
             WHERE sr.request_id = :requestId
             """, nativeQuery = true)
     Optional<AdminStatusRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);
