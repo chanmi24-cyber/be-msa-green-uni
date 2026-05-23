@@ -647,7 +647,7 @@ public class AdminService {
                 .newStatus(newStatus)
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
-                .reason(req.getReason())
+                .note(req.getReason())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
                 .updaterCode(updaterCode)
@@ -934,7 +934,7 @@ public class AdminService {
             throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
         }
         if (req.getStatus() == EnumApprovalStatus.APPROVED) {
-            request.approve(updaterCode);
+            request.approve(req.getNote(), updaterCode);
 
             Long studentCode = request.getStudent().getMemberCode();
             Student student = studentRepository.findById(studentCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
@@ -978,7 +978,7 @@ public class AdminService {
                     .newStatus(newStatus)
                     .startDate(request.getStartDate())
                     .endDate(endDate)
-                    .reason(request.getReason())
+                    .note(req.getNote())
                     .returnYear(request.getReturnYear())
                     .returnSemester(request.getReturnSemester())
                     .updaterCode(updaterCode)

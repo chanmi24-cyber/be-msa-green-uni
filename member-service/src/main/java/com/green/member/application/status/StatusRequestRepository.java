@@ -99,5 +99,4 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
             WHERE sr.request_id = :requestId
             """, nativeQuery = true)
     Optional<AdminStatusRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);
-
 }

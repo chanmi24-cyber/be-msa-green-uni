@@ -50,8 +50,8 @@ public class StudentHistory extends CreatedAt {
     @Column(name = "return_semester")
     private Integer returnSemester;
 
-    @Column(name = "reason")
-    private String reason;
+    @Column(name = "note")
+    private String note;
 
     @Column(name = "updater_code", nullable = false)
     private Long updaterCode;

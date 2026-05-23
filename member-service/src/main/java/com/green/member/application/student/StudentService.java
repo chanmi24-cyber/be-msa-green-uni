@@ -124,7 +124,7 @@ public class StudentService {
                     res.setNewStatus(h.getNewStatus());
                     res.setStartDate(h.getStartDate());
                     res.setEndDate(h.getEndDate());
-                    res.setReason(h.getReason());
+                    res.setReason(h.getNote());
                     res.setReturnYear(h.getReturnYear());
                     res.setReturnSemester(h.getReturnSemester());
                     res.setCreatedAt(h.getCreatedAt());

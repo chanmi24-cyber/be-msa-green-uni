@@ -56,8 +56,8 @@ public class StatusRequest extends CreatedUpdatedAt {
     @Builder.Default
     private EnumApprovalStatus status = EnumApprovalStatus.PENDING;
 
-    @Column(name = "approve_reason")
-    private String approveReason;
+    @Column(name = "note")
+    private String note;
 
     @Column(name = "reject_reason")
     private String rejectReason;
@@ -68,8 +68,9 @@ public class StatusRequest extends CreatedUpdatedAt {
     public void setFile(String file) { this.file = file; }
     public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
 
-    public void approve(Long updaterCode) {
+    public void approve(String note, Long updaterCode) {
         this.status = EnumApprovalStatus.APPROVED;
+        this.note = note;
         this.updaterCode = updaterCode;
     }
 

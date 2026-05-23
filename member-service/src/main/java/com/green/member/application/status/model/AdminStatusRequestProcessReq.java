@@ -8,5 +8,6 @@ import lombok.Data;
 public class AdminStatusRequestProcessReq {
     @NotNull
     private EnumApprovalStatus status;
+    private String note;
     private String rejectReason;
 }
