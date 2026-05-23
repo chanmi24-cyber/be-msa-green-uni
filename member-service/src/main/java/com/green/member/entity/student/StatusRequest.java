@@ -68,9 +68,8 @@ public class StatusRequest extends CreatedUpdatedAt {
     public void setFile(String file) { this.file = file; }
     public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
 
-    public void approve(String approveReason, Long updaterCode) {
+    public void approve(Long updaterCode) {
         this.status = EnumApprovalStatus.APPROVED;
-        this.approveReason = approveReason;
         this.updaterCode = updaterCode;
     }
 

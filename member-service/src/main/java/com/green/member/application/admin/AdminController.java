@@ -18,6 +18,7 @@ import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.status.model.AdminStatusRequestDetailRes;
 import com.green.member.application.status.model.AdminStatusRequestListRes;
+import com.green.member.application.status.model.AdminStatusRequestProcessReq;
 import com.green.member.application.student.StudentBatchService;
 import com.green.member.application.student.StudentService;
 import com.green.member.application.student.model.*;
@@ -347,6 +348,15 @@ public class AdminController {
     public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
         return adminService.findStatusRequestFile( requestId, loginMember.memberCode() );
+    }
+    // 학적 변경 신청 처리 (승인/반려)
+    @PatchMapping("/requests/status/{requestId}")
+    public ResultResponse<?> processStatusRequest(@PathVariable Long requestId, @RequestBody @Valid AdminStatusRequestProcessReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.processStatusRequest( requestId , req, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("학적 변경 신청서를 처리하였습니다")
+                .build();
     }
 
 }

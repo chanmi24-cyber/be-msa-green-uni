@@ -16,8 +16,10 @@ import com.green.member.application.status.StatusRequestRepository;
 import com.green.member.application.status.model.AdminStatusRequestDetailDto;
 import com.green.member.application.status.model.AdminStatusRequestDetailRes;
 import com.green.member.application.status.model.AdminStatusRequestListRes;
+import com.green.member.application.status.model.AdminStatusRequestProcessReq;
 import com.green.member.application.student.model.*;
 import com.green.member.entity.student.*;
+import com.green.member.enumcode.EnumStatusRequestType;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.exception.RequestErrorCode;
 import com.green.common.exception.BusinessException;
@@ -58,6 +60,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -910,6 +913,98 @@ public class AdminService {
         Long studentCode = request.getStudent().getMemberCode();
         String filePath = String.format("request/status/%s/%s", studentCode, request.getFile());
         return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
+    // 학적 변경 신청 처리
+    @Transactional
+    public void processStatusRequest(Long requestId, AdminStatusRequestProcessReq req, Long updaterCode) {
+        Admin admin = adminRepository.findById(updaterCode)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+
+        // APPROVED, REJECTED 외 상태는 처리 불가
+        if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        StatusRequest request = statusRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        // PENDING 상태만 처리 가능
+        if (request.getStatus() != EnumApprovalStatus.PENDING) {
+            throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
+        }
+        if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            request.approve(updaterCode);
+
+            Long studentCode = request.getStudent().getMemberCode();
+            Student student = studentRepository.findById(studentCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
+            EnumStudentStatus oldStatus = student.getStatus();
+
+            // 변화값
+            EnumStudentStatus newStatus;
+            String changeType;
+
+            if (request.getType() == EnumStatusRequestType.ABSENCE) {
+                // 휴학 승인: 상태값 휴학으로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.ABSENCE;
+                changeType = "휴학";
+            } else if (request.getType() == EnumStatusRequestType.RETURN) {
+                // 복학 승인: 상태값 재학으로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.ENROLLED;
+                changeType = "복학";
+            } else { // QUIT: 자퇴
+                // 자퇴 승인: 상태값 자퇴로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.QUIT;
+                changeType = "자퇴";
+            }
+
+            // 휴학인 경우에만 복학 예정으로 종료일 계산
+            // 1학기 복학 → 해당 연도 2월 말, 2학기 복학 → 해당 연도 8월 31일
+            LocalDate endDate = null;
+            if (request.getType() == EnumStatusRequestType.ABSENCE
+                    && request.getReturnYear() != null && request.getReturnSemester() != null) {
+                if (request.getReturnSemester() == 1) {
+                    endDate = YearMonth.of(request.getReturnYear(), 2).atEndOfMonth();
+                } else {
+                    endDate = LocalDate.of(request.getReturnYear(), 8, 31);
+                }
+            }
+
+            // StudentHistory 저장
+            StudentHistory history = StudentHistory.builder()
+                    .student(student)
+                    .changeType(changeType)
+                    .oldStatus(oldStatus)
+                    .newStatus(newStatus)
+                    .startDate(request.getStartDate())
+                    .endDate(endDate)
+                    .reason(request.getReason())
+                    .returnYear(request.getReturnYear())
+                    .returnSemester(request.getReturnSemester())
+                    .updaterCode(updaterCode)
+                    .build();
+            studentHistoryRepository.save(history);
+
+            // 학생 상태 업데이트
+            student.updateStatus(newStatus);
+
+            // StudentEvent Outbox 저장
+            outboxService.saveToOutbox(
+                    MemberTopic.STUDENT,
+                    studentCode,
+                    StudentEvent.builder()
+                            .memberCode(studentCode)
+                            .status(newStatus.getCode())
+                            .eventType(EventType.E_UPDATED)
+                            .updateType(UpdateType.STATUS)
+                            .build()
+            );
+        } else { // REJECTED: 반려
+            if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            request.reject(req.getRejectReason(), updaterCode);
+        }
     }
 
 }
