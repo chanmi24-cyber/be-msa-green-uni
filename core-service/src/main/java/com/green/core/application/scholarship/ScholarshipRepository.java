@@ -1,12 +1,14 @@
 package com.green.core.application.scholarship;
 
-import com.green.core.entity.tuition.Scholarship;
-import com.green.core.entity.tuition.ScholarshipType;
+import com.green.core.entity.scholarship.Scholarship;
+import com.green.core.entity.scholarship.ScholarshipType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface ScholarshipRepository extends JpaRepository<Scholarship, Long> {
 
@@ -15,6 +17,7 @@ public interface ScholarshipRepository extends JpaRepository<Scholarship, Long> 
     );
 
     Page<Scholarship> findAllByStudentCode(Long studentCode, Pageable pageable);
+    List<Scholarship> findByStudentCodeAndYearAndSemester(Long studentCode, Integer year, Integer semester);
 
     @Query("""
     SELECT s FROM Scholarship s

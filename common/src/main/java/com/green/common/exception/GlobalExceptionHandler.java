@@ -165,4 +165,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ResultResponse<>(CommonErrorCode.DUPLICATE_ENTRY.getMessage(), null));
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ResultResponse<String>> handleIllegalState(IllegalStateException ex) {
+        log.warn("IllegalStateException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ResultResponse<>(ex.getMessage(), null));
+    }
 }

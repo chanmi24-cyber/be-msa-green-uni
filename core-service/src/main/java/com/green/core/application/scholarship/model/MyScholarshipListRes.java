@@ -1,6 +1,6 @@
 package com.green.core.application.scholarship.model;
 
-import com.green.core.entity.tuition.Scholarship;
+import com.green.core.entity.scholarship.Scholarship;
 import lombok.Builder;
 import lombok.Getter;
 
