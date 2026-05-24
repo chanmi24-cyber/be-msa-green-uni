@@ -12,6 +12,9 @@ public class AdminMajorRequestDetailRes {
     Long requestId;
     Long memberCode;
     String studentName;
+    String phone;
+    String email;
+    String academicStatus;
     String targetMajorName;
     String type;
     String status;

@@ -7,6 +7,9 @@ public interface AdminMajorRequestDetailDto {
     Long getRequestId();
     Long getMemberCode();
     String getStudentName();
+    String getPhone();
+    String getEmail();
+    String getAcademicStatus();
     String getTargetMajorName();
     String getCurrentMajorName();
     String getCurrentMinorName();
