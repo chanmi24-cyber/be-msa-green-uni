@@ -48,9 +48,11 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             SELECT mr.request_id          AS requestId,
                    m.member_code          AS memberCode,
                    m.name                 AS studentName,
+                   m.tel                  AS phone,
+                   m.email                AS email,
                    mc.name                AS targetMajorName,
-                   mc_current.name     AS currentMajorName,
-                   mc_minor.name       AS currentMinorName,
+                   mc_current.name        AS currentMajorName,
+                   mc_minor.name          AS currentMinorName,
                    mr.type                AS type,
                    mr.status              AS status,
                    mr.gpa                 AS gpa,
@@ -61,14 +63,16 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.original_file_name  AS originalFileName,
                    mr.reject_reason       AS rejectReason,
                    um.name                AS updaterName,
+                   s.status               AS academicStatus,
                    mr.created_at          AS createdAt,
                    mr.updated_at          AS updatedAt
             FROM major_request mr
-            JOIN member m       ON m.member_code  = mr.student_code
-            JOIN major_cache mc ON mc.major_id  = mr.target_major_id
+            JOIN member m          ON m.member_code  = mr.student_code
+            JOIN student s         ON s.member_code  = mr.student_code
+            JOIN major_cache mc     ON mc.major_id    = mr.target_major_id
             JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
             LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
-            LEFT JOIN member um  ON um.member_code = mr.updater_code
+            LEFT JOIN member um    ON um.member_code  = mr.updater_code
             WHERE mr.request_id = :requestId
             """, nativeQuery = true)
     Optional<AdminMajorRequestDetailDto> findDetailByRequestId(@Param("requestId") Long requestId);

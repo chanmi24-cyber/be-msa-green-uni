@@ -16,6 +16,9 @@ import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.ProfessorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
+import com.green.member.application.status.model.AdminStatusRequestDetailRes;
+import com.green.member.application.status.model.AdminStatusRequestListRes;
+import com.green.member.application.status.model.AdminStatusRequestProcessReq;
 import com.green.member.application.student.StudentBatchService;
 import com.green.member.application.student.StudentService;
 import com.green.member.application.student.model.*;
@@ -316,6 +319,43 @@ public class AdminController {
         adminService.processMajorRequest( requestId , req, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청서 처리 완료")
+                .build();
+    }
+
+
+    // 학적 변경 신청 목록 조회
+    @GetMapping("/requests/status")
+    public ResultResponse<?> findAllStatusRequests() {
+        MemberDto loginMember = MemberContext.get();
+        List<AdminStatusRequestListRes> res = adminService.findStatusRequests( loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("학적 변경 신청 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+    // 학적 변경 신청 상세 조회
+    @GetMapping("/requests/status/{requestId}")
+    public ResultResponse<?> findStatusRequestDetail(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        AdminStatusRequestDetailRes res = adminService.findStatusRequestDetail( requestId, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("전공 변경 신청 상세 조회")
+                .data(res)
+                .build();
+    }
+    // 학적 변경 신청서 파일 다운로드
+    @GetMapping("/requests/status/{requestId}/file")
+    public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        return adminService.findStatusRequestFile( requestId, loginMember.memberCode() );
+    }
+    // 학적 변경 신청 처리 (승인/반려)
+    @PatchMapping("/requests/status/{requestId}")
+    public ResultResponse<?> processStatusRequest(@PathVariable Long requestId, @RequestBody @Valid AdminStatusRequestProcessReq req) {
+        MemberDto loginMember = MemberContext.get();
+        adminService.processStatusRequest( requestId , req, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("학적 변경 신청서를 처리하였습니다")
                 .build();
     }
 

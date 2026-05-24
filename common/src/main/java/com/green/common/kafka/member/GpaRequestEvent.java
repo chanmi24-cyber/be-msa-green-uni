@@ -14,7 +14,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GpaRequestEvent implements Serializable, KafkaEvent {
-    private Long requestId;   // MajorRequest PK (응답 매칭용)
+    private Long requestId;       // 요청 PK (응답 매칭용)
     private Long studentCode;
+    private String requestType;   // "MAJOR_REQUEST" | "STATUS_REQUEST"
     private EventType eventType;
 }

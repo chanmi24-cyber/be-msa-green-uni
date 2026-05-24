@@ -15,6 +15,8 @@ public enum RequestErrorCode implements ErrorCode {
     , NOT_PROCESSABLE("R005", "이미 처리된 신청입니다.", HttpStatus.BAD_REQUEST)
     , INELIGIBLE_STUDENT_STATUS("R006", "현재 학적 상태로는 신청할 수 없습니다.", HttpStatus.BAD_REQUEST)
     , TRANSFER_STUDENT_CANNOT_TRANSFER("R007", "편입생은 전과 신청을 할 수 없습니다.", HttpStatus.BAD_REQUEST)
+    , NOT_STATUS_REQUEST("R008", "존재하지 않는 학적 변경 신청서입니다.", HttpStatus.NOT_FOUND)
+    , INVALID_STATUS_REQUEST_TYPE("R009", "현재 학적 상태로는 해당 유형의 신청을 할 수 없습니다.", HttpStatus.BAD_REQUEST)
     ;
     private final String code;
     private final String message;

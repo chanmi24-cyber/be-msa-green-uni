@@ -12,8 +12,14 @@ import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
 import com.green.member.application.professor.model.ProfessorListDto;
 import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.status.StatusRequestRepository;
+import com.green.member.application.status.model.AdminStatusRequestDetailDto;
+import com.green.member.application.status.model.AdminStatusRequestDetailRes;
+import com.green.member.application.status.model.AdminStatusRequestListRes;
+import com.green.member.application.status.model.AdminStatusRequestProcessReq;
 import com.green.member.application.student.model.*;
-import com.green.member.entity.student.MajorRequest;
+import com.green.member.entity.student.*;
+import com.green.member.enumcode.EnumStatusRequestType;
 import com.green.member.exception.MemberErrorCode;
 import com.green.member.exception.RequestErrorCode;
 import com.green.common.exception.BusinessException;
@@ -42,9 +48,6 @@ import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.professor.ProfessorHistory;
-import com.green.member.entity.student.Student;
-import com.green.member.entity.student.StudentHistory;
-import com.green.member.entity.student.StudentMajor;
 import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
@@ -57,6 +60,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +82,7 @@ public class AdminService {
     private final ProfessorHistoryRepository professorHistoryRepository;
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
+    private final StatusRequestRepository statusRequestRepository;
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
@@ -196,7 +201,7 @@ public class AdminService {
                 .oldStatus(null)
                 .newStatus(savedStudent.getStatus())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         // StudentEvent Outbox 저장
@@ -246,7 +251,7 @@ public class AdminService {
                 .newStatus(savedProfessor.getStatus())
                 .newPosition(savedProfessor.getPosition())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         // ProfessorEvent Outbox 저장
@@ -285,7 +290,7 @@ public class AdminService {
                 .oldStatus(null)
                 .newStatus(savedAdmin.getStatus())
                 .startDate(member.getEntryDate())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build());
 
         return MemberCreateRes.builder()
@@ -485,7 +490,7 @@ public class AdminService {
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .reason(req.getReason())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build();
         adminHistoryRepository.save(history);
 
@@ -553,7 +558,7 @@ public class AdminService {
                     .startDate(req.getStartDate())
                     .endDate(req.getEndDate())
                     .reason(req.getReason())
-                    .updatorCode(updaterCode)
+                    .updaterCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
 
@@ -590,7 +595,7 @@ public class AdminService {
                     .startDate(req.getStartDate())
                     .endDate(req.getEndDate())
                     .reason(req.getReason())
-                    .updatorCode(updaterCode)
+                    .updaterCode(updaterCode)
                     .build();
             professorHistoryRepository.save(history);
         }
@@ -642,10 +647,10 @@ public class AdminService {
                 .newStatus(newStatus)
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
-                .reason(req.getReason())
+                .note(req.getReason())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
-                .updatorCode(updaterCode)
+                .updaterCode(updaterCode)
                 .build();
         studentHistoryRepository.save(history);
 
@@ -726,6 +731,9 @@ public class AdminService {
                 .requestId(detail.getRequestId())
                 .memberCode(detail.getMemberCode())
                 .studentName(detail.getStudentName())
+                .phone(detail.getPhone())
+                .email(detail.getEmail())
+                .academicStatus(detail.getAcademicStatus())
                 .targetMajorName(detail.getTargetMajorName())
                 .type(detail.getType())
                 .status(detail.getStatus())
@@ -852,6 +860,160 @@ public class AdminService {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
+    }
+
+    // 학적 변경 신청 목록 전체 조회
+    @Transactional(readOnly = true)
+    public List<AdminStatusRequestListRes> findStatusRequests(Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        return statusRequestRepository.findAllByFilter();
+    }
+    // 학적 변경 신청 상세 조회
+    @Transactional(readOnly = true)
+    public AdminStatusRequestDetailRes findStatusRequestDetail(Long requestId, Long memberCode ) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        AdminStatusRequestDetailDto detail = statusRequestRepository.findDetailByRequestId(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+
+        return AdminStatusRequestDetailRes.builder()
+                .requestId(detail.getRequestId())
+                .memberCode(detail.getMemberCode())
+                .studentName(detail.getStudentName())
+                .phone(detail.getPhone())
+                .email(detail.getEmail())
+                .totalCredits(detail.getTotalCredits())
+                .currentMajorName(detail.getCurrentMajorName())
+                .currentMinorName(detail.getCurrentMinorName())
+                .academicStatus(detail.getAcademicStatus())
+                .type(detail.getType())
+                .status(detail.getStatus())
+                .reason(detail.getReason())
+                .file(detail.getFile())
+                .originalFileName(detail.getOriginalFileName())
+                .rejectReason(detail.getRejectReason())
+                .updaterName(detail.getUpdaterName())
+                .academicYear(detail.getAcademicYear())
+                .returnYear(detail.getReturnYear())
+                .returnSemester(detail.getReturnSemester())
+                .semester(detail.getSemester())
+                .createdAt(detail.getCreatedAt())
+                .updatedAt(detail.getUpdatedAt())
+                .startDate(detail.getStartDate())
+                .build();
+    }
+    // 학적 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
+    @Transactional(readOnly = true)
+    public ResponseEntity<Resource> findStatusRequestFile( Long requestId, Long memberCode) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        StatusRequest request = statusRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        if (request.getFile() == null) {
+            throw new BusinessException(FileErrorCode.FILE_NOT_FOUND);
+        }
+        Long studentCode = request.getStudent().getMemberCode();
+        String filePath = String.format("request/status/%s/%s", studentCode, request.getFile());
+        return fileService.buildDownloadResponse(filePath, request.getOriginalFileName());
+    }
+    // 학적 변경 신청 처리
+    @Transactional
+    public void processStatusRequest(Long requestId, AdminStatusRequestProcessReq req, Long updaterCode) {
+        Admin admin = adminRepository.findById(updaterCode)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+
+        // APPROVED, REJECTED 외 상태는 처리 불가
+        if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        StatusRequest request = statusRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
+        // PENDING 상태만 처리 가능
+        if (request.getStatus() != EnumApprovalStatus.PENDING) {
+            throw new BusinessException(RequestErrorCode.NOT_PROCESSABLE);
+        }
+        if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            request.approve(req.getNote(), updaterCode);
+
+            Long studentCode = request.getStudent().getMemberCode();
+            Student student = studentRepository.findById(studentCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
+            EnumStudentStatus oldStatus = student.getStatus();
+
+            // 변화값
+            EnumStudentStatus newStatus;
+            String changeType;
+
+            if (request.getType() == EnumStatusRequestType.ABSENCE) {
+                // 휴학 승인: 상태값 휴학으로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.ABSENCE;
+                changeType = "휴학";
+            } else if (request.getType() == EnumStatusRequestType.RETURN) {
+                // 복학 승인: 상태값 재학으로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.ENROLLED;
+                changeType = "복학";
+            } else { // QUIT: 자퇴
+                // 자퇴 승인: 상태값 자퇴로 변경 이벤트 발행
+                newStatus = EnumStudentStatus.QUIT;
+                changeType = "자퇴";
+            }
+
+            // 휴학인 경우에만 복학 예정으로 종료일 계산
+            // 1학기 복학 → 해당 연도 2월 말, 2학기 복학 → 해당 연도 8월 31일
+            LocalDate endDate = null;
+            if (request.getType() == EnumStatusRequestType.ABSENCE
+                    && request.getReturnYear() != null && request.getReturnSemester() != null) {
+                if (request.getReturnSemester() == 1) {
+                    endDate = YearMonth.of(request.getReturnYear(), 2).atEndOfMonth();
+                } else {
+                    endDate = LocalDate.of(request.getReturnYear(), 8, 31);
+                }
+            }
+
+            // StudentHistory 저장
+            StudentHistory history = StudentHistory.builder()
+                    .student(student)
+                    .changeType(changeType)
+                    .oldStatus(oldStatus)
+                    .newStatus(newStatus)
+                    .startDate(request.getStartDate())
+                    .endDate(endDate)
+                    .note(req.getNote())
+                    .returnYear(request.getReturnYear())
+                    .returnSemester(request.getReturnSemester())
+                    .updaterCode(updaterCode)
+                    .build();
+            studentHistoryRepository.save(history);
+
+            // 학생 상태 업데이트
+            student.updateStatus(newStatus);
+
+            // StudentEvent Outbox 저장
+            outboxService.saveToOutbox(
+                    MemberTopic.STUDENT,
+                    studentCode,
+                    StudentEvent.builder()
+                            .memberCode(studentCode)
+                            .status(newStatus.getCode())
+                            .eventType(EventType.E_UPDATED)
+                            .updateType(UpdateType.STATUS)
+                            .build()
+            );
+        } else { // REJECTED: 반려
+            if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            request.reject(req.getRejectReason(), updaterCode);
+        }
     }
 
 }

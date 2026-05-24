@@ -1,24 +1,24 @@
-package com.green.member.application.major.model;
+package com.green.member.application.status.model;
 
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class AdminMajorRequestDetailRes {
+public class AdminStatusRequestDetailRes {
     Long requestId;
     Long memberCode;
     String studentName;
     String phone;
     String email;
+    String currentMajorName;
+    String currentMinorName;
     String academicStatus;
-    String targetMajorName;
     String type;
     String status;
-    BigDecimal gpa;
     String reason;
     String file;
     String originalFileName;
@@ -26,8 +26,10 @@ public class AdminMajorRequestDetailRes {
     String updaterName;
     Integer academicYear;
     Integer semester;
-    String currentMajorName;
-    String currentMinorName;
+    Integer returnYear;
+    Integer returnSemester;
+    LocalDate startDate;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+    Integer totalCredits; // core-service 연동 후 채울 필드
 }

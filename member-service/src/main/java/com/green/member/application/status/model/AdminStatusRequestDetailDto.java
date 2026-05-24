@@ -1,21 +1,16 @@
-package com.green.member.application.major.model;
+package com.green.member.application.status.model;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public interface AdminMajorRequestDetailDto {
+public interface AdminStatusRequestDetailDto {
     Long getRequestId();
     Long getMemberCode();
     String getStudentName();
     String getPhone();
     String getEmail();
-    String getAcademicStatus();
-    String getTargetMajorName();
-    String getCurrentMajorName();
-    String getCurrentMinorName();
     String getType();
     String getStatus();
-    BigDecimal getGpa();
     String getReason();
     String getFile();
     String getOriginalFileName();
@@ -23,6 +18,13 @@ public interface AdminMajorRequestDetailDto {
     String getUpdaterName();
     Integer getAcademicYear();
     Integer getSemester();
+    Integer getReturnYear();
+    Integer getReturnSemester();
+    LocalDate getStartDate();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
+    Integer getTotalCredits();
+    String getAcademicStatus();
+    String getCurrentMajorName();
+    String getCurrentMinorName();
 }

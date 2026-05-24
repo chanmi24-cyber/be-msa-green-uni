@@ -1,11 +1,11 @@
-package com.green.member.application.student.model;
+package com.green.member.application.major.model;
 
 import com.green.member.enumcode.EnumMajorRequestType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class StudentMajorReq {
+public class StudentMajorRequestReq {
     @NotNull
     private EnumMajorRequestType type;
     @NotNull
