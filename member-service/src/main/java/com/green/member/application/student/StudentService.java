@@ -23,6 +23,7 @@ import com.green.member.application.status.model.StudentStatusRequestDetailRes;
 import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
+import com.green.member.application.student.model.StudentDashboardRequestRes;
 import com.green.member.entity.cache.MajorCache;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.student.*;
@@ -42,6 +43,8 @@ import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -354,6 +357,33 @@ public class StudentService {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
         return statusRequestRepository.findStudentStatusRequests(memberCode);
+    }
+
+    // 대시보드: 학적변경 + 전공변경 신청 통합 목록 조회 (createdAt DESC, size 제한)
+    @Transactional(readOnly = true)
+    public List<StudentDashboardRequestRes> findDashboardRequests(Long memberCode, int size) {
+        if (!studentRepository.existsById(memberCode)) {
+            throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
+        }
+        List<StudentDashboardRequestRes> merged = new ArrayList<>();
+
+        statusRequestRepository.findStudentStatusRequests(memberCode).forEach(r ->
+                merged.add(new StudentDashboardRequestRes(
+                        r.getRequestId(), "STATUS", r.getType(), null,
+                        r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
+                ))
+        );
+        majorRequestRepository.findStudentMajorRequests(memberCode).forEach(r ->
+                merged.add(new StudentDashboardRequestRes(
+                        r.getRequestId(), "MAJOR", r.getType(), r.getTargetMajorName(),
+                        r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
+                ))
+        );
+
+        return merged.stream()
+                .sorted(Comparator.comparing(StudentDashboardRequestRes::getCreatedAt).reversed())
+                .limit(size)
+                .toList();
     }
     // 내 학적 변경 신청서 상세 조회
     @Transactional(readOnly = true)

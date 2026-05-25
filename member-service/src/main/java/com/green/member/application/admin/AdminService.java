@@ -64,6 +64,7 @@ import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -98,6 +99,20 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<AdminListDto> findAdmins() {
         return adminRepository.findAdminList();
+    }
+
+    // 대시보드: 학생/교수/관리자 계정 수 조회
+    @Transactional(readOnly = true)
+    public MemberCountRes getMemberCounts(Long memberCode) {
+        Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
+            throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
+        }
+        return new MemberCountRes(
+                studentRepository.count(),
+                professorRepository.count(),
+                adminRepository.count()
+        );
     }
 
     // 회원 계정 등록. 공통 처리: member 저장 + memberCode 생성
@@ -707,14 +722,17 @@ public class AdminService {
                 ;
     }
 
-    // 전공 변경 신청 목록 전체 조회
+    // 전공 변경 신청 목록 전체 조회 (status/size 파라미터 선택 가능)
     @Transactional(readOnly = true)
-    public List<AdminMajorRequestListRes> findMajorRequests( Long memberCode ) {
+    public List<AdminMajorRequestListRes> findMajorRequests(Long memberCode, String status, Integer size) {
         Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
-        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
             throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
         }
-        return majorRequestRepository.findAllByFilter();
+        Stream<AdminMajorRequestListRes> stream = majorRequestRepository.findAllByFilter().stream();
+        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
+        if (size != null && size > 0) return stream.limit(size).toList();
+        return stream.toList();
     }
 
     // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
@@ -862,14 +880,18 @@ public class AdminService {
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
     }
 
-    // 학적 변경 신청 목록 전체 조회
+    // 학적 변경 신청 목록 전체 조회 (status/type/size 파라미터 선택 가능)
     @Transactional(readOnly = true)
-    public List<AdminStatusRequestListRes> findStatusRequests(Long memberCode ) {
+    public List<AdminStatusRequestListRes> findStatusRequests(Long memberCode, String status, String type, Integer size) {
         Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
-        if(admin.getStatus() != EnumAdminStatus.EMPLOYMENT ){
+        if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
             throw new BusinessException(MemberErrorCode.ADMIN_NOT_EMPLOYED);
         }
-        return statusRequestRepository.findAllByFilter();
+        Stream<AdminStatusRequestListRes> stream = statusRequestRepository.findAllByFilter().stream();
+        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
+        if (type != null) stream = stream.filter(r -> type.equals(r.getType()));
+        if (size != null && size > 0) return stream.limit(size).toList();
+        return stream.toList();
     }
     // 학적 변경 신청 상세 조회
     @Transactional(readOnly = true)
