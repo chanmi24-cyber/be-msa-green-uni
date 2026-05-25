@@ -4,6 +4,7 @@ import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
 import com.green.member.application.admin.model.*;
+import com.green.member.application.admin.model.MemberCountRes;
 import com.green.member.application.major.model.AdminMajorRequestDetailRes;
 import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
@@ -47,6 +48,17 @@ public class AdminController {
     private final AdminBatchService adminBatchService;
     private final ProfessorService professorService;
     private final StudentService studentService;
+
+    // 대시보드: 학생/교수/관리자 계정 수 조회
+    @GetMapping("/counts")
+    public ResultResponse<?> getMemberCounts() {
+        MemberDto loginMember = MemberContext.get();
+        MemberCountRes res = adminService.getMemberCounts(loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("회원 현황 조회")
+                .data(res)
+                .build();
+    }
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
@@ -286,11 +298,13 @@ public class AdminController {
                 .message("학생 계정 상태 변경 및 이력 기록")
                 .build();
     }
-    // 전공 변경 신청 목록 조회
+    // 전공 변경 신청 목록 조회 (status, size 파라미터로 필터링 가능)
     @GetMapping("/requests/major")
-    public ResultResponse<?> findAllMajorRequests() {
+    public ResultResponse<?> findAllMajorRequests(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer size) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminMajorRequestListRes> res = adminService.findMajorRequests( loginMember.memberCode() );
+        List<AdminMajorRequestListRes> res = adminService.findMajorRequests(loginMember.memberCode(), status, size);
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -323,11 +337,14 @@ public class AdminController {
     }
 
 
-    // 학적 변경 신청 목록 조회
+    // 학적 변경 신청 목록 조회 (status, type, size 파라미터로 필터링 가능)
     @GetMapping("/requests/status")
-    public ResultResponse<?> findAllStatusRequests() {
+    public ResultResponse<?> findAllStatusRequests(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer size) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminStatusRequestListRes> res = adminService.findStatusRequests( loginMember.memberCode() );
+        List<AdminStatusRequestListRes> res = adminService.findStatusRequests(loginMember.memberCode(), status, type, size);
         return ResultResponse.builder()
                 .message("학적 변경 신청 목록 조회 완료")
                 .data(res)
