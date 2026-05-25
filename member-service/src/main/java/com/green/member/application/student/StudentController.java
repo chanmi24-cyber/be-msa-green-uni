@@ -11,6 +11,7 @@ import com.green.member.application.status.model.StudentStatusRequestDetailRes;
 import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestReq;
 import com.green.member.application.student.model.*;
+import com.green.member.application.student.model.StudentDashboardRequestRes;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,18 @@ import java.util.List;
 @RequestMapping("/student")
 public class StudentController {
     private final StudentService studentService;
+
+    // 대시보드: 학적변경 + 전공변경 신청 통합 목록 조회
+    @GetMapping("/requests/dashboard")
+    public ResultResponse<?> findDashboardRequests(
+            @RequestParam(defaultValue = "3") int size) {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentDashboardRequestRes> res = studentService.findDashboardRequests(loginMember.memberCode(), size);
+        return ResultResponse.builder()
+                .message("내 신청서 목록 조회 완료")
+                .data(res)
+                .build();
+    }
 
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
