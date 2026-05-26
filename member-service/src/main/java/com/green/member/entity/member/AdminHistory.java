@@ -44,6 +44,6 @@ public class AdminHistory extends CreatedAt {
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "updator_code")
-    private Long updatorCode;
+    @Column(name = "updater_code")
+    private Long updaterCode;
 }

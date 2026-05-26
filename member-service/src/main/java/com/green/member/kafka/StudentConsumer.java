@@ -2,8 +2,10 @@ package com.green.member.kafka;
 
 import com.green.common.kafka.member.GpaResponseEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.member.application.student.MajorRequestRepository;
+import com.green.member.application.major.MajorRequestRepository;
+import com.green.member.application.status.StatusRequestRepository;
 import com.green.member.entity.student.MajorRequest;
+import com.green.member.entity.student.StatusRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,19 +17,28 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class StudentConsumer {
     private final MajorRequestRepository majorRequestRepository;
+    private final StatusRequestRepository statusRequestRepository;
 
     @Transactional
     @KafkaListener(topics = MemberTopic.GPA_RESPONSE, groupId = "member-service-group")
     public void consumeGpaResponse(GpaResponseEvent event) {
-        log.info("GPA 응답 수신 - requestId: {}, gpa: {}", event.getRequestId(), event.getGpa());
+        log.info("GPA 응답 수신 - requestId: {}, requestType: {}, gpa: {}", event.getRequestId(), event.getRequestType(), event.getGpa());
         try {
-            MajorRequest request = majorRequestRepository.findById(event.getRequestId())
-                    .orElse(null);
-            if (request == null) {
-                log.warn("GPA 응답 대상 신청 없음 - requestId: {}", event.getRequestId());
-                return;
+            if ("STATUS_REQUEST".equals(event.getRequestType())) {
+                StatusRequest request = statusRequestRepository.findById(event.getRequestId()).orElse(null);
+                if (request == null) {
+                    log.warn("GPA 응답 대상 학적변경 신청 없음 - requestId: {}", event.getRequestId());
+                    return;
+                }
+                request.updateTotalCredits(event.getTotalCredits());
+            } else {
+                MajorRequest request = majorRequestRepository.findById(event.getRequestId()).orElse(null);
+                if (request == null) {
+                    log.warn("GPA 응답 대상 전공변경 신청 없음 - requestId: {}", event.getRequestId());
+                    return;
+                }
+                request.updateGpa(event.getGpa());
             }
-            request.updateGpa(event.getGpa());
         } catch (Exception e) {
             log.error("GPA 업데이트 실패 - requestId: {}, error: {}", event.getRequestId(), e.getMessage());
         }
