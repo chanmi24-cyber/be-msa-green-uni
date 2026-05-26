@@ -12,6 +12,10 @@ import java.util.List;
 public class AttendStuListRes {
     private Long    lectureId;
     private String  lectureName;
+    private int lectureYear; //학생 출석조회에서 학기 필터링에 필요
+    private int lectureSemester; //학생 출석조회에서 학기 필터링에 필요
+    private String professorName; //강의정보출력에 필요
+    private String scheduleInfo; //강의정보출력에 필요
     private Integer totalCount;
     private Integer attendCount;
     private Integer absentCount;

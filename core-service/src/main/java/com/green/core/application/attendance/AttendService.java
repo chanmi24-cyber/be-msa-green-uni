@@ -18,7 +18,9 @@ import com.green.core.application.attendance.model.AttendStatusUpdateReq;
 import com.green.core.application.attendance.model.AttendStuListRes;
 import com.green.core.entity.attendance.AttendanceCancel;
 import com.green.core.application.major.MajorRepository;
+import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.entity.cache.StudentCache;
+import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.entity.attendance.Attendance;
 import com.green.core.entity.major.Major;
 import com.green.core.entity.attendance.AttendanceSession;
@@ -61,6 +63,7 @@ public class AttendService {
     private final MajorRepository majorRepository;
     // [추가] 휴강/보강 이력 Repository
     private final AttendanceCancelRepository attendanceCancelRepository;
+    private final ProfessorCacheRepository professorCacheRepository;
 
     // ── ATTD-01 출석 세션 시작 ───────────────────────────────────────────────────
     // [수정] AttendSessionStartReq → AttendSessionReq, AttendSessionStartRes → AttendSessionRes
@@ -666,6 +669,21 @@ public class AttendService {
                     List<Object[]> sessionRows = entry.getValue();
                     Lecture lecture = ((AttendanceSession) sessionRows.get(0)[0]).getLecture();
 
+                    String professorName = professorCacheRepository
+                            .findById(lecture.getMemberCode())
+                            .map(ProfessorCache::getName)
+                            .orElse("알 수 없음");
+
+                    String scheduleInfo = attendLectureScheduleRepository
+                            .findByLectureIdWithRoom(lecture.getLectureId())
+                            .stream()
+                            .findFirst()
+                            .map(s -> s.getDayOfWeek()
+                                    + "(" + s.getStartPeriod() + "~" + s.getEndPeriod() + ")"
+                                    + "-" + s.getClassRoom().getBuilding().getValue()
+                                    + " " + s.getClassRoom().getRoom())
+                            .orElse("");
+
                     int attendCount = 0, absentCount = 0, lateCount = 0, earlyLeaveCount = 0;
                     List<AttendStuListRes.Detail> details = new java.util.ArrayList<>();
 
@@ -714,6 +732,10 @@ public class AttendService {
                     return new AttendStuListRes(
                             lecture.getLectureId(),
                             lecture.getLectureName(),
+                            lecture.getYear(),
+                            lecture.getSemester(),
+                            professorName,
+                            scheduleInfo,
                             attendCount + absentCount + lateCount + earlyLeaveCount,
                             attendCount,
                             absentCount,
