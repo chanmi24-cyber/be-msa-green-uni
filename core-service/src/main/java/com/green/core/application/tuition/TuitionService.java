@@ -223,9 +223,9 @@ public class TuitionService {
             throw new IllegalStateException("등록금 책정액은 1,000,000원보다 커야 합니다. 금액을 다시 확인해주세요.");
         }
 
-        ScheduleCache tuitionSchedule = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .orElse(null);
+        List<ScheduleCache> tuitionScheduleList = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        ScheduleCache tuitionSchedule = tuitionScheduleList.isEmpty() ? null : tuitionScheduleList.get(0);
 
         if (tuitionSchedule != null) {
             LocalDateTime now = LocalDateTime.now();
@@ -284,9 +284,9 @@ public class TuitionService {
     }
 
     public TuitionRes.PaymentPeriodRes getTuitionPaymentPeriod() {
-        ScheduleCache schedule = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .orElse(null);
+        List<ScheduleCache> scheduleList = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        ScheduleCache schedule = scheduleList.isEmpty() ? null : scheduleList.get(0);
 
         if (schedule == null) {
             return new TuitionRes.PaymentPeriodRes(false, null, null);

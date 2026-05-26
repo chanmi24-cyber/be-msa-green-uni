@@ -17,14 +17,14 @@ public class ScholarshipScheduler {
 
     @Scheduled(cron = "0 0 2 * * *")
     public void runScholarshipAssignment() {
-        scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .ifPresentOrElse(
-                        schedule -> {
-                            log.info("[ScholarshipScheduler] 실행 - year={}, semester={}",
-                                    schedule.getYear(), schedule.getSemester());
-                            scholarshipService.assignScholarships(schedule.getYear(), schedule.getSemester());
-                        },
-                        () -> log.info("[ScholarshipScheduler] 활성 학기 없음, 스킵")
-                );
+        var list = scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        if (list.isEmpty()) {
+            log.info("[ScholarshipScheduler] 활성 학기 없음, 스킵");
+            return;
+        }
+        var schedule = list.get(0);
+        log.info("[ScholarshipScheduler] 실행 - year={}, semester={}",
+                schedule.getYear(), schedule.getSemester());
+        scholarshipService.assignScholarships(schedule.getYear(), schedule.getSemester());
     }
 }

@@ -53,8 +53,9 @@ public class TuitionScheduler {
         log.info("[배치 시스템] {}년도 {}학기 등록금 사전 고지 및 스냅샷 처리 시작", currentYear, currentSemester);
 
         // 1. 등록금 납부 일정 조회 및 마감일(deadline) 확정
-        ScheduleCache tuitionSchedule = scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .orElse(null);
+        List<ScheduleCache> tuitionScheduleList = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        ScheduleCache tuitionSchedule = tuitionScheduleList.isEmpty() ? null : tuitionScheduleList.get(0);
 
         if (tuitionSchedule == null) {
             log.error("[🚨 배치 중단] 현재 활성화된 등록금 일정(ScheduleCache)이 존재하지 않습니다.");
