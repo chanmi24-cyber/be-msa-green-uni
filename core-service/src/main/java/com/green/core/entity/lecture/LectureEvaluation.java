@@ -26,16 +26,27 @@ public class LectureEvaluation{
     private Course course;
 
     @Column(name = "score")
-    private Integer score; // 1~5, validation으로 체크
+    private Double score; // 1~5, validation으로 체크
 
     @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
+    @Column(name = "q1") private Double q1;
+    @Column(name = "q2") private Double q2;
+    @Column(name = "q3") private Double q3;
+    @Column(name = "q4") private Double q4;
+    @Column(name = "q5") private Double q5;
+
     @Column(name = "created_at") // null = 미완료
     private LocalDateTime createdAt;
 
-    public void submit(Integer score, String comment) {
-        this.score = score;
+    public void submit(Double q1, Double q2, Double q3, Double q4, Double q5, String comment) {
+        this.q1 = q1;
+        this.q2 = q2;
+        this.q3 = q3;
+        this.q4 = q4;
+        this.q5 = q5;
+        this.score = (q1 + q2 + q3 + q4 + q5) / 5;
         this.comment = comment;
         this.createdAt = LocalDateTime.now();
     }

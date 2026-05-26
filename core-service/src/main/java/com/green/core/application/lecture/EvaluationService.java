@@ -82,7 +82,12 @@ public class EvaluationService {
         LectureEvaluation evaluation = LectureEvaluation.builder()
                 .lecture(course.getLecture())
                 .course(course)
-                .score(req.getScore())
+                .q1(req.getQ1())
+                .q2(req.getQ2())
+                .q3(req.getQ3())
+                .q4(req.getQ4())
+                .q5(req.getQ5())
+                .score((req.getQ1() + req.getQ2() + req.getQ3() + req.getQ4() + req.getQ5()) / 5.0)
                 .comment(req.getComment())
                 .createdAt(LocalDateTime.now())
                 .build();

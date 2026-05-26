@@ -15,6 +15,11 @@ public class ProEvalDetailRes {
     private Integer responseCount;
     private Integer totalStudents;
     private Double score;           // 평균 점수
+    private Double q1Avg;
+    private Double q2Avg;
+    private Double q3Avg;
+    private Double q4Avg;
+    private Double q5Avg;
     private List<String> comments;
     private Integer totalComments;
 }
