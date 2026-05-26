@@ -24,10 +24,8 @@ public class ScheduleProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    //    // 매일 자정 실행
-//    @Scheduled(cron = "0 0 0 * * *")
-    //테스트용
-    @Scheduled(fixedDelay = 30_000) // 30초마다
+    // @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
+    @Scheduled(cron = "0 0 9 * * *") // 매일 9시
     @Transactional
     public void updateActiveStatus() {
         LocalDateTime now = LocalDateTime.now();
