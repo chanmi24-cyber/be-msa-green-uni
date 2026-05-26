@@ -87,7 +87,7 @@ public class EvaluationService {
                 .q3(req.getQ3())
                 .q4(req.getQ4())
                 .q5(req.getQ5())
-                .score((req.getQ1() + req.getQ2() + req.getQ3() + req.getQ4() + req.getQ5()) / 5.0)
+                .score(req.getScore())
                 .comment(req.getComment())
                 .createdAt(LocalDateTime.now())
                 .build();

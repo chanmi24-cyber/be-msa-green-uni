@@ -61,13 +61,13 @@
         <result property="totalStudents"  column="total_students"/>
         <result property="score"          column="score"/>
         <result property="totalComments"  column="total_comments"/>
-        <collection property="comments" ofType="String" column="lecture_id"
-                    select="findCommentsByLectureId"/>
         <result property="q1Avg" column="q1_avg"/>
         <result property="q2Avg" column="q2_avg"/>
         <result property="q3Avg" column="q3_avg"/>
         <result property="q4Avg" column="q4_avg"/>
         <result property="q5Avg" column="q5_avg"/>
+        <collection property="comments" ofType="String" column="lecture_id"
+                    select="findCommentsByLectureId"/>
     </resultMap>
 
     <select id="findProEvalDetail" resultMap="proEvalDetailMap">
