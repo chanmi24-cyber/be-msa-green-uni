@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import com.green.common.kafka.ScheduleEvent;
 
+import java.time.LocalDate;
+
 
 @Slf4j
 @Component
@@ -39,8 +41,30 @@ public class ScheduleConsumer {
         scheduleCacheRepository.save(cache);
 
         // 수강신청 기간 종료 시 자동 폐강 처리
-        if (event.getType() == EnumScheduleType.COURSE_REGISTRATION
-                && !event.getIsActive()) {
+        LocalDate today = LocalDate.now();
+
+        boolean courseRegEnded = event.getType() == EnumScheduleType.COURSE_REGISTRATION
+                && !event.getIsActive()
+                && today.equals(event.getEndDate().toLocalDate().plusDays(1));
+
+        boolean modEnded = event.getType() == EnumScheduleType.COURSE_MODIFICATION
+                && !event.getIsActive()
+                && today.equals(event.getEndDate().toLocalDate().plusDays(1));
+
+        if (courseRegEnded || modEnded) {
+            boolean modExists = scheduleCacheRepository
+                    .existsByTypeAndYearAndSemester(
+                            EnumScheduleType.COURSE_MODIFICATION,
+                            event.getYear(),
+                            event.getSemester()
+                    );
+
+            if (courseRegEnded && modExists) {
+                log.info("정정기간 예정됨 - 자동폐강 스킵");
+                return;
+            }
+
+            log.info("수강신청/정정기간 종료 확인 - 자동폐강 실행");
             lectureAutoCancelService.autoCancelLectures(event.getYear(), event.getSemester());
         }
     }

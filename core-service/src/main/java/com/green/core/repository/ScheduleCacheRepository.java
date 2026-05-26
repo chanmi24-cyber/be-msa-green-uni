@@ -8,4 +8,8 @@ import java.util.Optional;
 
 public interface ScheduleCacheRepository extends JpaRepository<ScheduleCache, Long> {
     Optional<ScheduleCache> findByTypeAndIsActiveTrue(EnumScheduleType type);
+
+    boolean existsByTypeAndYearAndSemester(
+            EnumScheduleType type, Integer year, Integer semester
+    );
 }
