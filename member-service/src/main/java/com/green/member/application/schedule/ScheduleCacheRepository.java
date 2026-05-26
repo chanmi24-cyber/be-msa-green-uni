@@ -4,8 +4,8 @@ import com.green.common.enumcode.EnumScheduleType;
 import com.green.member.entity.cache.ScheduleCache;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface ScheduleCacheRepository extends JpaRepository<ScheduleCache, Long> {
-    Optional<ScheduleCache> findByTypeAndIsActiveTrue(EnumScheduleType type);
+    List<ScheduleCache> findByTypeAndIsActiveTrue(EnumScheduleType type);
 }
