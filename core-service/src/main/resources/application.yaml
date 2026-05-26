@@ -39,6 +39,22 @@ spring:
         # 하이버네이트 7의 메타데이터 조회 버그 방지
         temp:
           use_jdbc_metadata_defaults: false
+
+  # 🎯 [추가] core 모듈에서 직접 이메일을 쏘기 위한 지메일 SMTP 연동 설정
+  mail:
+    host: smtp.gmail.com        # Gmail SMTP 서버 주소
+    port: 587                   # STARTTLS 방식의 표준 포트
+    username: ${MAIL_USERNAME}  # .env 또는 환경 변수에 설정된 Gmail 주소
+    password: ${MAIL_PASSWORD}  # Gmail 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true            # SMTP 인증 사용 (필수)
+          starttls:
+            enable: true        # 보안 연결(TLS) 사용 (필수)
+            required: true
+          timeout: 5000
+
   kafka:
     bootstrap-servers: localhost:9092
     # [발행] Major, Collage 이벤트를 Outbox에 담아 보냄

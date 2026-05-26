@@ -6,6 +6,8 @@ import com.green.member.enumcode.EnumStatusRequestType;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 @Entity
 @Table(name = "status_request")
 @Getter
@@ -32,16 +34,53 @@ public class StatusRequest extends CreatedUpdatedAt {
     @Column(name = "file")
     private String file;
 
+    @Column(name = "original_file_name")
+    private String originalFileName;
+
+    @Column(name = "academic_year")
+    private Integer academicYear;
+
+    @Column(name = "semester")
+    private Integer semester;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "return_year")
+    private Integer returnYear;
+
+    @Column(name = "return_semester")
+    private Integer returnSemester;
+
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EnumApprovalStatus status = EnumApprovalStatus.PENDING;
 
-    @Column(name = "approve_reason")
-    private String approveReason;
+    @Column(name = "total_credits")
+    private Integer totalCredits;
+
+    @Column(name = "note")
+    private String note;
 
     @Column(name = "reject_reason")
     private String rejectReason;
 
-    @Column(name = "updator_code")
-    private Long updatorCode;
+    @Column(name = "updater_code")
+    private Long updaterCode;
+
+    public void setFile(String file) { this.file = file; }
+    public void updateTotalCredits(Integer totalCredits) { this.totalCredits = totalCredits; }
+    public void cancel() { this.status = EnumApprovalStatus.CANCELLED; }
+
+    public void approve(String note, Long updaterCode) {
+        this.status = EnumApprovalStatus.APPROVED;
+        this.note = note;
+        this.updaterCode = updaterCode;
+    }
+
+    public void reject(String rejectReason, Long updaterCode) {
+        this.status = EnumApprovalStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.updaterCode = updaterCode;
+    }
 }
