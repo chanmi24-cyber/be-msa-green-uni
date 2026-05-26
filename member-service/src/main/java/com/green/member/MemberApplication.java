@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EntityScan(basePackages = {"com.green.member", "com.green.common"})
 @EnableJpaAuditing
-@EnableScheduling
 @SpringBootApplication(scanBasePackages = {"com.green.member", "com.green.common"})
 public class MemberApplication {
     public static void main(String[] args) {
