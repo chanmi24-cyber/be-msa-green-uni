@@ -41,11 +41,6 @@ public class EvaluationService {
         return evaluationMapper.findProfessorEvalList(req);
     }
 
-    // 평가 기간 조회 (공통)
-    public EvalPeriodRes getEvalPeriod(EvalPeriodReq req) {
-        return evaluationMapper.findEvalPeriod(req);
-    }
-
     // 교수 - 평가 상세
     public ProEvalDetailRes getProfessorEvalDetail(MemberDto memberDto, Long lectureId) {
         ProEvalDetailRes res = evaluationMapper.findProEvalDetail(memberDto.memberCode(), lectureId);

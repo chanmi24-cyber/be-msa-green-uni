@@ -87,6 +87,10 @@ public class Lecture extends CreatedUpdatedAt {
         this.status = status;
     }
 
+    public void changeProfessor(Long newMemberCode) {
+        this.memberCode = newMemberCode;
+    }
+
 
     public void update(LectureDetailReq req, Major major) {
         this.major = major;

@@ -14,9 +14,4 @@ public enum EnumTuitionStatus implements EnumMapperType {
 
     private final String code;
     private final String value;
-
-    @Converter
-    public static class CodeConverter extends AbstractEnumCodeConverter<EnumTuitionStatus> {
-        public CodeConverter() { super(EnumTuitionStatus.class, false); }
-    }
 }
