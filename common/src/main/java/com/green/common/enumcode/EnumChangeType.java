@@ -9,7 +9,8 @@ public enum EnumChangeType implements EnumMapperType {
     INSERT("INSERT", "등록"),
     UPDATE("UPDATE", "수정"),
     DELETE("DELETE", "삭제"),
-    CANCEL("CANCEL", "폐강");
+    CANCEL("CANCEL", "폐강"),
+    SNAPSHOT("SNAPSHOT", "스냅샷");
 
     private final String code;
     private final String value;

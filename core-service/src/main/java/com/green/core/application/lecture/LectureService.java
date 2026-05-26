@@ -26,6 +26,7 @@ import com.green.common.constants.EventType;
 import com.green.common.kafka.NotificationEvent;
 
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -303,6 +304,24 @@ public class LectureService {
         lecture.delete();
     }
 
+    // DASH-11 시간표
+    public List<MyLectureListRes> getProfessorTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findProfessorTimetable(memberDto.memberCode(), year, semester);
+    }
+
+    public List<MyLectureListRes> getStudentTimetable(MemberDto memberDto, Integer year, Integer semester) {
+        return lectureMapper.findStudentTimetable(memberDto.memberCode(), year, semester);
+    }
+
+    // DASH교수: 오늘 강의 목록
+    public List<TodayLectureRes> getTodayLectures(MemberDto memberDto) {
+        String[] days = {"일", "월", "화", "수", "목", "금", "토"};
+        String dayOfWeek = days[LocalDate.now().getDayOfWeek().getValue() % 7];
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+        int semester = (month >= 3 && month <= 8) ? 1 : 2;
+        return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek, year, semester);
+    }
 
     //강의 수동폐강 로직
     @Transactional
@@ -353,6 +372,48 @@ public class LectureService {
         }
     }
 
+    // 강의 담당 교수 변경
+    @Transactional
+    public void changeLectureProfessor(MemberDto memberDto, Long lectureId, String reason, Long newMemberCode) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
 
+        if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_CANCELLABLE);
+        }
+
+        try {
+            String beforeData = objectMapper.writeValueAsString(Map.of(
+                    "lectureId", lecture.getLectureId(),
+                    "lectureName", lecture.getLectureName(),
+                    "originalMemberCode", lecture.getMemberCode(),
+                    "newMemberCode", newMemberCode
+            ));
+            lectureHistoryRepository.save(LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("[교수변경] " + reason)
+                    .updatorCode(memberDto.memberCode())
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        lecture.changeProfessor(newMemberCode);
+
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+                lectureId, lecture.getYear(), lecture.getSemester());
+        for (Course course : courses) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(course.getStudentCode())
+                    .type("LECTURE_PROFESSOR_CHANGED")
+                    .message("'" + lecture.getLectureName() + "' 강의의 담당 교수가 변경되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+        }
+    }
 
 }

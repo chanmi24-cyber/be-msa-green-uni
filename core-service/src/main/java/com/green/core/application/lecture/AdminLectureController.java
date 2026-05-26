@@ -50,4 +50,21 @@ public class AdminLectureController {
         return ResultResponse.builder().message("강의 폐강 처리 완료").build();
     }
 
+    @PatchMapping("/{lectureId}/professor")
+    public ResultResponse<?> changeLectureProfessor(@PathVariable Long lectureId,
+                                                    @RequestBody Map<String, Object> body) {
+        MemberDto memberDto = MemberContext.get();
+        String reason = (body != null) ? (String) body.get("reason") : null;
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException(LectureErrorCode.CANCEL_REASON_REQUIRED);
+        }
+        Long newMemberCode = body.get("newMemberCode") != null
+                ? Long.parseLong(body.get("newMemberCode").toString()) : null;
+        if (newMemberCode == null) {
+            throw new BusinessException(LectureErrorCode.REPLACEMENT_PROFESSOR_REQUIRED);
+        }
+        lectureService.changeLectureProfessor(memberDto, lectureId, reason, newMemberCode);
+        return ResultResponse.builder().message("강의 담당 교수 변경 완료").build();
+    }
+
 }
