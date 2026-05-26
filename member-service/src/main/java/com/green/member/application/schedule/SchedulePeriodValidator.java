@@ -14,9 +14,9 @@ public class SchedulePeriodValidator {
 
     // 전공변경신청 기간 체크
     public void checkMajorChange() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.MAJOR_CHANGE)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_MAJOR_CHANGE_PERIOD);
     }
 }
