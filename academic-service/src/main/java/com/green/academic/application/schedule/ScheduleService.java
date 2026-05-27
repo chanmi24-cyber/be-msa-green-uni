@@ -111,8 +111,7 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
 
-        sendKafkaDeleteEvent(schedule);  // 추가
-
+        sendKafkaDeleteEvent(schedule);
         scheduleRepository.delete(schedule);
     }
 
