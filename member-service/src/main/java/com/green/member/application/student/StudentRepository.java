@@ -1,13 +1,22 @@
 package com.green.member.application.student;
 
+import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.student.model.StudentListDto;
 import com.green.member.entity.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
+
+    // 🎯 원본 테이블 상태 변경을 위한 벌크 쿼리 메서드 추가
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Student s SET s.status = :status WHERE s.memberCode = :memberCode")
+    int updateStatus(@Param("memberCode") Long memberCode,
+                     @Param("status") EnumStudentStatus status);
 
     @Query(
             value = """

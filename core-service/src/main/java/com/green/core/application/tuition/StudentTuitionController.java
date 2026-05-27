@@ -21,14 +21,20 @@ public class StudentTuitionController {
         return ResponseEntity.ok(tuitionService.getStudentTuitionList(studentCode));
     }
 
-    // API-TUI-03: 등록금 납부 상세 조회 (Path 변수로 tuitionId 수신 구조 매핑)
-    @GetMapping("/{tuitionId}")
+    // API-TUI-14-STU: 학생용 등록금 납부 기간 조회
+    @GetMapping("/payment-period")
+    public ResponseEntity<TuitionRes.PaymentPeriodRes> getPaymentPeriod() {
+        return ResponseEntity.ok(tuitionService.getTuitionPaymentPeriod());
+    }
+
+    // API-TUI-03: 등록금 납부 상세 조회
+    @GetMapping("/detail/{tuitionId}")
     public ResponseEntity<TuitionRes.MyTuitionDetailRes> getMyTuitionDetail(@PathVariable Long tuitionId) {
         Long studentCode = MemberContext.get().memberCode();
         return ResponseEntity.ok(tuitionService.getStudentTuitionDetailByTuitionId(studentCode, tuitionId));
     }
 
-    // API-TUI-07: 학생 납부 신청 (PATCH 매핑 및 pending 엔드포인트 주소 일치)
+    // API-TUI-07: 학생 납부 신청
     @PatchMapping("/{tuitionId}/pending")
     public ResponseEntity<Void> requestPayment(@PathVariable Long tuitionId) {
         Long studentCode = MemberContext.get().memberCode();

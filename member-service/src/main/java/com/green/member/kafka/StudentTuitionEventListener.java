@@ -16,18 +16,18 @@ public class StudentTuitionEventListener {
 
     private final StudentRepository studentRepository;
 
-    // groupId를 core와 구분되도록 'member-student-group'으로 지정합니다.
     @KafkaListener(topics = "tuition-paid-topic", groupId = "member-student-group")
     @Transactional
     public void handleTuitionPaidEvent(TuitionPaidEvent event) {
         log.info("[Member-Service] 등록금 납부 완료 이벤트 수신 -> 원본 DB 상태 변경 시작 - 학생: {}", event.studentCode());
 
-        studentRepository.findById(event.studentCode()).ifPresentOrElse(
-                student -> {
-                    student.updateStatus(EnumStudentStatus.ENROLLED);
-                    log.info("[Member-Service] 학생 원본 DB 상태 변환 완료 -> ENROLLED (학생코드: {})", event.studentCode());
-                },
-                () -> log.error("[🚨 Member-Service] 이벤트를 수신했으나 해당 학번의 학생을 찾을 수 없습니다. 코드: {}", event.studentCode())
-        );
+        // 🎯 SpEL이 적용된 리포지토리 메서드 호출
+        int updatedRows = studentRepository.updateStatus(event.studentCode(), EnumStudentStatus.ENROLLED);
+
+        if (updatedRows > 0) {
+            log.info("[Member-Service] 학생 원본 DB 상태 변환 완료 -> ENROLLED (학생코드: {})", event.studentCode());
+        } else {
+            log.error("[🚨 Member-Service] 이벤트를 수신했으나 해당 학번의 학생을 찾을 수 없습니다. 코드: {}", event.studentCode());
+        }
     }
 }
