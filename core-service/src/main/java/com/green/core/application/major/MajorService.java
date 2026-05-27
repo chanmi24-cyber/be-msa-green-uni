@@ -136,7 +136,7 @@ public class MajorService {
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
-                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate());
+                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate(), req.getClosedDate());
 
         // 이벤트 발행 추가
         MajorEvent event = MajorEvent.builder()
@@ -225,6 +225,7 @@ public class MajorService {
                 .info(major.getInfo())
                 .courseDuration(major.getCourseDuration())
                 .foundedDate(major.getFoundedDate())
+                .closedDate(major.getClosedDate())
                 .build();
     }
 

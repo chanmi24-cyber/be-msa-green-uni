@@ -7,8 +7,6 @@ import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
-
 @Entity
 @Table(name = "major")
 @Getter
@@ -19,7 +17,6 @@ public class Major extends CreatedUpdatedAt {
 
     @Id @Tsid
     @Column(name = "major_id")
-    //없앰
     private Long majorId;
 
     @Column(name = "name", nullable = false, length = 20)
@@ -57,9 +54,14 @@ public class Major extends CreatedUpdatedAt {
     @Column(name = "founded_date", length = 10)
     private String foundedDate;
 
+    // ↓ 폐지일 필드 추가 (Nullable 허용)
+    @Column(name = "closed_date", length = 10)
+    private String closedDate;
+
     public void update(String name, EnumMajorStatus active, College college,
                        EnumBuilding majorBuilding, String room, String tel,
-                       Integer capacity, Long professorCode, String info, Integer courseDuration, String foundedDate) {
+                       Integer capacity, Long professorCode, String info,
+                       Integer courseDuration, String foundedDate, String closedDate) { // ← closedDate 파라미터 추가
         this.name = name;
         this.active = active;
         this.college = college;
@@ -71,6 +73,7 @@ public class Major extends CreatedUpdatedAt {
         this.info = info;
         this.courseDuration = courseDuration;
         this.foundedDate = foundedDate;
+        this.closedDate = closedDate; // ← 추가
     }
 
 }
