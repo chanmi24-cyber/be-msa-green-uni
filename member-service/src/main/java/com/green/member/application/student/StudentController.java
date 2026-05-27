@@ -34,7 +34,7 @@ public class StudentController {
     public ResultResponse<?> findDashboardRequests(
             @RequestParam(defaultValue = "3") int size) {
         MemberDto loginMember = MemberContext.get();
-        List<StudentDashboardRequestRes> res = studentService.findDashboardRequests(loginMember.memberCode(), size);
+        List<StudentDashboardRequestRes> res = studentService.getDashboardRequests(loginMember.memberCode(), size);
         return ResultResponse.builder()
                 .message("내 신청서 목록 조회 완료")
                 .data(res)
@@ -44,7 +44,7 @@ public class StudentController {
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
-        List<StudentHistoryRes> res = studentService.findStudentHistory( loginMember.memberCode() );
+        List<StudentHistoryRes> res = studentService.getStudentHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("학생 상태 변경 이력 조회")
                 .data(res)
@@ -56,7 +56,7 @@ public class StudentController {
     public ResultResponse<?> applyMajorRequest(@RequestPart @Valid StudentMajorRequestReq req,
                                            @RequestPart(required = false) MultipartFile file) {
         MemberDto loginMember = MemberContext.get();
-        studentService.requestMajor(req, file, loginMember.memberCode());
+        studentService.createMajorRequest(req, file, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("전공 변경 신청을 성공했습니다")
                 .build();
@@ -74,7 +74,7 @@ public class StudentController {
     @GetMapping("/requests/major")
     public ResultResponse<?> findMajorRequests() {
         MemberDto loginMember = MemberContext.get();
-        List<StudentMajorRequestListRes> res = studentService.findMajorRequests( loginMember.memberCode() );
+        List<StudentMajorRequestListRes> res = studentService.getMajorRequests( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -84,7 +84,7 @@ public class StudentController {
     @GetMapping("/requests/major/{requestId}")
     public ResultResponse<?> findMajorRequestsDetail(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        StudentMajorRequestDetailRes res = studentService.findMajorRequest( requestId, loginMember.memberCode() );
+        StudentMajorRequestDetailRes res = studentService.getMajorRequest( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 전공 변경 신청서 상세 조회")
                 .data(res)
@@ -94,14 +94,14 @@ public class StudentController {
     @GetMapping("/requests/major/{requestId}/file")
     public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        return studentService.findMajorRequestFile(requestId, loginMember.memberCode());
+        return studentService.getMajorRequestFile(requestId, loginMember.memberCode());
     }
 
     // 내 전공 변경 이력 조회
     @GetMapping("/history/major")
     public ResultResponse<?> findMajorHistory() {
         MemberDto loginMember = MemberContext.get();
-        List<StudentMajorHistoryRes> res = studentService.findMajorHistory(loginMember.memberCode());
+        List<StudentMajorHistoryRes> res = studentService.getMajorHistory(loginMember.memberCode());
         return ResultResponse.builder()
                 .message("전공 변경 이력 조회")
                 .data(res)
@@ -113,7 +113,7 @@ public class StudentController {
     public ResultResponse<?> applyStatusRequest(@RequestPart @Valid StudentStatusRequestReq req,
                                                @RequestPart(required = false) MultipartFile file) {
         MemberDto loginMember = MemberContext.get();
-        studentService.requestStatus(req, file, loginMember.memberCode());
+        studentService.createStatusRequest(req, file, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("학적 변경 신청이 완료되었습니다.")
                 .build();
@@ -131,7 +131,7 @@ public class StudentController {
     @GetMapping("/requests/status")
     public ResultResponse<?> findStatusRequests() {
         MemberDto loginMember = MemberContext.get();
-        List<StudentStatusRequestListRes> res = studentService.findStatusRequests( loginMember.memberCode() );
+        List<StudentStatusRequestListRes> res = studentService.getStatusRequests( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 학적 변경 신청 목록 조회 완료")
                 .data(res)
@@ -141,7 +141,7 @@ public class StudentController {
     @GetMapping("/requests/status/{requestId}")
     public ResultResponse<?> findStatusRequestsDetail(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        StudentStatusRequestDetailRes res = studentService.findStatusRequest( requestId, loginMember.memberCode() );
+        StudentStatusRequestDetailRes res = studentService.getStatusRequest( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("내 학적 변경 신청서 상세 조회")
                 .data(res)
@@ -151,6 +151,6 @@ public class StudentController {
     @GetMapping("/requests/status/{requestId}/file")
     public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        return studentService.findStatusRequestFile(requestId, loginMember.memberCode());
+        return studentService.getStatusRequestFile(requestId, loginMember.memberCode());
     }
 }

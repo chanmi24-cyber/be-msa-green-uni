@@ -28,7 +28,7 @@ public class ProfessorService {
     private final ProfessorHistoryRepository professorHistoryRepository;
 
     // 교수 정보 조회
-    public ProfessorProfileRes findProfessor(Long memberCode, EnumMemberRole role){
+    public ProfessorProfileRes getProfessor(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Professor professorInfo = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
         log.info("professorInfo: {}", professorInfo);
@@ -64,7 +64,7 @@ public class ProfessorService {
 
     // 교수 상태 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<ProfessorHistoryRes> findStatusHistory(Long memberCode){
+    public List<ProfessorHistoryRes> getStatusHistory(Long memberCode){
         if (!professorRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND);
         }

@@ -10,7 +10,7 @@ import com.green.member.application.major.model.AdminMajorRequestProcessReq;
 import com.green.member.application.major.model.AdminMajorRequestDetailDto;
 import com.green.member.application.major.model.AdminMajorRequestListRes;
 import com.green.member.application.major.model.AdminStudentMajorHistoryRes;
-import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.professor.model.ProfessorListRes;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.status.StatusRequestRepository;
 import com.green.member.application.status.model.AdminStatusRequestDetailDto;
@@ -86,7 +86,7 @@ public class AdminService {
     private final StatusRequestRepository statusRequestRepository;
 
     // 재직 중인 관리자인지 검증
-    private void validateEmployedAdmin(Long memberCode) {
+    private void checkEmployedAdmin(Long memberCode) {
         Admin admin = adminRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         if (admin.getStatus() != EnumAdminStatus.EMPLOYMENT) {
@@ -96,27 +96,27 @@ public class AdminService {
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentListDto> findStudents(Long memberCode) {
-        validateEmployedAdmin(memberCode);
+    public List<StudentListRes> getStudents(Long memberCode) {
+        checkEmployedAdmin(memberCode);
         return studentRepository.findStudentList();
     }
     // 교수 목록 조회
     @Transactional(readOnly = true)
-    public List<ProfessorListDto> findProfessors(Long memberCode) {
-        validateEmployedAdmin(memberCode);
+    public List<ProfessorListRes> getProfessors(Long memberCode) {
+        checkEmployedAdmin(memberCode);
         return professorRepository.findProfessorList();
     }
     // 관리자 목록 조회
     @Transactional(readOnly = true)
-    public List<AdminListDto> findAdmins(Long memberCode) {
-        validateEmployedAdmin(memberCode);
+    public List<AdminListRes> getAdmins(Long memberCode) {
+        checkEmployedAdmin(memberCode);
         return adminRepository.findAdminList();
     }
 
     // 대시보드: 학생/교수/관리자 계정 수 조회
     @Transactional(readOnly = true)
     public MemberCountRes getMemberCounts(Long memberCode) {
-        validateEmployedAdmin(memberCode);
+        checkEmployedAdmin(memberCode);
         return new MemberCountRes(
                 studentRepository.count(),
                 professorRepository.count(),
@@ -193,7 +193,7 @@ public class AdminService {
     // 학생 계정 등록
     @Transactional
     public MemberCreateRes createStudent(StudentCreateReq req, MultipartFile pic, Long updaterCode) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Member member = createMember(req, pic, EnumMemberRole.STUDENT);
 
         // 학생 테이블 저장
@@ -253,7 +253,7 @@ public class AdminService {
     // 교수 계정 등록
     @Transactional
     public MemberCreateRes createProfessor(ProfessorCreateReq req, MultipartFile pic, Long updaterCode) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Member member = createMember(req, pic, EnumMemberRole.PROFESSOR);
 
         Professor newProfessor = Professor.builder()
@@ -300,7 +300,7 @@ public class AdminService {
     // 관리자 계정 등록
     @Transactional
     public MemberCreateRes createAdmin(AdminCreateReq req, MultipartFile pic, Long updaterCode) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Member member = createMember(req, pic, EnumMemberRole.ADMIN);
 
         Admin newAdmin = Admin.builder()
@@ -326,7 +326,7 @@ public class AdminService {
     }
 
     public MemberProfileRes getMemberProfile(Long memberCode, Long requesterCode) {
-        validateEmployedAdmin(requesterCode);
+        checkEmployedAdmin(requesterCode);
         EnumMemberRole role = getRoleFromMemberCode(memberCode);
         return memberService.getMyProfile(memberCode, role);
     }
@@ -345,7 +345,7 @@ public class AdminService {
     // 학생 계정 개인 정보 수정
     @Transactional
     public void updateStudent(Long memberCode, Long updaterCode, AdminStudentUpdateReq req, MultipartFile pic) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
@@ -416,7 +416,7 @@ public class AdminService {
     // 교수 계정 정보 수정
     @Transactional
     public void updateProfessor(Long memberCode, Long updaterCode, AdminProfessorUpdateReq req, MultipartFile pic) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         // 공통 필드 업데이트
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         String oldName = member.getName();
@@ -459,7 +459,7 @@ public class AdminService {
     // 관리자 계정 정보 수정
     @Transactional
     public void updateAdmin(Long memberCode, Long updaterCode, AdminMemberUpdateReq req, MultipartFile pic) {
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Member member = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         String oldName = member.getName();
@@ -480,7 +480,7 @@ public class AdminService {
 
     @Transactional
     public void updateAdminStatus(Long memberCode, Long updaterCode, StatusUpdateAdminReq req){
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Admin admin = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
         EnumAdminStatus oldStatus = admin.getStatus();
         EnumAdminStatus newStatus = req.getStatus();
@@ -537,7 +537,7 @@ public class AdminService {
 
     @Transactional
     public void updateProfessorStatus(Long memberCode, Long updaterCode, StatusUpdateProfessorReq req){
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Professor professor = professorRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.PROFESSOR_NOT_FOUND));
         EnumProfessorStatus oldStatus = professor.getStatus();
         EnumProfessorStatus newStatus = req.getStatus();
@@ -633,7 +633,7 @@ public class AdminService {
 
     @Transactional
     public void updateStudentStatus(Long memberCode, Long updaterCode, StatusUpdateStudentReq req){
-        validateEmployedAdmin(updaterCode);
+        checkEmployedAdmin(updaterCode);
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         EnumStudentStatus oldStatus = student.getStatus();
         EnumStudentStatus newStatus = req.getStatus();
@@ -717,8 +717,8 @@ public class AdminService {
     }
     // 관리자 상태 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<AdminHistoryRes> findStatusHistory(Long memberCode, Long requesterCode){
-        validateEmployedAdmin(requesterCode);
+    public List<AdminHistoryRes> getStatusHistory(Long memberCode, Long requesterCode){
+        checkEmployedAdmin(requesterCode);
         if (!adminRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND);
         }
@@ -741,8 +741,8 @@ public class AdminService {
 
     // 전공 변경 신청 목록 전체 조회 (status/size 파라미터 선택 가능)
     @Transactional(readOnly = true)
-    public List<AdminMajorRequestListRes> findMajorRequests(Long memberCode, String status, Integer size) {
-        validateEmployedAdmin(memberCode);
+    public List<AdminMajorRequestListRes> getMajorRequests(Long memberCode, String status, Integer size) {
+        checkEmployedAdmin(memberCode);
         Stream<AdminMajorRequestListRes> stream = majorRequestRepository.findAllByFilter().stream();
         if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
         if (size != null && size > 0) return stream.limit(size).toList();
@@ -751,8 +751,8 @@ public class AdminService {
 
     // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
     @Transactional(readOnly = true)
-    public AdminMajorRequestDetailRes findMajorRequestDetail( Long requestId, Long memberCode ) {
-        validateEmployedAdmin(memberCode);
+    public AdminMajorRequestDetailRes getMajorRequestDetail( Long requestId, Long memberCode ) {
+        checkEmployedAdmin(memberCode);
         AdminMajorRequestDetailDto detail = majorRequestRepository.findDetailByRequestId(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
 
@@ -783,8 +783,8 @@ public class AdminService {
 
     // 전공 변경 신청 처리
     @Transactional
-    public void processMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long updaterCode) {
-        validateEmployedAdmin(updaterCode);
+    public void updateMajorRequest(Long requestId, AdminMajorRequestProcessReq req, Long updaterCode) {
+        checkEmployedAdmin(updaterCode);
         // APPROVED, REJECTED 외 상태는 처리 불가
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
@@ -858,8 +858,8 @@ public class AdminService {
 
     // 전공 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findMajorRequestFile( Long requestId, Long memberCode) {
-        validateEmployedAdmin(memberCode);
+    public ResponseEntity<Resource> getMajorRequestFile( Long requestId, Long memberCode) {
+        checkEmployedAdmin(memberCode);
         MajorRequest request = majorRequestRepository.findById(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
         if (request.getFile() == null) {
@@ -872,8 +872,8 @@ public class AdminService {
 
     // 특정 학생의 전공 변경 이력 조회 (관리자용)
     @Transactional(readOnly = true)
-    public List<AdminStudentMajorHistoryRes> findStudentMajorHistory(Long studentCode, Long adminCode) {
-        validateEmployedAdmin(adminCode);
+    public List<AdminStudentMajorHistoryRes> getStudentMajorHistory(Long studentCode, Long adminCode) {
+        checkEmployedAdmin(adminCode);
         if (!studentRepository.existsById(studentCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -882,8 +882,8 @@ public class AdminService {
 
     // 학적 변경 신청 목록 전체 조회 (status/type/size 파라미터 선택 가능)
     @Transactional(readOnly = true)
-    public List<AdminStatusRequestListRes> findStatusRequests(Long memberCode, String status, String type, Integer size) {
-        validateEmployedAdmin(memberCode);
+    public List<AdminStatusRequestListRes> getStatusRequests(Long memberCode, String status, String type, Integer size) {
+        checkEmployedAdmin(memberCode);
         Stream<AdminStatusRequestListRes> stream = statusRequestRepository.findAllByFilter().stream();
         if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
         if (type != null) stream = stream.filter(r -> type.equals(r.getType()));
@@ -892,8 +892,8 @@ public class AdminService {
     }
     // 학적 변경 신청 상세 조회
     @Transactional(readOnly = true)
-    public AdminStatusRequestDetailRes findStatusRequestDetail(Long requestId, Long memberCode ) {
-        validateEmployedAdmin(memberCode);
+    public AdminStatusRequestDetailRes getStatusRequestDetail(Long requestId, Long memberCode ) {
+        checkEmployedAdmin(memberCode);
         AdminStatusRequestDetailDto detail = statusRequestRepository.findDetailByRequestId(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
 
@@ -925,8 +925,8 @@ public class AdminService {
     }
     // 학적 변경 신청서 파일 다운로드 (관리자 — 소유권 제한 없음)
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findStatusRequestFile( Long requestId, Long memberCode) {
-        validateEmployedAdmin(memberCode);
+    public ResponseEntity<Resource> getStatusRequestFile( Long requestId, Long memberCode) {
+        checkEmployedAdmin(memberCode);
         StatusRequest request = statusRequestRepository.findById(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
         if (request.getFile() == null) {
@@ -938,8 +938,8 @@ public class AdminService {
     }
     // 학적 변경 신청 처리
     @Transactional
-    public void processStatusRequest(Long requestId, AdminStatusRequestProcessReq req, Long updaterCode) {
-        validateEmployedAdmin(updaterCode);
+    public void updateStatusRequest(Long requestId, AdminStatusRequestProcessReq req, Long updaterCode) {
+        checkEmployedAdmin(updaterCode);
 
         // APPROVED, REJECTED 외 상태는 처리 불가
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {

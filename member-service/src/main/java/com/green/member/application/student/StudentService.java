@@ -60,7 +60,7 @@ public class StudentService {
     private final CoreServiceClient coreServiceClient;
 
     // 학생 정보 조회
-    public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
+    public StudentProfileRes getStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Student studentInfo = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         List<StudentMajor> majors = studentMajorRepository.findByStudent_MemberCodeAndIsActiveTrue(memberCode);
@@ -110,7 +110,7 @@ public class StudentService {
 
     // 학생 상태 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<StudentHistoryRes> findStudentHistory(Long memberCode){
+    public List<StudentHistoryRes> getStudentHistory(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -136,7 +136,7 @@ public class StudentService {
 
     // 학생 전공 변경 신청
     @Transactional
-    public void requestMajor(StudentMajorRequestReq req, MultipartFile file, Long memberCode){
+    public void createMajorRequest(StudentMajorRequestReq req, MultipartFile file, Long memberCode){
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
@@ -225,7 +225,7 @@ public class StudentService {
     }
     // 내 전공 변경 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentMajorRequestListRes> findMajorRequests(Long memberCode){
+    public List<StudentMajorRequestListRes> getMajorRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -234,7 +234,7 @@ public class StudentService {
 
     // 내 전공 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<StudentMajorHistoryRes> findMajorHistory(Long memberCode) {
+    public List<StudentMajorHistoryRes> getMajorHistory(Long memberCode) {
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -243,14 +243,14 @@ public class StudentService {
 
     // 내 전공 변경 신청서 상세 조회
     @Transactional(readOnly = true)
-    public StudentMajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
+    public StudentMajorRequestDetailRes getMajorRequest(Long requestId, Long memberCode){
         return majorRequestRepository.findStudentMajorRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
     }
 
     // 내 전공 변경 신청서 파일 다운로드
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
+    public ResponseEntity<Resource> getMajorRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
@@ -264,7 +264,7 @@ public class StudentService {
 
     // 학생 학적 변경 신청
     @Transactional
-    public void requestStatus(StudentStatusRequestReq req, MultipartFile file, Long memberCode){
+    public void createStatusRequest(StudentStatusRequestReq req, MultipartFile file, Long memberCode){
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
         // 재학/휴학 상태만 신청 가능 (졸업, 자퇴, 퇴학 등은 차단)
@@ -333,7 +333,7 @@ public class StudentService {
     }
     // 내 학적 변경 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentStatusRequestListRes> findStatusRequests(Long memberCode){
+    public List<StudentStatusRequestListRes> getStatusRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -342,7 +342,7 @@ public class StudentService {
 
     // 대시보드: 학적변경 + 전공변경 신청 통합 목록 조회 (createdAt DESC, size 제한)
     @Transactional(readOnly = true)
-    public List<StudentDashboardRequestRes> findDashboardRequests(Long memberCode, int size) {
+    public List<StudentDashboardRequestRes> getDashboardRequests(Long memberCode, int size) {
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -368,13 +368,13 @@ public class StudentService {
     }
     // 내 학적 변경 신청서 상세 조회
     @Transactional(readOnly = true)
-    public StudentStatusRequestDetailRes findStatusRequest(Long requestId, Long memberCode){
+    public StudentStatusRequestDetailRes getStatusRequest(Long requestId, Long memberCode){
         return statusRequestRepository.findStudentStatusRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
     }
     // 내 학적 변경 신청서 파일 다운로드
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findStatusRequestFile(Long requestId, Long memberCode) {
+    public ResponseEntity<Resource> getStatusRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         StatusRequest request = statusRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
