@@ -1,15 +1,11 @@
 package com.green.member.application.student;
 
-import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
-import com.green.common.kafka.member.GpaRequestEvent;
-import com.green.common.kafka.member.MemberTopic;
-import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
@@ -57,7 +53,6 @@ public class StudentService {
     private final StudentMajorRepository studentMajorRepository;
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
-    private final OutboxService outboxService;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final FileService fileService;
     private final StatusRequestRepository statusRequestRepository;
@@ -206,19 +201,7 @@ public class StudentService {
                         .filter(m -> m.getType() == EnumMajorType.MINOR)
                         .map(StudentMajor::getMajorId).findFirst().orElse(null))
                 .build();
-        MajorRequest newRequest = majorRequestRepository.save(request);
-
-
-        // GPA 조회 요청 이벤트 발행
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                newRequest.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(newRequest.getRequestId())
-                        .studentCode(memberCode)
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
+        majorRequestRepository.save(request);
     }
     // 내 전공 변경 신청 취소
     @Transactional
@@ -325,17 +308,6 @@ public class StudentService {
                 .returnSemester(req.getReturnSemester())
                 .build();
         statusRequestRepository.save(request);
-
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                request.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(request.getRequestId())
-                        .studentCode(memberCode)
-                        .requestType("STATUS_REQUEST")
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
     }
     // 내 학적 변경 신청 취소
     @Transactional
