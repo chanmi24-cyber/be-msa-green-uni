@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,30 +32,35 @@ public class ScholarshipService {
     private final StudentCacheRepository studentCacheRepository;
     private final MajorRepository majorRepository;
 
-    // 스케줄러 호출용
     @Transactional
     public void assignScholarships(Integer year, Integer semester) {
-        // scholarship_type 전체 맵으로 로드
+        // 1. scholarship_type 전체 맵으로 로드
         Map<String, ScholarshipType> typeMap = scholarshipTypeRepository.findAll()
                 .stream()
                 .collect(Collectors.toMap(ScholarshipType::getScholarshipType, t -> t));
 
-        // ENROLLED 학생만 대상
-        List<StudentCache> students = studentCacheRepository.findAllByStatus(EnumStudentStatus.ENROLLED);
+        // 2. 해당 년도/학기에 이미 배정된 장학금 전체 리스트 조회
+        List<Scholarship> alreadyAssignedList = scholarshipRepository.findAllByYearAndSemester(year, semester, Pageable.unpaged()).getContent();
 
+        // 3. 식별자 키 조합 생성
+        Set<String> alreadyAssignedSet = alreadyAssignedList.stream()
+                .map(s -> s.getStudentCode() + "_" + s.getScholarshipType().getScholarshipTypeId())
+                .collect(Collectors.toSet());
+
+        // 4. ENROLLED 학생만 대상
+        List<StudentCache> students = studentCacheRepository.findAllByStatus(EnumStudentStatus.ENROLLED);
         List<Scholarship> toSave = new ArrayList<>();
 
         for (StudentCache student : students) {
             if (Boolean.TRUE.equals(student.getIsTransfer())) {
-                collectIfAbsent(student, typeMap.get("편입학"), year, semester, toSave);
+                collectIfAbsent(student, typeMap.get("편입학"), year, semester, toSave, alreadyAssignedSet);
             }
             if (Boolean.TRUE.equals(student.getIsVeteran())) {
-                collectIfAbsent(student, typeMap.get("보훈"), year, semester, toSave);
+                collectIfAbsent(student, typeMap.get("보훈"), year, semester, toSave, alreadyAssignedSet);
             }
             if (Boolean.TRUE.equals(student.getIsMultiChild())) {
-                collectIfAbsent(student, typeMap.get("다자녀"), year, semester, toSave);
+                collectIfAbsent(student, typeMap.get("다자녀"), year, semester, toSave, alreadyAssignedSet);
             }
-            // 성적 장학금은 성적 확정 시점에 별도 처리
         }
 
         scholarshipRepository.saveAll(toSave);
@@ -62,13 +68,13 @@ public class ScholarshipService {
     }
 
     private void collectIfAbsent(StudentCache student, ScholarshipType type,
-                                 Integer year, Integer semester, List<Scholarship> toSave) {
+                                 Integer year, Integer semester, List<Scholarship> toSave,
+                                 Set<String> alreadyAssignedSet) {
         if (type == null) return;
-        boolean exists = scholarshipRepository
-                .existsByStudentCodeAndScholarshipTypeAndYearAndSemester(
-                        student.getMemberCode(), type, year, semester
-                );
-        if (!exists) {
+
+        // 5. 여기서도 getId() 대신 getScholarshipTypeId()를 사용합니다.
+        String key = student.getMemberCode() + "_" + type.getScholarshipTypeId();
+        if (!alreadyAssignedSet.contains(key)) {
             toSave.add(Scholarship.builder()
                     .studentCode(student.getMemberCode())
                     .scholarshipType(type)
@@ -97,7 +103,7 @@ public class ScholarshipService {
                     String studentName = cache != null ? cache.getName() : "알 수 없음";
                     Integer academicYear = cache != null ? cache.getAcademicYear() : null;
 
-                    // 💡 [수정] cache가 null이 아닐 때만 학과 레포지토리를 조회하도록 안전하게 방어 조치합니다.
+                    // cache가 null이 아닐 때만 학과 레포지토리를 조회하도록 안전하게 방어 조치합니다.
                     String deptName = "알 수 없음";
                     if (cache != null && cache.getMajorId() != null) {
                         deptName = majorRepository.findById(cache.getMajorId())
