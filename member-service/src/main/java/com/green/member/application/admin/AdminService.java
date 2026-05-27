@@ -1019,6 +1019,13 @@ public class AdminService {
             // 학생 상태 업데이트
             student.updateStatus(newStatus);
 
+            // 자퇴 승인 시 자퇴 처리일 기록
+            if (newStatus == EnumStudentStatus.QUIT) {
+                Member member = memberRepository.findById(studentCode)
+                        .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+                member.setExitDate(LocalDate.now());
+            }
+
             // StudentEvent Outbox 저장
             outboxService.saveToOutbox(
                     MemberTopic.STUDENT,
