@@ -55,11 +55,8 @@ public class MemberService {
 
     // 관리자 정보 조회
     public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
-        log.info("findAdmin 진입, memberCode: {}", memberCode);
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
-        log.info("memberInfo: {}", memberInfo);
         Admin adminInfo = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
-        log.info("adminInfo: {}", adminInfo);
 
         return AdminProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
@@ -105,8 +102,6 @@ public class MemberService {
         String oldAddress = member.getAddress();
         String oldDetailAddress = member.getDetailAddress();
         String oldPic = member.getPic();
-
-        log.info("oldEmail: {}, reqEmail: {}", oldEmail, req.getEmail());
 
         // 공통 필드 업데이트
         member.updateCommon(

@@ -35,7 +35,7 @@ public class GraduationResponseConsumer {
 
     @Transactional
     @KafkaListener(topics = MemberTopic.GRADUATION_RESPONSE, groupId = "member-service-group")
-    public boolean consume(GraduationCheckResponseEvent event) {
+    public void consume(GraduationCheckResponseEvent event) {
         Long studentCode = event.getStudentCode();
         Integer totalCredits = event.getTotalCredits();
 
@@ -44,25 +44,25 @@ public class GraduationResponseConsumer {
         if (totalCredits == null || totalCredits < GRADUATION_CREDIT_REQUIREMENT) {
             log.info("[졸업 처리] studentCode={} 졸업 조건 미충족 ({}/{}학점)",
                     studentCode, totalCredits, GRADUATION_CREDIT_REQUIREMENT);
-            return false;
+            return;
         }
 
         Student student = studentRepository.findById(studentCode).orElse(null);
         if (student == null) {
             log.warn("[졸업 처리] studentCode={} 학생 없음 - 건너뜀", studentCode);
-            return false;
+            return;
         }
         // 재학 상태가 아니면 처리 안 함 (중복 처리 방어)
         if (student.getStatus() != EnumStudentStatus.ENROLLED) {
             log.info("[졸업 처리] studentCode={} 재학 상태 아님 ({}) - 건너뜀",
                     studentCode, student.getStatus());
-            return false;
+            return;
         }
 
         Member member = memberRepository.findById(studentCode).orElse(null);
         if (member == null) {
             log.warn("[졸업 처리] studentCode={} 회원 없음 - 건너뜀", studentCode);
-            return false;
+            return;
         }
 
         EnumStudentStatus oldStatus = student.getStatus();
@@ -97,6 +97,5 @@ public class GraduationResponseConsumer {
         );
 
         log.info("[졸업 처리] 완료 - studentCode={} 취득학점={}학점", studentCode, totalCredits);
-        return true;
     }
 }

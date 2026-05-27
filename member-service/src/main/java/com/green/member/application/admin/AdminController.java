@@ -63,7 +63,7 @@ public class AdminController {
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
-        List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
+        List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode(), loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자 상태 변경 이력 조회")
                 .data(res)
@@ -99,7 +99,8 @@ public class AdminController {
     }
     @GetMapping("/admins/{memberCode}/history")
     public ResultResponse<?> findAdminHistory(@PathVariable Long memberCode){
-        List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode );
+        MemberDto loginMember = MemberContext.get();
+        List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자의 관리자 계정 상태 변경 이력 조회")
                 .data(res)
@@ -109,7 +110,8 @@ public class AdminController {
     // 회원 상세 정보 조회
     @GetMapping("/{memberCode}")
     public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
-        MemberProfileRes res = adminService.getMemberProfile(memberCode);
+        MemberDto loginMember = MemberContext.get();
+        MemberProfileRes res = adminService.getMemberProfile(memberCode, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("회원 프로파일 조회")
                 .data(res)
@@ -119,7 +121,8 @@ public class AdminController {
     // 학생 회원 목록 조회
     @GetMapping("/students")
     public ResultResponse<?> findStudentList(){
-        List<StudentListDto> res = adminService.findStudents();
+        MemberDto loginMember = MemberContext.get();
+        List<StudentListDto> res = adminService.findStudents(loginMember.memberCode());
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)
@@ -128,7 +131,8 @@ public class AdminController {
     // 교수 회원 목록 조회
     @GetMapping("/professors")
     public ResultResponse<?> findProfessorList(){
-        List<ProfessorListDto> res = adminService.findProfessors();
+        MemberDto loginMember = MemberContext.get();
+        List<ProfessorListDto> res = adminService.findProfessors(loginMember.memberCode());
         return ResultResponse.builder()
                 .message("교수 목록 조회 성공")
                 .data(res)
@@ -137,7 +141,8 @@ public class AdminController {
     // 관리자 회원 목록 조회
     @GetMapping("/admins")
     public ResultResponse<?> findAdminList(){
-        List<AdminListDto> res = adminService.findAdmins();
+        MemberDto loginMember = MemberContext.get();
+        List<AdminListDto> res = adminService.findAdmins(loginMember.memberCode());
         return ResultResponse.builder()
                 .message("관리자 목록 조회 성공")
                 .data(res)
