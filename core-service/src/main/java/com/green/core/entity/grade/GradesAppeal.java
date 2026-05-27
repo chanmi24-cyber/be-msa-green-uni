@@ -39,4 +39,25 @@ public class GradesAppeal extends CreatedUpdatedAt {
     // 교수 처리 시 백엔드에서 직접 입력
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
+
+    // [추가] 이의신청 내용 재신청 (REJECTED → PENDING)
+    public void resubmit(String reason) {
+        this.reason = reason;
+        this.status = EnumAppealStatus.PENDING;
+        this.rejectReason = null;
+        this.processedAt = null;
+    }
+
+    // [추가] 교수 반려 처리
+    public void reject(String rejectReason) {
+        this.status = EnumAppealStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.processedAt = LocalDateTime.now();
+    }
+
+    // [추가] 교수 승인 처리
+    public void approve() {
+        this.status = EnumAppealStatus.APPROVED;
+        this.processedAt = LocalDateTime.now();
+    }
 }
