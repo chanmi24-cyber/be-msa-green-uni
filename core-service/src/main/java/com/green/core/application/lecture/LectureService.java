@@ -416,4 +416,7 @@ public class LectureService {
         }
     }
 
+    public List<Integer> getLectureYears() {
+        return lectureMapper.findLectureYears();
+    }
 }
