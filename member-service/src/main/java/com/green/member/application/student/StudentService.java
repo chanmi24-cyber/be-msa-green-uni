@@ -1,16 +1,14 @@
 package com.green.member.application.student;
 
-import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
-import com.green.common.kafka.member.GpaRequestEvent;
-import com.green.common.kafka.member.MemberTopic;
-import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
+import com.green.common.client.GpaResult;
+import com.green.member.client.CoreServiceClient;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
@@ -41,7 +39,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,13 +54,13 @@ public class StudentService {
     private final StudentMajorRepository studentMajorRepository;
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
-    private final OutboxService outboxService;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final FileService fileService;
     private final StatusRequestRepository statusRequestRepository;
+    private final CoreServiceClient coreServiceClient;
 
     // 학생 정보 조회
-    public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
+    public StudentProfileRes getStudent(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Student studentInfo = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
         List<StudentMajor> majors = studentMajorRepository.findByStudent_MemberCodeAndIsActiveTrue(memberCode);
@@ -113,7 +110,7 @@ public class StudentService {
 
     // 학생 상태 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<StudentHistoryRes> findStudentHistory(Long memberCode){
+    public List<StudentHistoryRes> getStudentHistory(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -139,7 +136,7 @@ public class StudentService {
 
     // 학생 전공 변경 신청
     @Transactional
-    public void requestMajor(StudentMajorRequestReq req, MultipartFile file, Long memberCode){
+    public void createMajorRequest(StudentMajorRequestReq req, MultipartFile file, Long memberCode){
         // 회원 조회
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
@@ -186,6 +183,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
         MajorRequest request = MajorRequest.builder()
                 .student(student)
@@ -194,7 +194,7 @@ public class StudentService {
                 .reason(req.getReason())
                 .file(savedFileName)
                 .originalFileName(originalFileName)
-                .gpa(BigDecimal.ZERO)
+                .gpa(gpaResult.getGpa())
                 .academicYear(student.getAcademicYear())
                 .semester(student.getSemester())
                 .currentMajorId(activeMajors.stream()
@@ -206,19 +206,7 @@ public class StudentService {
                         .filter(m -> m.getType() == EnumMajorType.MINOR)
                         .map(StudentMajor::getMajorId).findFirst().orElse(null))
                 .build();
-        MajorRequest newRequest = majorRequestRepository.save(request);
-
-
-        // GPA 조회 요청 이벤트 발행
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                newRequest.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(newRequest.getRequestId())
-                        .studentCode(memberCode)
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
+        majorRequestRepository.save(request);
     }
     // 내 전공 변경 신청 취소
     @Transactional
@@ -237,7 +225,7 @@ public class StudentService {
     }
     // 내 전공 변경 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentMajorRequestListRes> findMajorRequests(Long memberCode){
+    public List<StudentMajorRequestListRes> getMajorRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -246,7 +234,7 @@ public class StudentService {
 
     // 내 전공 변경 이력 조회
     @Transactional(readOnly = true)
-    public List<StudentMajorHistoryRes> findMajorHistory(Long memberCode) {
+    public List<StudentMajorHistoryRes> getMajorHistory(Long memberCode) {
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -255,14 +243,14 @@ public class StudentService {
 
     // 내 전공 변경 신청서 상세 조회
     @Transactional(readOnly = true)
-    public StudentMajorRequestDetailRes findMajorRequest(Long requestId, Long memberCode){
+    public StudentMajorRequestDetailRes getMajorRequest(Long requestId, Long memberCode){
         return majorRequestRepository.findStudentMajorRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
     }
 
     // 내 전공 변경 신청서 파일 다운로드
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findMajorRequestFile(Long requestId, Long memberCode) {
+    public ResponseEntity<Resource> getMajorRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         MajorRequest request = majorRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
@@ -276,7 +264,7 @@ public class StudentService {
 
     // 학생 학적 변경 신청
     @Transactional
-    public void requestStatus(StudentStatusRequestReq req, MultipartFile file, Long memberCode){
+    public void createStatusRequest(StudentStatusRequestReq req, MultipartFile file, Long memberCode){
         Student student = studentRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
 
         // 재학/휴학 상태만 신청 가능 (졸업, 자퇴, 퇴학 등은 차단)
@@ -312,6 +300,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA/취득학점 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         StatusRequest request = StatusRequest.builder()
                 .student(student)
                 .type(req.getType())
@@ -323,19 +314,9 @@ public class StudentService {
                 .startDate(req.getStartDate())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
+                .totalCredits(gpaResult.getTotalCredits())
                 .build();
         statusRequestRepository.save(request);
-
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                request.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(request.getRequestId())
-                        .studentCode(memberCode)
-                        .requestType("STATUS_REQUEST")
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
     }
     // 내 학적 변경 신청 취소
     @Transactional
@@ -352,7 +333,7 @@ public class StudentService {
     }
     // 내 학적 변경 신청 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentStatusRequestListRes> findStatusRequests(Long memberCode){
+    public List<StudentStatusRequestListRes> getStatusRequests(Long memberCode){
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -361,7 +342,7 @@ public class StudentService {
 
     // 대시보드: 학적변경 + 전공변경 신청 통합 목록 조회 (createdAt DESC, size 제한)
     @Transactional(readOnly = true)
-    public List<StudentDashboardRequestRes> findDashboardRequests(Long memberCode, int size) {
+    public List<StudentDashboardRequestRes> getDashboardRequests(Long memberCode, int size) {
         if (!studentRepository.existsById(memberCode)) {
             throw new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND);
         }
@@ -387,13 +368,13 @@ public class StudentService {
     }
     // 내 학적 변경 신청서 상세 조회
     @Transactional(readOnly = true)
-    public StudentStatusRequestDetailRes findStatusRequest(Long requestId, Long memberCode){
+    public StudentStatusRequestDetailRes getStatusRequest(Long requestId, Long memberCode){
         return statusRequestRepository.findStudentStatusRequestDetail(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
     }
     // 내 학적 변경 신청서 파일 다운로드
     @Transactional(readOnly = true)
-    public ResponseEntity<Resource> findStatusRequestFile(Long requestId, Long memberCode) {
+    public ResponseEntity<Resource> getStatusRequestFile(Long requestId, Long memberCode) {
         // requestId + memberCode 조합으로 타인의 파일 접근 차단
         StatusRequest request = statusRequestRepository.findByRequestIdAndStudent_MemberCode(requestId, memberCode)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));

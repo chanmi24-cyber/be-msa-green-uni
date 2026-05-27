@@ -14,7 +14,7 @@ import java.util.List;
 public class MajorCacheService {
     private final MajorCacheRepository majorCacheRepository;
 
-    public List<CollegeListRes> findColleges(){
+    public List<CollegeListRes> getColleges(){
         return majorCacheRepository.findDistinctColleges()
                 .stream()
                 .map(row -> CollegeListRes.builder()
@@ -24,7 +24,7 @@ public class MajorCacheService {
                 .toList();
     }
 
-    public List<MajorListRes> findAll(){
+    public List<MajorListRes> getMajors(){
         return majorCacheRepository.findByActive("RUNNING")
                 .stream()
                 .map(major -> MajorListRes.builder()
