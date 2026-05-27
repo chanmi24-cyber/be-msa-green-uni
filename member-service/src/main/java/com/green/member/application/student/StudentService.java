@@ -7,7 +7,7 @@ import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
 import com.green.common.file.FileService;
-import com.green.common.model.GpaResult;
+import com.green.common.client.GpaResult;
 import com.green.member.client.CoreServiceClient;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
@@ -39,7 +39,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;

@@ -1,6 +1,6 @@
 package com.green.core.application.grade;
 
-import com.green.common.model.GpaResult;
+import com.green.common.client.GpaResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

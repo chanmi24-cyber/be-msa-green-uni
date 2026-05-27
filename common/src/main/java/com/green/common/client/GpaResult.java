@@ -1,4 +1,4 @@
-package com.green.common.model;
+package com.green.common.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
