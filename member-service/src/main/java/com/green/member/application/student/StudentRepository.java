@@ -12,6 +12,12 @@ import java.util.List;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
+    // 원본 테이블 상태 변경을 위한 벌크 쿼리 메서드 추가
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Student s SET s.status = :status WHERE s.memberCode = :memberCode")
+    int updateStatus(@Param("memberCode") Long memberCode,
+                     @Param("status") EnumStudentStatus status);
+
     // 학기 갱신 / 졸업 처리 대상 조회
     List<Student> findByStatus(EnumStudentStatus status);
 
