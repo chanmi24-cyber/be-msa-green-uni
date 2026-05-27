@@ -41,4 +41,26 @@ public class AcademicScheduler {
         log.info("[AcademicScheduler] 학기 시작 감지 ({}). 학년/학기 자동 갱신 시작", today);
         semesterSchedulerService.advanceSemester();
     }
+
+    /**
+     * 매일 자정에 실행.
+     * schedule_cache에서 오늘이 SEMESTER_END 시작일이면 졸업 처리 요청 발행.
+     */
+    @Scheduled(cron = "0 0 0 * * *")
+    public void checkAndGraduate() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+        List<ScheduleCache> todayEnds = scheduleCacheRepository
+                .findByTypeAndIsActiveTrueAndStartDateBetween(
+                        EnumScheduleType.SEMESTER_END, startOfDay, endOfDay);
+
+        if (todayEnds.isEmpty()) {
+            return;
+        }
+
+        log.info("[AcademicScheduler] 학기 종료 감지 ({}). 졸업 처리 요청 시작", today);
+        semesterSchedulerService.requestGraduationCheck();
+    }
 }

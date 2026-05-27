@@ -116,4 +116,17 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
             @Param("attendScore") int attendScore,
             @Param("totalScore") int totalScore,
             @Param("gradeLetter") EnumGradeLetter gradeLetter);
+
+    // 졸업 처리: 학생의 F학점 제외 총 취득학점 합산
+    @Query(value = """
+            SELECT COALESCE(SUM(l.credit), 0)
+            FROM grade g
+            INNER JOIN course c ON c.course_id = g.course_id
+            INNER JOIN lecture l ON l.lecture_id = c.lecture_id
+            WHERE c.student_code = :studentCode
+              AND g.grade_letter IS NOT NULL
+              AND g.grade_letter != 'F'
+            """, nativeQuery = true)
+    int sumTotalCreditsByStudentCode(@Param("studentCode") Long studentCode);
+
 }

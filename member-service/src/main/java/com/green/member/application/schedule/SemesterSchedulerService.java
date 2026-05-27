@@ -3,6 +3,7 @@ package com.green.member.application.schedule;
 import com.green.common.constants.EventType;
 import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumStudentStatus;
+import com.green.common.kafka.member.GraduationCheckRequestEvent;
 import com.green.common.kafka.member.MemberTopic;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.member.application.OutboxService;
@@ -55,7 +56,31 @@ public class SemesterSchedulerService {
                             .build()
             );
         }
-
         log.info("[학기 갱신] 완료 - 처리 인원: {}명", enrolledStudents.size());
+    }
+
+    /**
+     * 학기 종료 시 재학 중인 학생의 졸업 여부 확인 요청을 Kafka로 발행
+     * core-service가 취득학점을 계산 후 GRADUATION_RESPONSE로 응답
+     */
+    @Transactional(readOnly = true)
+    public void requestGraduationCheck() {
+        List<Student> enrolledStudents = studentRepository.findByStatus(EnumStudentStatus.ENROLLED);
+
+        if (enrolledStudents.isEmpty()) {
+            log.info("[졸업 체크] 재학 중인 학생 없음 - 요청 건너뜀");
+            return;
+        }
+
+        for (Student student : enrolledStudents) {
+            outboxService.saveToOutbox(
+                    MemberTopic.GRADUATION_REQUEST,
+                    student.getMemberCode(),
+                    GraduationCheckRequestEvent.builder()
+                            .studentCode(student.getMemberCode())
+                            .build()
+            );
+        }
+        log.info("[졸업 체크] 요청 발행 완료 - 대상 인원: {}명", enrolledStudents.size());
     }
 }
