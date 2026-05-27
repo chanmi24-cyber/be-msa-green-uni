@@ -1019,11 +1019,21 @@ public class AdminService {
             // 학생 상태 업데이트
             student.updateStatus(newStatus);
 
-            // 자퇴 승인 시 자퇴 처리일 기록
+            // 자퇴 승인 시
             if (newStatus == EnumStudentStatus.QUIT) {
+                // 자퇴 처리일 기록
                 Member member = memberRepository.findById(studentCode)
                         .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
                 member.setExitDate(LocalDate.now());
+
+                // 로그인 불가 처리 처리
+                AuthMemberEvent authEvent = AuthMemberEvent.builder()
+                        .memberCode(student.getMemberCode())
+                        .isActive(false)
+                        .eventType(EventType.E_UPDATED)
+                        .updateType(UpdateType.DEACTIVATE)
+                        .build();
+                outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, student.getMemberCode(), authEvent);
             }
 
             // StudentEvent Outbox 저장
