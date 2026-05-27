@@ -99,8 +99,14 @@
     </resultMap>
 
 
-
-
+    <!--연도쿼리-->
+    <select id="findLectureYears" resultType="int">
+        SELECT DISTINCT year
+        FROM lecture
+        WHERE status = 'APPROVED'
+        AND is_del = false
+        ORDER BY year DESC
+    </select>
 
 
     <!-- LEC-03 관리자: 승인관리 목록 -->
