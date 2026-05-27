@@ -45,4 +45,9 @@ public class StudentCache {
 
     @Column(name = "is_veteran", nullable = false)
     private Boolean isVeteran;
+
+    // 🎯 [핵심 추가] 비즈니스 로직에 따른 상태 변경 전용 메서드
+    public void updateStatus(EnumStudentStatus status) {
+        this.status = status;
+    }
 }
