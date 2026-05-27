@@ -12,4 +12,6 @@ public interface ScheduleCacheRepository extends JpaRepository<ScheduleCache, Lo
     boolean existsByTypeAndYearAndSemester(
             EnumScheduleType type, Integer year, Integer semester
     );
+
+    void deleteByScheduleId(Long scheduleId);
 }

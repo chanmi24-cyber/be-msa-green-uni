@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ScheduleCacheRepository extends JpaRepository<ScheduleCache, Long> {
     List<ScheduleCache> findByTypeAndIsActiveTrue(EnumScheduleType type);
+    void deleteByScheduleId(Long scheduleId);
 }
