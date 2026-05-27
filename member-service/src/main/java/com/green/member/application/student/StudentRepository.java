@@ -4,7 +4,9 @@ import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.student.model.StudentListRes;
 import com.green.member.entity.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 

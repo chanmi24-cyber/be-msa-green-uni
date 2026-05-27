@@ -32,4 +32,6 @@ public interface LectureMapper {
             @Param("year") Integer year,
             @Param("semester") Integer semester
     );
+
+    List<Integer> findLectureYears();
 }

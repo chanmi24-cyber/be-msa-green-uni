@@ -10,6 +10,7 @@ import com.green.core.entity.lecture.Classroom;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -88,6 +89,11 @@ public class ProfessorLectureController {
                 .message("오늘 강의 목록 조회 성공")
                 .data(lectureService.getTodayLectures(memberDto))
                 .build();
+    }
+
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        return ResponseEntity.ok(lectureService.getLectureYears());
     }
 
 }
