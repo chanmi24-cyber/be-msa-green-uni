@@ -1,6 +1,7 @@
 package com.green.core.kafka;
 
 import com.green.common.constants.EventType;
+import com.green.common.constants.UpdateType;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.kafka.member.StudentEvent;
 import com.green.common.kafka.member.MemberTopic;
@@ -41,21 +42,22 @@ public class StudentConsumer {
                         .build();
                 studentCacheRepository.save(cache);
             } else if (type == EventType.E_UPDATED) {
-                if ("EMAIL".equals(event.getUpdateType())) {
+                UpdateType updateType = event.getUpdateType();
+                if (UpdateType.EMAIL == updateType) {
                     studentCacheRepository.updateEmail(event.getMemberCode(), event.getEmail());
-                } else if ("PROFILE".equals(event.getUpdateType())) {
-                     studentCacheRepository.updateProfile(
-                             event.getMemberCode(),
-                             event.getName(),
-                             event.getMajorId(),
-                             event.getIsTransfer(),
-                             event.getIsMultiChild(),
-                             event.getIsVeteran()
-                     );
-                } else if ("STATUS".equals(event.getUpdateType())) {
-                     studentCacheRepository.updateStatus(event.getMemberCode(),
-                             EnumStudentStatus.from(event.getStatus()));
-                } else if ("SEMESTER_ADVANCE".equals(event.getUpdateType())) {
+                } else if (UpdateType.PROFILE == updateType) {
+                    studentCacheRepository.updateProfile(
+                            event.getMemberCode(),
+                            event.getName(),
+                            event.getMajorId(),
+                            event.getIsTransfer(),
+                            event.getIsMultiChild(),
+                            event.getIsVeteran()
+                    );
+                } else if (UpdateType.STATUS == updateType) {
+                    studentCacheRepository.updateStatus(event.getMemberCode(),
+                            EnumStudentStatus.from(event.getStatus()));
+                } else if (UpdateType.SEMESTER_ADVANCE == updateType) {
                     studentCacheRepository.updateSemester(
                             event.getMemberCode(),
                             event.getAcademicYear(),
