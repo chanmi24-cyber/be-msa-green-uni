@@ -41,7 +41,7 @@ public class GraduationResponseConsumer {
 
         log.info("[졸업 처리] studentCode={} 취득학점={}", studentCode, totalCredits);
 
-        if (totalCredits < GRADUATION_CREDIT_REQUIREMENT) {
+        if (totalCredits == null || totalCredits < GRADUATION_CREDIT_REQUIREMENT) {
             log.info("[졸업 처리] studentCode={} 졸업 조건 미충족 ({}/{}학점)",
                     studentCode, totalCredits, GRADUATION_CREDIT_REQUIREMENT);
             return false;

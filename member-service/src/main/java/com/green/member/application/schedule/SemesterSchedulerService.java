@@ -63,7 +63,7 @@ public class SemesterSchedulerService {
      * 학기 종료 시 재학 중인 학생의 졸업 여부 확인 요청을 Kafka로 발행
      * core-service가 취득학점을 계산 후 GRADUATION_RESPONSE로 응답
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public void requestGraduationCheck() {
         List<Student> enrolledStudents = studentRepository.findByStatus(EnumStudentStatus.ENROLLED);
 

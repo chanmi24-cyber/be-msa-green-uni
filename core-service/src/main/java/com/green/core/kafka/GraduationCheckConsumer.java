@@ -23,16 +23,20 @@ public class GraduationCheckConsumer {
         Long studentCode = event.getStudentCode();
         log.info("[졸업 체크] studentCode={} 취득학점 계산 시작", studentCode);
 
-        int totalCredits = gradeRepository.sumTotalCreditsByStudentCode(studentCode);
-        log.info("[졸업 체크] studentCode={} 취득학점={}", studentCode, totalCredits);
+        try {
+            int totalCredits = gradeRepository.sumTotalCreditsByStudentCode(studentCode);
+            log.info("[졸업 체크] studentCode={} 취득학점={}", studentCode, totalCredits);
 
-        GraduationCheckResponseEvent response = GraduationCheckResponseEvent.builder()
-                .studentCode(studentCode)
-                .totalCredits(totalCredits)
-                .eventType(EventType.E_CREATED)
-                .build();
+            GraduationCheckResponseEvent response = GraduationCheckResponseEvent.builder()
+                    .studentCode(studentCode)
+                    .totalCredits(totalCredits)
+                    .eventType(EventType.E_CREATED)
+                    .build();
 
-        kafkaTemplate.send(MemberTopic.GRADUATION_RESPONSE,
-                String.valueOf(studentCode), response);
+            kafkaTemplate.send(MemberTopic.GRADUATION_RESPONSE,
+                    String.valueOf(studentCode), response);
+        } catch (Exception e) {
+            log.error("[졸업 체크] studentCode={} 처리 중 오류 발생 - 건너뜀: {}", studentCode, e.getMessage(), e);
+        }
     }
 }
