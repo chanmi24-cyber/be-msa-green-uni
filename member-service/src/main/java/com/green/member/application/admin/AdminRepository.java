@@ -1,6 +1,6 @@
 package com.green.member.application.admin;
 
-import com.green.member.application.admin.model.AdminListDto;
+import com.green.member.application.admin.model.AdminListRes;
 import com.green.member.entity.member.Admin;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,5 +22,5 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
             """,
             nativeQuery = true
     )
-    List<AdminListDto> findAdminList();
+    List<AdminListRes> findAdminList();
 }

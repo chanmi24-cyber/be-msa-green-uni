@@ -22,7 +22,7 @@ public class ProfessorController {
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
-        List<ProfessorHistoryRes> res = professorService.findStatusHistory( loginMember.memberCode() );
+        List<ProfessorHistoryRes> res = professorService.getStatusHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("교수 상태 변경 이력 조회")
                 .data(res)

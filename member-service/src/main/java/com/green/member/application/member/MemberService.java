@@ -46,15 +46,15 @@ public class MemberService {
     @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
-            case STUDENT   -> studentService.findStudent(memberCode, role);
-            case PROFESSOR -> professorService.findProfessor(memberCode, role);
-            case ADMIN     -> findAdmin(memberCode, role);
+            case STUDENT   -> studentService.getStudent(memberCode, role);
+            case PROFESSOR -> professorService.getProfessor(memberCode, role);
+            case ADMIN     -> getAdmin(memberCode, role);
         };
         return memberProfile;
     }
 
     // 관리자 정보 조회
-    public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
+    public AdminProfileRes getAdmin(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
         Admin adminInfo = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
 

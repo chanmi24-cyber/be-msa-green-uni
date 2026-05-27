@@ -1,7 +1,7 @@
 package com.green.member.application.student;
 
 import com.green.common.enumcode.EnumStudentStatus;
-import com.green.member.application.student.model.StudentListDto;
+import com.green.member.application.student.model.StudentListRes;
 import com.green.member.entity.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -44,5 +44,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             """,
             nativeQuery = true
     )
-    List<StudentListDto> findStudentList();
+    List<StudentListRes> findStudentList();
 }
