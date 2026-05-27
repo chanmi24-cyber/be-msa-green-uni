@@ -55,6 +55,12 @@ public class StudentConsumer {
                 } else if ("STATUS".equals(event.getUpdateType())) {
                      studentCacheRepository.updateStatus(event.getMemberCode(),
                              EnumStudentStatus.from(event.getStatus()));
+                } else if ("SEMESTER_ADVANCE".equals(event.getUpdateType())) {
+                    studentCacheRepository.updateSemester(
+                            event.getMemberCode(),
+                            event.getAcademicYear(),
+                            event.getSemester()
+                    );
                 }
             }
 

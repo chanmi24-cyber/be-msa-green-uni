@@ -1,5 +1,6 @@
 package com.green.member.application.student;
 
+import com.green.common.enumcode.EnumStudentStatus;
 import com.green.member.application.student.model.StudentListDto;
 import com.green.member.entity.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
+
+    // 학기 갱신 / 졸업 처리 대상 조회
+    List<Student> findByStatus(EnumStudentStatus status);
 
     @Query(
             value = """
