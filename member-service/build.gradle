@@ -16,6 +16,9 @@ dependencies {
     // MSA 간 메시징을 위한 Apache Kafka
     implementation 'org.springframework.boot:spring-boot-starter-kafka'
 
+    // 서비스 간 HTTP 호출 (OpenFeign)
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     // TSID 사용을 위한 유틸리티

@@ -49,6 +49,9 @@ spring:
         spring.json.trusted.packages: "*"
 outbox:
   enabled: true
+
+core-service:
+  url: http://${SERVICE_HOST}:${CORE_PORT}
 logging:
   level:
     org.springframework.web: DEBUG

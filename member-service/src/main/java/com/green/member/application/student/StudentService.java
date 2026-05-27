@@ -7,6 +7,8 @@ import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
 import com.green.common.file.FileService;
+import com.green.common.model.GpaResult;
+import com.green.member.client.CoreServiceClient;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
@@ -56,6 +58,7 @@ public class StudentService {
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final FileService fileService;
     private final StatusRequestRepository statusRequestRepository;
+    private final CoreServiceClient coreServiceClient;
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
@@ -181,6 +184,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
         MajorRequest request = MajorRequest.builder()
                 .student(student)
@@ -189,7 +195,7 @@ public class StudentService {
                 .reason(req.getReason())
                 .file(savedFileName)
                 .originalFileName(originalFileName)
-                .gpa(BigDecimal.ZERO)
+                .gpa(gpaResult.getGpa())
                 .academicYear(student.getAcademicYear())
                 .semester(student.getSemester())
                 .currentMajorId(activeMajors.stream()
@@ -295,6 +301,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA/취득학점 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         StatusRequest request = StatusRequest.builder()
                 .student(student)
                 .type(req.getType())
@@ -306,6 +315,7 @@ public class StudentService {
                 .startDate(req.getStartDate())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
+                .totalCredits(gpaResult.getTotalCredits())
                 .build();
         statusRequestRepository.save(request);
     }
