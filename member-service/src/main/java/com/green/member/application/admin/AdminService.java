@@ -958,6 +958,18 @@ public class AdminService {
             Student student = studentRepository.findById(studentCode).orElseThrow(() -> new BusinessException(MemberErrorCode.STUDENT_NOT_FOUND));
             EnumStudentStatus oldStatus = student.getStatus();
 
+            // 신청 유형과 현재 학적 상태 정합성 검증
+            // 신청 시점 이후 관리자 직접 변경 등으로 상태가 달라진 경우 방어
+            if (request.getType() == EnumStatusRequestType.ABSENCE && oldStatus != EnumStudentStatus.ENROLLED) {
+                throw new BusinessException(MemberErrorCode.INVALID_STATUS_FOR_REQUEST);
+            }
+            if (request.getType() == EnumStatusRequestType.RETURN && oldStatus != EnumStudentStatus.ABSENCE) {
+                throw new BusinessException(MemberErrorCode.INVALID_STATUS_FOR_REQUEST);
+            }
+            if (request.getType() == EnumStatusRequestType.QUIT && oldStatus != EnumStudentStatus.ENROLLED) {
+                throw new BusinessException(MemberErrorCode.INVALID_STATUS_FOR_REQUEST);
+            }
+
             // 변화값
             EnumStudentStatus newStatus;
             String changeType;
