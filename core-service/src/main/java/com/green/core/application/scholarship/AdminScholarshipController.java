@@ -29,13 +29,4 @@ public class AdminScholarshipController {
         );
     }
 
-    //Todo: 테스트를 위해 임시 추가한 것이므로, 학기 시작 스케줄이 생성되면 ScholarshipSchedule에서 findByTypeAndIsActiveTrue(EnumScheduleType.???) 수정 후 지워도 됨
-    @PostMapping("/assign-test")
-    public ResponseEntity<String> testAssign(
-            @RequestParam Integer year,
-            @RequestParam Integer semester
-    ) {
-        scholarshipService.assignScholarships(year, semester);
-        return ResponseEntity.ok("장학금 배정 완료");
-    }
 }
