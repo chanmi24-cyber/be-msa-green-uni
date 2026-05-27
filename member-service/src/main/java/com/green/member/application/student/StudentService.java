@@ -1,16 +1,14 @@
 package com.green.member.application.student;
 
-import com.green.common.constants.EventType;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.enumcode.EnumMajorType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumStudentStatus;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.FileErrorCode;
-import com.green.common.kafka.member.GpaRequestEvent;
-import com.green.common.kafka.member.MemberTopic;
-import com.green.member.application.OutboxService;
 import com.green.common.file.FileService;
+import com.green.common.client.GpaResult;
+import com.green.member.client.CoreServiceClient;
 import com.green.member.application.major.MajorRequestRepository;
 import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
@@ -41,7 +39,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,10 +54,10 @@ public class StudentService {
     private final StudentMajorRepository studentMajorRepository;
     private final StudentHistoryRepository studentHistoryRepository;
     private final MajorRequestRepository majorRequestRepository;
-    private final OutboxService outboxService;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final FileService fileService;
     private final StatusRequestRepository statusRequestRepository;
+    private final CoreServiceClient coreServiceClient;
 
     // 학생 정보 조회
     public StudentProfileRes findStudent(Long memberCode, EnumMemberRole role){
@@ -186,6 +183,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
         MajorRequest request = MajorRequest.builder()
                 .student(student)
@@ -194,7 +194,7 @@ public class StudentService {
                 .reason(req.getReason())
                 .file(savedFileName)
                 .originalFileName(originalFileName)
-                .gpa(BigDecimal.ZERO)
+                .gpa(gpaResult.getGpa())
                 .academicYear(student.getAcademicYear())
                 .semester(student.getSemester())
                 .currentMajorId(activeMajors.stream()
@@ -206,19 +206,7 @@ public class StudentService {
                         .filter(m -> m.getType() == EnumMajorType.MINOR)
                         .map(StudentMajor::getMajorId).findFirst().orElse(null))
                 .build();
-        MajorRequest newRequest = majorRequestRepository.save(request);
-
-
-        // GPA 조회 요청 이벤트 발행
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                newRequest.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(newRequest.getRequestId())
-                        .studentCode(memberCode)
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
+        majorRequestRepository.save(request);
     }
     // 내 전공 변경 신청 취소
     @Transactional
@@ -312,6 +300,9 @@ public class StudentService {
                     : null;
         }
 
+        // GPA/취득학점 조회 (core-service 직접 호출)
+        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+
         StatusRequest request = StatusRequest.builder()
                 .student(student)
                 .type(req.getType())
@@ -323,19 +314,9 @@ public class StudentService {
                 .startDate(req.getStartDate())
                 .returnYear(req.getReturnYear())
                 .returnSemester(req.getReturnSemester())
+                .totalCredits(gpaResult.getTotalCredits())
                 .build();
         statusRequestRepository.save(request);
-
-        outboxService.saveToOutbox(
-                MemberTopic.GPA_REQUEST,
-                request.getRequestId(),
-                GpaRequestEvent.builder()
-                        .requestId(request.getRequestId())
-                        .studentCode(memberCode)
-                        .requestType("STATUS_REQUEST")
-                        .eventType(EventType.E_CREATED)
-                        .build()
-        );
     }
     // 내 학적 변경 신청 취소
     @Transactional
