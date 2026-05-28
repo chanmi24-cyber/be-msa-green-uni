@@ -25,6 +25,15 @@ public class ProfessorEvaluationController {
                 .build();
     }
 
+    @GetMapping("/years")
+    public ResultResponse<List<Integer>> getProfessorEvalYears() {
+        MemberDto memberDto = MemberContext.get();
+        return ResultResponse.<List<Integer>>builder()
+                .message("교수 강의평가 연도 목록 조회 성공")
+                .data(evaluationService.getProfessorEvalYears(memberDto))
+                .build();
+    }
+
     @GetMapping("/{lectureId}")
     public ResultResponse<ProEvalDetailRes> getProfessorEvalDetail(@PathVariable Long lectureId) {
         MemberDto memberDto = MemberContext.get();
@@ -33,4 +42,6 @@ public class ProfessorEvaluationController {
                 .data(evaluationService.getProfessorEvalDetail(memberDto, lectureId))
                 .build();
     }
+
+
 }

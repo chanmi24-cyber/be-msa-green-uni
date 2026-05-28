@@ -93,4 +93,12 @@ public class EvaluationService {
                 .build();
         evaluationRepository.save(evaluation);
     }
+
+    public List<Integer> getStudentEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findStudentEvalYears(memberDto.memberCode());
+    }
+
+    public List<Integer> getProfessorEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findProfessorEvalYears(memberDto.memberCode());
+    }
 }
