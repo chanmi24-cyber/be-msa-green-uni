@@ -5,6 +5,9 @@ import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.exception.BusinessException;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
+import com.green.core.application.grade.model.GradeAppealProDetailRes;
+import com.green.core.application.grade.model.GradeAppealProListRes;
+import com.green.core.application.grade.model.GradeAppealProReq;
 import com.green.core.application.grade.model.GradeAppealReq;
 import com.green.core.application.grade.model.GradeAppealRes;
 import com.green.core.application.grade.model.GradeAppealStuListRes;
@@ -16,6 +19,7 @@ import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.grade.Grade;
 import com.green.core.entity.grade.GradesAppeal;
+import com.green.core.entity.grade.GradesAppealHistory;
 import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumAppealStatus;
 import com.green.core.enumcode.EnumAttendStatus;
@@ -42,6 +46,7 @@ public class GradeService {
     private final GradeLectureRepository gradeLectureRepository;
     private final GradeMajorRepository gradeMajorRepository;
     private final GradeAppealRepository gradeAppealRepository;
+    private final GradeAppealHistoryRepository gradeAppealHistoryRepository;
     private final StudentCacheRepository studentCacheRepository;
     private final ProfessorCacheRepository professorCacheRepository;
 
@@ -162,7 +167,7 @@ public class GradeService {
                     lecture.getCredit(),
                     lecture.getLectureType().getValue(),
                     letter != null ? letter.getCode()   : null,
-                    letter != null ? toGradePoint(letter) : null
+                    letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null
             );
         }).toList();
 
@@ -185,7 +190,6 @@ public class GradeService {
             averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
             convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
             totalCredits  = graded.stream()
-                    .filter(g -> !"F".equals(g.getLectureGrade()))
                     .mapToInt(GradeStudentRes.GradeItem::getLectureCredit)
                     .sum();
         }
@@ -211,7 +215,7 @@ public class GradeService {
         Map<Long, String> appealStatusMap = gradeAppealRepository.findAllById(courseIds)
                 .stream()
                 .collect(Collectors.toMap(GradesAppeal::getCourseId,
-                        a -> a.getStatus().getValue()));
+                        a -> a.getStatus().getCode()));
 
         List<GradeStudentDetailRes.GradeItem> gradeList = grades.stream().map(g -> {
             var course  = g.getCourse();
@@ -236,7 +240,7 @@ public class GradeService {
                     g.getAttendScore(),
                     g.getTotalScore(),
                     letter != null ? letter.getCode()    : null,
-                    letter != null ? toGradePoint(letter) : null,
+                    letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null,
                     myRank,
                     totalCount,
                     appealStatusMap.get(g.getCourseId())
@@ -263,7 +267,6 @@ public class GradeService {
             averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
             convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
             totalCredits  = graded.stream()
-                    .filter(g -> !"F".equals(g.getLectureGrade()))
                     .mapToInt(GradeStudentDetailRes.GradeItem::getLectureCredit)
                     .sum();
             averageScore  = Math.round(
@@ -313,7 +316,7 @@ public class GradeService {
                             course.getYear(),
                             course.getSemester(),
                             a.getReason(),
-                            a.getStatus().getValue(),
+                            a.getStatus().getCode(),
                             a.getRejectReason(),
                             a.getCreatedAt(),
                             a.getProcessedAt()
@@ -390,6 +393,13 @@ public class GradeService {
                     .reason(req.getReason())
                     .build());
         }
+
+        gradeAppealHistoryRepository.save(GradesAppealHistory.builder()
+                .courseId(gradeId)
+                .memberCode(studentCode)
+                .reason(req.getReason())
+                .status(EnumAppealStatus.PENDING)
+                .build());
     }
 
     private GradeStudentDetailRes.StudentInfo buildStudentInfo(StudentCache studentCache) {
@@ -402,21 +412,6 @@ public class GradeService {
                 studentCache.getAcademicYear(),
                 studentCache.getSemester()
         );
-    }
-
-    // 평점 변환: A+=4.5, A=4.0, B+=3.5, B=3.0, C+=2.5, C=2.0, D+=1.5, D=1.0, F=0.0
-    private double toGradePoint(EnumGradeLetter letter) {
-        return switch (letter) {
-            case A_PLUS -> 4.5;
-            case A      -> 4.0;
-            case B_PLUS -> 3.5;
-            case B      -> 3.0;
-            case C_PLUS -> 2.5;
-            case C      -> 2.0;
-            case D_PLUS -> 1.5;
-            case D      -> 1.0;
-            case F      -> 0.0;
-        };
     }
 
     // ── 출석 점수 자동 계산 ───────────────────────────────────────────────────
@@ -438,5 +433,116 @@ public class GradeService {
 
     private boolean isOutOfRange(Integer score) {
         return score == null || score < 0 || score > 100;
+    }
+
+    // ── 교수 이의신청 목록 조회 (GET /professor/grades/appeals) ──────────────
+    @Transactional(readOnly = true)
+    public List<GradeAppealProListRes> getProfessorAppealList() {
+        Long professorCode = MemberContext.get().memberCode();
+        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode)
+                .stream()
+                .map(a -> {
+                    var course  = a.getGrade().getCourse();
+                    var lecture = course.getLecture();
+                    StudentCache student = studentCacheRepository.findById(a.getMemberCode()).orElse(null);
+                    return new GradeAppealProListRes(
+                            a.getCourseId(),
+                            a.getMemberCode(),
+                            student != null ? student.getName() : null,
+                            lecture.getLectureName(),
+                            course.getYear(),
+                            course.getSemester(),
+                            a.getReason(),
+                            a.getStatus().getCode(),
+                            a.getCreatedAt()
+                    );
+                })
+                .toList();
+    }
+
+    // ── 교수 이의신청 상세 조회 (GET /professor/grades/appeals/{courseId}) ────
+    @Transactional(readOnly = true)
+    public GradeAppealProDetailRes getProfessorAppealDetail(Long courseId) {
+        Long professorCode = MemberContext.get().memberCode();
+
+        GradesAppeal appeal = gradeAppealRepository.findByIdWithDetails(courseId)
+                .orElseThrow(() -> new BusinessException(GradeErrorCode.APPEAL_NOT_FOUND));
+
+        var lecture = appeal.getGrade().getCourse().getLecture();
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new BusinessException(GradeErrorCode.NOT_PROFESSOR_LECTURE);
+        }
+
+        var course = appeal.getGrade().getCourse();
+        var grade  = appeal.getGrade();
+        StudentCache student = studentCacheRepository.findById(appeal.getMemberCode()).orElse(null);
+        Major major = student != null
+                ? gradeMajorRepository.findWithCollegeById(student.getMajorId()).orElse(null)
+                : null;
+
+        return new GradeAppealProDetailRes(
+                appeal.getMemberCode(),
+                student != null ? student.getName()        : null,
+                major   != null ? major.getName()           : null,
+                student != null ? student.getAcademicYear() : null,
+                lecture.getLectureName(),
+                course.getYear(),
+                course.getSemester(),
+                appeal.getReason(),
+                appeal.getStatus().getCode(),
+                appeal.getRejectReason(),
+                appeal.getCreatedAt(),
+                grade.getMidScore(),
+                grade.getFinScore(),
+                grade.getAssignmentScore(),
+                grade.getAttendScore(),
+                grade.getTotalScore(),
+                grade.getGradeLetter() != null ? grade.getGradeLetter().getCode() : null
+        );
+    }
+
+    // ── 교수 이의신청 처리 (PATCH /professor/grades/appeals/{courseId}) ───────
+    @Transactional
+    public void processAppeal(Long courseId, GradeAppealProReq req) {
+        Long professorCode = MemberContext.get().memberCode();
+
+        GradesAppeal appeal = gradeAppealRepository.findByIdWithDetails(courseId)
+                .orElseThrow(() -> new BusinessException(GradeErrorCode.APPEAL_NOT_FOUND));
+
+        var lecture = appeal.getGrade().getCourse().getLecture();
+        if (!lecture.getMemberCode().equals(professorCode)) {
+            throw new BusinessException(GradeErrorCode.NOT_PROFESSOR_LECTURE);
+        }
+
+        if (appeal.getStatus() != EnumAppealStatus.PENDING) {
+            throw new BusinessException(GradeErrorCode.APPEAL_ALREADY_PROCESSED);
+        }
+
+        if ("APPROVED".equals(req.getStatus())) {
+            validateScore(req.getMidScore(), req.getFinScore(), req.getAssignmentScore());
+            int attendScore = calcAttendScore(courseId);
+            int totalScore  = Grade.calcTotalScore(
+                    req.getMidScore(), req.getFinScore(), req.getAssignmentScore(), attendScore);
+            EnumGradeLetter gradeLetter = Grade.calcGradeLetter(totalScore);
+            gradeRepository.updateScores(courseId,
+                    req.getMidScore(), req.getFinScore(), req.getAssignmentScore(),
+                    attendScore, totalScore, gradeLetter);
+            appeal.approve();
+        } else if ("REJECTED".equals(req.getStatus())) {
+            if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                throw new BusinessException(GradeErrorCode.REJECT_REASON_REQUIRED);
+            }
+            appeal.reject(req.getRejectReason());
+        } else {
+            throw new BusinessException(GradeErrorCode.APPEAL_NOT_FOUND);
+        }
+
+        gradeAppealHistoryRepository.save(GradesAppealHistory.builder()
+                .courseId(courseId)
+                .memberCode(appeal.getMemberCode())
+                .reason(appeal.getReason())
+                .status(appeal.getStatus())
+                .rejectReason(appeal.getRejectReason())
+                .build());
     }
 }
