@@ -88,18 +88,13 @@
             COUNT(le.comment)                                                 AS total_comments
         FROM lecture l
                  JOIN professor_cache pc ON l.member_code = pc.member_code
-<<<<<<< Updated upstream
-                 LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-                     AND sc.year = l.year AND sc.semester = l.semester
-=======
                  LEFT JOIN schedule_cache sc ON sc.schedule_id = (
             SELECT schedule_id FROM schedule_cache
             WHERE type = 'LECTURE_EVALUATION'
                       AND year = l.year AND semester = l.semester
             ORDER BY schedule_id DESC
             LIMIT 1
-)
->>>>>>> Stashed changes
+                 )
                  LEFT JOIN course c ON c.lecture_id = l.lecture_id
             LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
         WHERE l.lecture_id = #{lectureId}
@@ -135,7 +130,7 @@
                       AND year = l.year AND semester = l.semester
             ORDER BY schedule_id DESC
             LIMIT 1
-)
+                 )
                  LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
           AND l.lecture_id = #{lectureId}
