@@ -61,6 +61,11 @@
         <result property="totalStudents"  column="total_students"/>
         <result property="score"          column="score"/>
         <result property="totalComments"  column="total_comments"/>
+        <result property="q1Avg" column="q1_avg"/>
+        <result property="q2Avg" column="q2_avg"/>
+        <result property="q3Avg" column="q3_avg"/>
+        <result property="q4Avg" column="q4_avg"/>
+        <result property="q5Avg" column="q5_avg"/>
         <collection property="comments" ofType="String" column="lecture_id"
                     select="findCommentsByLectureId"/>
     </resultMap>
@@ -75,11 +80,16 @@
             COUNT(le.evaluation_id)                                           AS response_count,
             (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_students,
             AVG(le.score)                                                     AS score,
+            AVG(le.q1)                                                        AS q1_avg,
+            AVG(le.q2)                                                        AS q2_avg,
+            AVG(le.q3)                                                        AS q3_avg,
+            AVG(le.q4)                                                        AS q4_avg,
+            AVG(le.q5)                                                        AS q5_avg,
             COUNT(le.comment)                                                 AS total_comments
         FROM lecture l
                  JOIN professor_cache pc ON l.member_code = pc.member_code
                  LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-                     AND sc.year = l.year AND sc.semester = l.semester
+            AND sc.year = l.year AND sc.semester = l.semester
                  LEFT JOIN course c ON c.lecture_id = l.lecture_id
                  LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
         WHERE l.lecture_id = #{lectureId}
@@ -104,6 +114,7 @@
             pc.name AS pro_name,
             sc.start_date AS start_date,
             sc.end_date   AS end_date,
+            le.q1, le.q2, le.q3, le.q4, le.q5,
             le.score,
             le.comment
         FROM course c

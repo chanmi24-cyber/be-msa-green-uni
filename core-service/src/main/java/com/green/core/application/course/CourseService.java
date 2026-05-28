@@ -48,14 +48,14 @@ public class CourseService {
     // API-ENRL-06: 수강 신청 페이지 활성화 제어
     @Transactional(readOnly = true)
     public CourseStatusRes getCourseStatus() {
-        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isPresent()) {
+        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isEmpty()) {
             return CourseStatusRes.builder()
                     .isOpen(true)
                     .scheduleType(EnumScheduleType.COURSE_REGISTRATION)
                     .build();
         }
 
-        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isPresent()) {
+        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isEmpty()) {
             return CourseStatusRes.builder()
                     .isOpen(true)
                     .scheduleType(EnumScheduleType.COURSE_MODIFICATION)

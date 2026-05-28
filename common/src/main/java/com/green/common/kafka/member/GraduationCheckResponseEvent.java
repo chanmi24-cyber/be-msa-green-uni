@@ -8,14 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GpaResponseEvent implements Serializable, KafkaEvent {
-    private Long requestId;   // MajorRequest PK (매칭용)
-    private BigDecimal gpa;
-    private EventType eventType;
+public class GraduationCheckResponseEvent implements Serializable, KafkaEvent {
+    private Long studentCode;
+    private Integer totalCredits;
+    @Builder.Default
+    private EventType eventType = EventType.E_CREATED;
 }

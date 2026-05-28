@@ -1,6 +1,6 @@
 package com.green.member.application.professor;
 
-import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.professor.model.ProfessorListRes;
 import com.green.member.entity.professor.Professor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -27,5 +27,5 @@ public interface ProfessorRepository extends JpaRepository<Professor,Long> {
             """,
             nativeQuery = true
     )
-    List<ProfessorListDto> findProfessorList();
+    List<ProfessorListRes> findProfessorList();
 }

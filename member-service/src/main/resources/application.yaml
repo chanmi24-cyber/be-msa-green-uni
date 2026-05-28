@@ -3,6 +3,7 @@ constants:
       prefix: /api/member
   file:
     directory: ${FILE_DIRECTORY}
+    max-size: 5242880  # 5MB
 
 server:
   port: ${MEMBER_PORT}
@@ -45,9 +46,12 @@ spring:
       group-id: member-service-group
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.green.common.model"
+        spring.json.trusted.packages: "com.green.common.model,com.green.common.kafka"
 outbox:
   enabled: true
+
+core-service:
+  url: http://${SERVICE_HOST}:${CORE_PORT}
 logging:
   level:
     org.springframework.web: DEBUG

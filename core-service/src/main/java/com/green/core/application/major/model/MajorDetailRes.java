@@ -22,4 +22,5 @@ public class MajorDetailRes {
     private Integer courseDuration;
     private String foundedDate;
     private String info;
+    private String closedDate;
 }

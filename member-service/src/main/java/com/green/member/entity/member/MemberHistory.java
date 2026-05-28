@@ -28,6 +28,6 @@ public class MemberHistory extends CreatedAt {
     @Column(name = "before_data", nullable = false, columnDefinition = "JSON")
     private String beforeData;
 
-    @Column(name = "updator_code", nullable = false)
-    private Long updatorCode;
+    @Column(name = "updater_code", nullable = false)
+    private Long updaterCode;
 }
