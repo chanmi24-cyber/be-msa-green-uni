@@ -29,6 +29,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -305,13 +308,15 @@ public class AdminController {
                 .message("학생 계정 상태 변경 및 이력 기록")
                 .build();
     }
-    // 전공 변경 신청 목록 조회 (status, size 파라미터로 필터링 가능)
+    // 전공 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/major")
     public ResultResponse<?> findAllMajorRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminMajorRequestListRes> res = adminService.getMajorRequests(loginMember.memberCode(), status, size);
+        Page<AdminMajorRequestListRes> res = adminService.getMajorRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)

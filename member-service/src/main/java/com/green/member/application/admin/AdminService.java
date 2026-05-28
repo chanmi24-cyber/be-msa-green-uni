@@ -52,6 +52,8 @@ import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -739,14 +741,12 @@ public class AdminService {
                 ;
     }
 
-    // 전공 변경 신청 목록 전체 조회 (status/size 파라미터 선택 가능)
+    // 전공 변경 신청 목록 전체 조회 (status/search 필터 + 페이지네이션)
     @Transactional(readOnly = true)
-    public List<AdminMajorRequestListRes> getMajorRequests(Long memberCode, String status, Integer size) {
+    public Page<AdminMajorRequestListRes> getMajorRequests(
+            Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        Stream<AdminMajorRequestListRes> stream = majorRequestRepository.findAllByFilter().stream();
-        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
-        if (size != null && size > 0) return stream.limit(size).toList();
-        return stream.toList();
+        return majorRequestRepository.findAllByFilter(status, search, pageable);
     }
 
     // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
