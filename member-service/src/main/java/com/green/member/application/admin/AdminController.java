@@ -123,31 +123,47 @@ public class AdminController {
                 .build();
     }
 
-    // 학생 회원 목록 조회
+    // 학생 회원 목록 조회 (status/academicYear/collegeName/majorName/search 필터 + 페이지네이션)
     @GetMapping("/students")
-    public ResultResponse<?> findStudentList(){
+    public ResultResponse<?> findStudentList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer academicYear,
+            @RequestParam(required = false) String collegeName,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<StudentListRes> res = adminService.getStudents(loginMember.memberCode());
+        Page<StudentListRes> res = adminService.getStudents(
+                loginMember.memberCode(), status, academicYear, collegeName, majorName, search, pageable);
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 교수 회원 목록 조회
+    // 교수 회원 목록 조회 (status/majorName/position/search 필터 + 페이지네이션)
     @GetMapping("/professors")
-    public ResultResponse<?> findProfessorList(){
+    public ResultResponse<?> findProfessorList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<ProfessorListRes> res = adminService.getProfessors(loginMember.memberCode());
+        Page<ProfessorListRes> res = adminService.getProfessors(
+                loginMember.memberCode(), status, majorName, position, search, pageable);
         return ResultResponse.builder()
                 .message("교수 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 관리자 회원 목록 조회
+    // 관리자 회원 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/admins")
-    public ResultResponse<?> findAdminList(){
+    public ResultResponse<?> findAdminList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminListRes> res = adminService.getAdmins(loginMember.memberCode());
+        Page<AdminListRes> res = adminService.getAdmins(loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("관리자 목록 조회 성공")
                 .data(res)

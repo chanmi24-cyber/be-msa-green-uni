@@ -97,21 +97,24 @@ public class AdminService {
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentListRes> getStudents(Long memberCode) {
+    public Page<StudentListRes> getStudents(
+            Long memberCode, String status, Integer academicYear,
+            String collegeName, String majorName, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return studentRepository.findStudentList();
+        return studentRepository.findStudentList(status, academicYear, collegeName, majorName, search, pageable);
     }
     // 교수 목록 조회
     @Transactional(readOnly = true)
-    public List<ProfessorListRes> getProfessors(Long memberCode) {
+    public Page<ProfessorListRes> getProfessors(
+            Long memberCode, String status, String majorName, String position, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return professorRepository.findProfessorList();
+        return professorRepository.findProfessorList(status, majorName, position, search, pageable);
     }
     // 관리자 목록 조회
     @Transactional(readOnly = true)
-    public List<AdminListRes> getAdmins(Long memberCode) {
+    public Page<AdminListRes> getAdmins(Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return adminRepository.findAdminList();
+        return adminRepository.findAdminList(status, search, pageable);
     }
 
     // 대시보드: 학생/교수/관리자 계정 수 조회
