@@ -349,14 +349,15 @@ public class AdminController {
     }
 
 
-    // 학적 변경 신청 목록 조회 (status, type, size 파라미터로 필터링 가능)
+    // 학적 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/status")
     public ResultResponse<?> findAllStatusRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminStatusRequestListRes> res = adminService.getStatusRequests(loginMember.memberCode(), status, type, size);
+        Page<AdminStatusRequestListRes> res = adminService.getStatusRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("학적 변경 신청 목록 조회 완료")
                 .data(res)

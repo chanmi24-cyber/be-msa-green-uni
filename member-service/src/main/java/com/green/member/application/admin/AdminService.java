@@ -66,7 +66,6 @@ import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -880,15 +879,12 @@ public class AdminService {
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
     }
 
-    // 학적 변경 신청 목록 전체 조회 (status/type/size 파라미터 선택 가능)
+    // 학적 변경 신청 목록 전체 조회 (status/search 필터 + 페이지네이션)
     @Transactional(readOnly = true)
-    public List<AdminStatusRequestListRes> getStatusRequests(Long memberCode, String status, String type, Integer size) {
+    public Page<AdminStatusRequestListRes> getStatusRequests(
+            Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        Stream<AdminStatusRequestListRes> stream = statusRequestRepository.findAllByFilter().stream();
-        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
-        if (type != null) stream = stream.filter(r -> type.equals(r.getType()));
-        if (size != null && size > 0) return stream.limit(size).toList();
-        return stream.toList();
+        return statusRequestRepository.findAllByFilter(status, search, pageable);
     }
     // 학적 변경 신청 상세 조회
     @Transactional(readOnly = true)
