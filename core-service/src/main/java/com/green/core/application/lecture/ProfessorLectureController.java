@@ -21,6 +21,7 @@ import java.util.List;
 public class ProfessorLectureController {
     private final LectureService lectureService;
     private final ClassroomRepository classroomRepository;
+    private final EvaluationService evaluationService;
 
     @PostMapping
     public ResultResponse<?> createLecture(@Valid @RequestBody LectureCreateReq req){

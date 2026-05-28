@@ -26,4 +26,7 @@ public interface EvaluationMapper {
     // 교수 평가 상세 - 코멘트 목록 (XML resultMap collection용)
     List<String> findCommentsByLectureId(Long lectureId);
 
+    List<Integer> findStudentEvalYears(@Param("memberCode") Long memberCode);
+    List<Integer> findProfessorEvalYears(@Param("memberCode") Long memberCode);
+
 }
