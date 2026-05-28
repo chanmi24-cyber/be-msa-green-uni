@@ -321,11 +321,16 @@ public class GradeService {
             if (majorTotalCount == 0) { majorTotalCount = 1; majorRank = 1; }
         }
 
+        boolean isAppealPeriod;
+        try { schedulePeriodValidator.checkGradeAppeal(); isAppealPeriod = true; }
+        catch (BusinessException e) { isAppealPeriod = false; }
+
         return new GradeStudentDetailRes(
                 studentInfo,
                 gradeList,
                 new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
-                        averageScore, averageGrade, majorRank, majorTotalCount));
+                        averageScore, averageGrade, majorRank, majorTotalCount),
+                isAppealPeriod);
     }
 
     // ── 학생 이의신청 내역 조회 (GET /student/grades/appeals/my) ─────────────────
@@ -395,6 +400,8 @@ public class GradeService {
     // ── API-GPA-07: 이의신청 제출 (POST /student/grades/{gradeId}/appeal) ──────
     @Transactional
     public void submitAppeal(Long gradeId, GradeAppealReq req) {
+        schedulePeriodValidator.checkGradeAppeal();
+
         Long studentCode = MemberContext.get().memberCode();
 
         Grade grade = gradeRepository.findById(gradeId)

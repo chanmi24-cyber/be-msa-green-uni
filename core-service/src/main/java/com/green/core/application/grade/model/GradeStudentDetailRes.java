@@ -13,6 +13,7 @@ public class GradeStudentDetailRes {
     private StudentInfo     studentInfo;
     private List<GradeItem> gradeList;
     private Summary         summary;
+    private boolean         appealPeriod;
 
     @Getter
     @AllArgsConstructor
