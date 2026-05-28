@@ -4,7 +4,7 @@ import com.green.common.constants.EventType;
 import com.green.common.kafka.member.GraduationCheckRequestEvent;
 import com.green.common.kafka.member.GraduationCheckResponseEvent;
 import com.green.common.kafka.member.MemberTopic;
-import com.green.core.application.grade.GradeRepository;
+import com.green.core.application.grade.GradeQueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class GraduationCheckConsumer {
-    private final GradeRepository gradeRepository;
+    private final GradeQueryRepository gradeQueryRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = MemberTopic.GRADUATION_REQUEST, groupId = "core-service-group")
@@ -24,7 +24,7 @@ public class GraduationCheckConsumer {
         log.info("[졸업 체크] studentCode={} 취득학점 계산 시작", studentCode);
 
         try {
-            int totalCredits = gradeRepository.sumTotalCreditsByStudentCode(studentCode);
+            int totalCredits = gradeQueryRepository.sumTotalCreditsByStudentCode(studentCode);
             log.info("[졸업 체크] studentCode={} 취득학점={}", studentCode, totalCredits);
 
             GraduationCheckResponseEvent response = GraduationCheckResponseEvent.builder()
