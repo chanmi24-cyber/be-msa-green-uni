@@ -167,7 +167,7 @@ public class GradeService {
                     lecture.getCredit(),
                     lecture.getLectureType().getValue(),
                     letter != null ? letter.getCode()   : null,
-                    letter != null ? toGradePoint(letter) : null
+                    letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null
             );
         }).toList();
 
@@ -190,7 +190,6 @@ public class GradeService {
             averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
             convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
             totalCredits  = graded.stream()
-                    .filter(g -> !"F".equals(g.getLectureGrade()))
                     .mapToInt(GradeStudentRes.GradeItem::getLectureCredit)
                     .sum();
         }
@@ -241,7 +240,7 @@ public class GradeService {
                     g.getAttendScore(),
                     g.getTotalScore(),
                     letter != null ? letter.getCode()    : null,
-                    letter != null ? toGradePoint(letter) : null,
+                    letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null,
                     myRank,
                     totalCount,
                     appealStatusMap.get(g.getCourseId())
@@ -268,7 +267,6 @@ public class GradeService {
             averageGpa    = sumCredits > 0 ? Math.round(sumWeighted / sumCredits * 100.0) / 100.0 : 0.0;
             convertedScore = (int) Math.round(averageGpa / 4.5 * 100);
             totalCredits  = graded.stream()
-                    .filter(g -> !"F".equals(g.getLectureGrade()))
                     .mapToInt(GradeStudentDetailRes.GradeItem::getLectureCredit)
                     .sum();
             averageScore  = Math.round(
@@ -414,21 +412,6 @@ public class GradeService {
                 studentCache.getAcademicYear(),
                 studentCache.getSemester()
         );
-    }
-
-    // 평점 변환: A+=4.5, A=4.0, B+=3.5, B=3.0, C+=2.5, C=2.0, D+=1.5, D=1.0, F=0.0
-    private double toGradePoint(EnumGradeLetter letter) {
-        return switch (letter) {
-            case A_PLUS -> 4.5;
-            case A      -> 4.0;
-            case B_PLUS -> 3.5;
-            case B      -> 3.0;
-            case C_PLUS -> 2.5;
-            case C      -> 2.0;
-            case D_PLUS -> 1.5;
-            case D      -> 1.0;
-            case F      -> 0.0;
-        };
     }
 
     // ── 출석 점수 자동 계산 ───────────────────────────────────────────────────
