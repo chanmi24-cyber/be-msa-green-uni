@@ -22,6 +22,10 @@ spring:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_MEMBER}?createDatabaseIfNotExist=true&characterEncoding=UTF-8
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
