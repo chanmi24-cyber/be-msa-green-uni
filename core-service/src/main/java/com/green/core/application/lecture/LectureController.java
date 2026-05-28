@@ -29,7 +29,7 @@ public class LectureController {
                 .build();
     }
 
-    @GetMapping("/{lectureId:[0-9]+}")
+    @GetMapping("/{lectureId}")
     public ResultResponse<LectureDetailRes> getLectureDetail(@PathVariable Long lectureId) {
         MemberDto memberDto = MemberContext.get();
         return ResultResponse.<LectureDetailRes>builder()
