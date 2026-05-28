@@ -41,14 +41,22 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true   # 추가
     # [수신] Major 캐시 정보를 받기 위한 설정
     consumer:
       group-id: member-service-group
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest          # 추가: 놓친 메시지 처음부터 재수신
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 추가
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
-        spring.json.trusted.packages: "com.green.common.model"
+        spring.json.trusted.packages: "com.green.common.model,com.green.common.kafka"
+
 outbox:
   enabled: true
+
+core-service:
+  url: http://${SERVICE_HOST}:${CORE_PORT}
 logging:
   level:
     org.springframework.web: DEBUG

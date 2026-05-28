@@ -46,20 +46,17 @@ public class MemberService {
     @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberCode, EnumMemberRole role){
         MemberProfileRes memberProfile = switch (role) {
-            case STUDENT   -> studentService.findStudent(memberCode, role);
-            case PROFESSOR -> professorService.findProfessor(memberCode, role);
-            case ADMIN     -> findAdmin(memberCode, role);
+            case STUDENT   -> studentService.getStudent(memberCode, role);
+            case PROFESSOR -> professorService.getProfessor(memberCode, role);
+            case ADMIN     -> getAdmin(memberCode, role);
         };
         return memberProfile;
     }
 
     // 관리자 정보 조회
-    public AdminProfileRes findAdmin(Long memberCode, EnumMemberRole role){
-        log.info("findAdmin 진입, memberCode: {}", memberCode);
+    public AdminProfileRes getAdmin(Long memberCode, EnumMemberRole role){
         Member memberInfo = memberRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
-        log.info("memberInfo: {}", memberInfo);
         Admin adminInfo = adminRepository.findById(memberCode).orElseThrow(() -> new BusinessException(MemberErrorCode.ADMIN_NOT_FOUND));
-        log.info("adminInfo: {}", adminInfo);
 
         return AdminProfileRes.builder()
                 .memberCode(memberInfo.getMemberCode())
@@ -105,8 +102,6 @@ public class MemberService {
         String oldAddress = member.getAddress();
         String oldDetailAddress = member.getDetailAddress();
         String oldPic = member.getPic();
-
-        log.info("oldEmail: {}, reqEmail: {}", oldEmail, req.getEmail());
 
         // 공통 필드 업데이트
         member.updateCommon(

@@ -1,6 +1,6 @@
 package com.green.member.application.student.model;
 
-public interface StudentListDto {
+public interface StudentListRes {
     Long getMemberCode();
     String getName();
     String getEmail();

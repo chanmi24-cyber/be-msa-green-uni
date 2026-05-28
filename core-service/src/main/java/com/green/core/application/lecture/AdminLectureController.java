@@ -9,6 +9,7 @@ import com.green.core.application.lecture.model.LectureApprovalReq;
 import com.green.core.application.lecture.model.MyLectureListRes;
 import com.green.core.exception.LectureErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -65,6 +66,11 @@ public class AdminLectureController {
         }
         lectureService.changeLectureProfessor(memberDto, lectureId, reason, newMemberCode);
         return ResultResponse.builder().message("강의 담당 교수 변경 완료").build();
+    }
+
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        return ResponseEntity.ok(lectureService.getLectureYears());
     }
 
 }

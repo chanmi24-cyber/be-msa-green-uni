@@ -128,6 +128,14 @@ public class MajorService {
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
+        // [추가] 변경하려는 상태가 '폐지(CLOSED)'인 경우 학과 내 학생 존재 여부 검증
+        if (req.getActive() == EnumMajorStatus.CLOSED) {
+            boolean hasStudents = majorRepository.existsStudentsInMajor(majorId);
+            if (hasStudents) {
+                throw new BusinessException(MajorErrorCode.HAS_ACTIVE_STUDENTS);
+            }
+        }
+
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
 
@@ -136,7 +144,7 @@ public class MajorService {
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
-                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate());
+                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate(), req.getClosedDate());
 
         // 이벤트 발행 추가
         MajorEvent event = MajorEvent.builder()
@@ -225,6 +233,7 @@ public class MajorService {
                 .info(major.getInfo())
                 .courseDuration(major.getCourseDuration())
                 .foundedDate(major.getFoundedDate())
+                .closedDate(major.getClosedDate())
                 .build();
     }
 
@@ -307,5 +316,9 @@ public class MajorService {
                         .name(b.getValue())
                         .build())
                 .toList();
+    }
+
+    public boolean hasStudents(Long majorId) {
+        return majorRepository.existsStudentsInMajor(majorId);
     }
 }

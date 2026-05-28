@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.enumcode.EnumChangeType;
-import com.green.common.exception.BusinessException;
+import com.green.common.kafka.TuitionPaidEvent;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.application.scholarship.ScholarshipRepository;
 import com.green.core.application.tuition.model.TuitionReq;
@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +47,7 @@ public class TuitionService {
     private final TuitionMailLogRepository tuitionMailLogRepository;
     private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // ❌ private final KafkaTemplate<String, Object> kafkaTemplate; // 더 이상 카프카를 거치지 않으므로 제거
 
@@ -156,7 +158,21 @@ public class TuitionService {
             tuition.updateScholarshipDeduction(calculatedDiscount, finalAmount);
         }
 
+        // 1. 등록금 상태를 PAID 등으로 변경
         tuition.updateStatus(status, adminCode);
+
+        // 🎯 2. 만약 변경된 상태가 'PAID(납부완료)'라면 Kafka 이벤트 발행!
+        if (status == EnumTuitionStatus.PAID) {
+            TuitionPaidEvent event = new TuitionPaidEvent(
+                    tuition.getStudentCode(),
+                    tuition.getYear(),
+                    tuition.getSemester()
+            );
+
+            kafkaTemplate.send("tuition-paid-topic", event);
+            log.info("[Kafka 발행] 등록금 납부 완료 이벤트 전송 - 학생코드: {}, 학기: {}-{}",
+                    tuition.getStudentCode(), tuition.getYear(), tuition.getSemester());
+        }
     }
 
     public TuitionRes.TuitionRemindRes previewReminderMails(Integer year, Integer semester) {
