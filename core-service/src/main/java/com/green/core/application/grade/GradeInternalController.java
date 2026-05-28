@@ -14,15 +14,15 @@ import java.math.RoundingMode;
 @RequestMapping("/internal/grades")
 @RequiredArgsConstructor
 public class GradeInternalController {
-    private final GradeRepository gradeRepository;
+    private final GradeQueryRepository gradeQueryRepository;
 
     @GetMapping("/gpa/{studentCode}")
     public GpaResult getGpa(@PathVariable Long studentCode) {
-        Double rawGpa = gradeRepository.calcWeightedGpaByStudentCode(studentCode);
+        Double rawGpa = gradeQueryRepository.calcWeightedGpaByStudentCode(studentCode);
         BigDecimal gpa = (rawGpa != null)
                 ? BigDecimal.valueOf(rawGpa).setScale(2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
-        int totalCredits = gradeRepository.sumTotalCreditsByStudentCode(studentCode);
+        int totalCredits = gradeQueryRepository.sumTotalCreditsByStudentCode(studentCode);
         return new GpaResult(gpa, totalCredits);
     }
 }
