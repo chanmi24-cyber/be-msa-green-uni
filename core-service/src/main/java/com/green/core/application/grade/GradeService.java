@@ -211,7 +211,7 @@ public class GradeService {
         Map<Long, String> appealStatusMap = gradeAppealRepository.findAllById(courseIds)
                 .stream()
                 .collect(Collectors.toMap(GradesAppeal::getCourseId,
-                        a -> a.getStatus().getValue()));
+                        a -> a.getStatus().getCode()));
 
         List<GradeStudentDetailRes.GradeItem> gradeList = grades.stream().map(g -> {
             var course  = g.getCourse();
@@ -313,7 +313,7 @@ public class GradeService {
                             course.getYear(),
                             course.getSemester(),
                             a.getReason(),
-                            a.getStatus().getValue(),
+                            a.getStatus().getCode(),
                             a.getRejectReason(),
                             a.getCreatedAt(),
                             a.getProcessedAt()
