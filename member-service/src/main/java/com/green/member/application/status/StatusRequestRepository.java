@@ -8,6 +8,8 @@ import com.green.member.application.status.model.AdminStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestDetailRes;
 import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.entity.student.StatusRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -57,7 +59,7 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
             @Param("requestId")  Long requestId,
             @Param("memberCode") Long memberCode);
 
-    // 관리자 학적 변경 신청 목록 조회
+    // 관리자 학적 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @Query(value = """
             SELECT sr.request_id       AS requestId,
                    ms.member_code       AS memberCode,
@@ -70,10 +72,24 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    sr.created_at       AS createdAt
             FROM status_request sr
             JOIN member ms      ON ms.member_code = sr.student_code
-            LEFT JOIN member ma      on ma.member_code = sr.updater_code
+            LEFT JOIN member ma ON ma.member_code = sr.updater_code
+            WHERE (:status IS NULL OR sr.status = :status)
+              AND (:search IS NULL OR ms.name LIKE CONCAT('%', :search, '%'))
             ORDER BY sr.created_at DESC
-            """, nativeQuery = true)
-    List<AdminStatusRequestListRes> findAllByFilter();
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM status_request sr
+            JOIN member ms ON ms.member_code = sr.student_code
+            WHERE (:status IS NULL OR sr.status = :status)
+              AND (:search IS NULL OR ms.name LIKE CONCAT('%', :search, '%'))
+            """,
+            nativeQuery = true)
+    Page<AdminStatusRequestListRes> findAllByFilter(
+            @Param("status") String status,
+            @Param("search") String search,
+            Pageable pageable
+    );
     // 관리자 학적 변경 신청 상세 조회
     @Query(value = """
             SELECT sr.request_id          AS requestId,

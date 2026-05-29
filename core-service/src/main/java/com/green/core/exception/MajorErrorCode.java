@@ -25,7 +25,8 @@ public enum MajorErrorCode implements ErrorCode {
     MAJOR_NAME_DUPLICATED("MAJOR_011", "이미 존재하는 학과명입니다.", HttpStatus.CONFLICT),
     TEL_DUPLICATED("MAJOR_012", "이미 사용 중인 전화번호입니다.", HttpStatus.CONFLICT),
     CHAIR_PROFESSOR_DUPLICATED("MAJOR_013", "이미 다른 학과의 학과장으로 임명된 교수입니다.", HttpStatus.CONFLICT),
-    OFFICE_ROOM_DUPLICATED("MAJOR_014", "이미 사용 중인 학과 사무실입니다.", HttpStatus.CONFLICT);
+    OFFICE_ROOM_DUPLICATED("MAJOR_014", "이미 사용 중인 학과 사무실입니다.", HttpStatus.CONFLICT),
+    HAS_ACTIVE_STUDENTS("MAJOR_015", "해당 학과에 재학 중인 학생(주전공/부전공)이 존재하여 학과를 폐지할 수 없습니다.", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String message;
