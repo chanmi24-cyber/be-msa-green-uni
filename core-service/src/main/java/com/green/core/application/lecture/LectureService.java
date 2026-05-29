@@ -26,6 +26,10 @@ import com.green.common.constants.EventType;
 import com.green.common.kafka.NotificationEvent;
 
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -153,31 +157,43 @@ public class LectureService {
     }
 
     // LEC-03 관리자: 승인관리 목록
-    public List<MyLectureListRes> getAdminLectures(AdminLectureReq req) {
-        return lectureMapper.findAdminLectures(req);
+    public Page<MyLectureListRes> getAdminLectures(AdminLectureReq req, Pageable pageable) {
+        long total = lectureMapper.countAdminLectures(req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findAdminLectures(req), pageable, total);
     }
 
     // LEC-06 교수: 내 강의 목록
-    public List<MyLectureListRes> getProfessorMyLectures(MemberDto memberDto, MyLectureListReq req) {
-        return lectureMapper.findProfessorMyLectures(memberDto.memberCode(), req);
+    public Page<MyLectureListRes> getProfessorMyLectures(MemberDto memberDto, MyLectureListReq req, Pageable pageable) {
+        long total = lectureMapper.countProfessorMyLectures(memberDto.memberCode(), req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findProfessorMyLectures(memberDto.memberCode(), req), pageable, total);
     }
 
     // LEC-07 학생: 내 강의 목록
     // [수정] 수강신청 기간: 빈 리스트
     //        수강정정 기간: 정정 시작일 이전 신청분만 표시 (수강신청 확정 목록 고정)
     //        정정 종료 후: 전체 목록 표시
-    public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
+    public Page<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req, Pageable pageable) {
         if (schedulePeriodValidator.isCourseRegistrationPeriod()) {
-            return List.of();
+            return Page.empty(pageable);
         }
         schedulePeriodValidator.getCourseModificationStartDate()
                 .ifPresent(req::setCreatedBefore);
-        return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
+        long total = lectureMapper.countStudentMyLectures(memberDto.memberCode(), req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findStudentMyLectures(memberDto.memberCode(), req), pageable, total);
     }
 
     // LEC-08 전체 강의 목록
-    public List<LectureListRes> getAllLectures(LectureListReq req) {
-        return lectureMapper.findAllLectures(req);
+    public Page<LectureListRes> getAllLectures(LectureListReq req, Pageable pageable) {
+        long total = lectureMapper.countAllLectures(req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findAllLectures(req), pageable, total);
     }
 
     // LEC-09, 10 공통
@@ -357,7 +373,7 @@ public class LectureService {
         // 수강 학생들 알림 발송
         int year = lecture.getYear();
         int semester = lecture.getSemester();
-        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                 lectureId, year, semester);
 
         for (Course course : courses) {
@@ -402,7 +418,7 @@ public class LectureService {
 
         lecture.changeProfessor(newMemberCode);
 
-        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                 lectureId, lecture.getYear(), lecture.getSemester());
         for (Course course : courses) {
             notificationProducer.sendNotification(NotificationEvent.builder()

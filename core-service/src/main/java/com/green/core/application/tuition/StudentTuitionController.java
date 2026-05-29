@@ -3,6 +3,9 @@ package com.green.core.application.tuition;
 import com.green.common.auth.MemberContext;
 import com.green.core.application.tuition.model.TuitionRes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,9 +19,10 @@ public class StudentTuitionController {
 
     // API-TUI-01: 등록금 납부 내역 전체 조회
     @GetMapping("/my")
-    public ResponseEntity<List<TuitionRes>> getMyTuitionList() {
+    public ResponseEntity<Page<TuitionRes>> getMyTuitionList(
+            @PageableDefault(size = 10) Pageable pageable) {
         Long studentCode = MemberContext.get().memberCode();
-        return ResponseEntity.ok(tuitionService.getStudentTuitionList(studentCode));
+        return ResponseEntity.ok(tuitionService.getStudentTuitionList(studentCode, pageable));
     }
 
     // API-TUI-14-STU: 학생용 등록금 납부 기간 조회

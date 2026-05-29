@@ -5,7 +5,6 @@ import lombok.*;
 @Getter
 @NoArgsConstructor
 public class EvalCreateReq {
-    private Long lectureId;
     private Double score;
     private Double q1;
     private Double q2;

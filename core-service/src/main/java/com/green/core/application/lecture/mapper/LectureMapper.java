@@ -9,12 +9,16 @@ import java.util.List;
 @Mapper
 public interface LectureMapper {
     List<MyLectureListRes> findAdminLectures(AdminLectureReq req);
+    long countAdminLectures(AdminLectureReq req);
 
     List<MyLectureListRes> findProfessorMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
+    long countProfessorMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
 
     List<LectureListRes> findStudentMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
+    long countStudentMyLectures(@Param("memberCode") Long memberCode, @Param("req") MyLectureListReq req);
 
     List<LectureListRes> findAllLectures(LectureListReq req);
+    long countAllLectures(LectureListReq req);
 
     LectureDetailRes findProAdmLectureDetail(Long lectureId);
 
