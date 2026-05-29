@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class AnnoListReq {
     private String targetRole;
+    private String search;
 }

@@ -60,7 +60,4 @@ public class Announcement extends CreatedUpdatedAt {
         this.deletedAt = LocalDateTime.now();
     }
 
-    public void incrementViewCount() {
-        this.viewCount++;
-    }
 }

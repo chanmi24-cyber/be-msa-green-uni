@@ -1,5 +1,6 @@
 package com.green.academic.enumcode;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.green.common.enumcode.AbstractEnumCodeConverter;
 import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
@@ -15,6 +16,16 @@ public enum EnumTargetRole implements EnumMapperType {
     ;
     private final String code;
     private final String value;
+
+    @JsonCreator
+    public static EnumTargetRole from(String value) {
+        for (EnumTargetRole role : EnumTargetRole.values()) {
+            if (role.getCode().equalsIgnoreCase(value) || role.getValue().equalsIgnoreCase(value)) {
+                return role;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 targetRole: " + value);
+    }
 
     @Converter(autoApply = true)
     public static class CodeConverter extends AbstractEnumCodeConverter<EnumTargetRole> {

@@ -54,10 +54,20 @@ public class AnnouncementService {
             case ADMIN -> {
                 EnumTargetRole roleFilter = req.getTargetRole() != null
                         ? EnumTargetRole.valueOf(req.getTargetRole()) : null;
-                yield announcementRepository.findByAdmin(member.memberCode(), roleFilter, pageable);
+                String search = req.getSearch() != null && !req.getSearch().isBlank()
+                        ? req.getSearch() : null;
+                yield (roleFilter != null && search != null)
+                        ? announcementRepository.findByTargetRoleAndSearchAndIsDelFalse(roleFilter, search, pageable)
+                        : (roleFilter != null)
+                        ? announcementRepository.findByTargetRoleAndIsDelFalseOrderByCreatedAtDesc(roleFilter, pageable)
+                        : (search != null)
+                        ? announcementRepository.findAllBySearchAndIsDelFalse(search, pageable)
+                        : announcementRepository.findAllByIsDelFalseOrderByCreatedAtDesc(pageable);
             }
-            case PROFESSOR -> announcementRepository.findByTargetRole(EnumTargetRole.PROFESSOR, pageable);
-            case STUDENT   -> announcementRepository.findByTargetRole(EnumTargetRole.STUDENT, pageable);
+            case PROFESSOR -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
+                        List.of(EnumTargetRole.PROFESSOR, EnumTargetRole.ALL), pageable);
+            case STUDENT   -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
+                        List.of(EnumTargetRole.STUDENT, EnumTargetRole.ALL), pageable);
         };
         return page.map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
                 a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
@@ -69,12 +79,13 @@ public class AnnouncementService {
         Announcement anno = announcementRepository.findByAnnoIdAndIsDelFalse(annoId)
                 .orElseThrow(() -> new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_NOT_FOUND));
         checkAccess(member, anno);
-        anno.incrementViewCount();
+        announcementRepository.incrementViewCount(annoId);
         return toDetailRes(anno);
     }
 
     public Page<AnnoListRes> getPublicList(Pageable pageable) {
-        return announcementRepository.findByTargetRole(EnumTargetRole.ALL, pageable)
+        return announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
+                        List.of(EnumTargetRole.ALL), pageable)
                 .map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
                         a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
     }
@@ -86,7 +97,7 @@ public class AnnouncementService {
         if (anno.getTargetRole() != EnumTargetRole.ALL) {
             throw new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_ACCESS_DENIED);
         }
-        anno.incrementViewCount();
+        announcementRepository.incrementViewCount(annoId);
         return toDetailRes(anno);
     }
 
@@ -101,9 +112,11 @@ public class AnnouncementService {
 
     private void checkAccess(MemberDto member, Announcement anno) {
         boolean allowed = switch (member.role()) {
-            case ADMIN     -> anno.getMemberCode().equals(member.memberCode());
-            case PROFESSOR -> anno.getTargetRole() == EnumTargetRole.PROFESSOR;
-            case STUDENT   -> anno.getTargetRole() == EnumTargetRole.STUDENT;
+            case ADMIN     -> true;
+            case PROFESSOR -> anno.getTargetRole() == EnumTargetRole.PROFESSOR
+                             || anno.getTargetRole() == EnumTargetRole.ALL;
+            case STUDENT   -> anno.getTargetRole() == EnumTargetRole.STUDENT
+                             || anno.getTargetRole() == EnumTargetRole.ALL;
         };
         if (!allowed) throw new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_ACCESS_DENIED);
     }
