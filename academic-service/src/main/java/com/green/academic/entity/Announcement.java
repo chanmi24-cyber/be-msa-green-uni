@@ -50,4 +50,14 @@ public class Announcement extends CreatedUpdatedAt {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    public void update(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
+
+    public void softDelete() {
+        this.isDel = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
 }
