@@ -12,6 +12,10 @@ mybatis:
     map-underscore-to-camel-case: true
 
 spring:
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true   # 프론트 page=1 → Spring 내부 page=0 자동 변환
   config:
     import:
       - optional:classpath:application-common.yaml

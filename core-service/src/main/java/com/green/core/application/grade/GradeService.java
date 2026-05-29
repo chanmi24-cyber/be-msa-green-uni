@@ -28,6 +28,9 @@ import com.green.core.exception.GradeErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -471,10 +474,9 @@ public class GradeService {
 
     // ── 교수 이의신청 목록 조회 (GET /professor/grades/appeals) ──────────────
     @Transactional(readOnly = true)
-    public List<GradeAppealProListRes> getProfessorAppealList() {
+    public Page<GradeAppealProListRes> getProfessorAppealList(Pageable pageable) {
         Long professorCode = MemberContext.get().memberCode();
-        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode)
-                .stream()
+        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode, pageable)
                 .map(a -> {
                     var course  = a.getGrade().getCourse();
                     var lecture = course.getLecture();
@@ -490,8 +492,7 @@ public class GradeService {
                             a.getStatus().getCode(),
                             a.getCreatedAt()
                     );
-                })
-                .toList();
+                });
     }
 
     // ── 교수 이의신청 상세 조회 (GET /professor/grades/appeals/{courseId}) ────
