@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import java.util.List;
 
 // [수정] 잘못된 /api/calendars 경로 → 교수 성적 API로 교체
@@ -49,9 +52,11 @@ public class GradeController {
 
     // 교수 이의신청 목록 조회
     @GetMapping("/appeals")
-    public ResponseEntity<ResultResponse<List<GradeAppealProListRes>>> getProfessorAppealList() {
+    public ResponseEntity<ResultResponse<Page<GradeAppealProListRes>>> getProfessorAppealList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(new ResultResponse<>("이의신청 목록 조회 성공",
-                gradeService.getProfessorAppealList()));
+                gradeService.getProfessorAppealList(PageRequest.of(page - 1, size))));
     }
 
     // 교수 이의신청 상세 조회

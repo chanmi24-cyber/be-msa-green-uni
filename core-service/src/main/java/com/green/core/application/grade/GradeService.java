@@ -28,13 +28,19 @@ import com.green.core.exception.GradeErrorCode;
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 // [추가] 성적 서비스 — 교수 성적 조회/입력 구현 (학생 성적 조회는 추후 추가)
 @Service
@@ -47,8 +53,10 @@ public class GradeService {
     private final GradeMajorRepository gradeMajorRepository;
     private final GradeAppealRepository gradeAppealRepository;
     private final GradeAppealHistoryRepository gradeAppealHistoryRepository;
+    private final GradeEvalRepository gradeEvalRepository;
     private final StudentCacheRepository studentCacheRepository;
     private final ProfessorCacheRepository professorCacheRepository;
+    private final SchedulePeriodValidator schedulePeriodValidator;
 
     // ── 교수 담당 강의 목록 조회 (성적 관리 강의 선택 화면용) ─────────────────────
     @Transactional(readOnly = true)
@@ -155,10 +163,21 @@ public class GradeService {
             grades = gradeRepository.findByStudentCode(studentCode);
         }
 
+        boolean isEvalPeriod;
+        try { schedulePeriodValidator.checkLectureEvaluation(); isEvalPeriod = true; }
+        catch (BusinessException e) { isEvalPeriod = false; }
+
+        List<Long> courseIds = grades.stream().map(Grade::getCourseId).toList();
+        // 강의평가 기간이 아니면 모든 과목을 완료로 처리 (기간 종료 후 성적 공개)
+        Set<Long> completedIds = (!isEvalPeriod || courseIds.isEmpty())
+                ? new java.util.HashSet<>(courseIds)
+                : gradeEvalRepository.findCompletedCourseIds(courseIds);
+
         List<GradeStudentRes.GradeItem> gradeList = grades.stream().map(g -> {
             var course   = g.getCourse();
             var lecture  = course.getLecture();
             EnumGradeLetter letter = g.getGradeLetter();
+            boolean evalCompleted = completedIds.contains(g.getCourseId());
             return new GradeStudentRes.GradeItem(
                     g.getCourseId(),
                     course.getYear(),
@@ -166,8 +185,9 @@ public class GradeService {
                     lecture.getLectureName(),
                     lecture.getCredit(),
                     lecture.getLectureType().getValue(),
-                    letter != null ? letter.getCode()   : null,
-                    letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null
+                    (letter != null && evalCompleted) ? letter.getCode() : null,
+                    (letter != null && evalCompleted) ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null,
+                    evalCompleted
             );
         }).toList();
 
@@ -203,6 +223,16 @@ public class GradeService {
     @Transactional(readOnly = true)
     public GradeStudentDetailRes getStudentAllGrades() {
         Long studentCode = MemberContext.get().memberCode();
+
+        // 강의평가 기간 중 미완료 과목이 하나라도 있으면 접근 차단
+        boolean isEvalPeriodForDetail;
+        try { schedulePeriodValidator.checkLectureEvaluation(); isEvalPeriodForDetail = true; }
+        catch (BusinessException e) { isEvalPeriodForDetail = false; }
+
+        if (isEvalPeriodForDetail
+                && gradeEvalRepository.existsByCourse_StudentCodeAndCreatedAtIsNull(studentCode)) {
+            throw new BusinessException(GradeErrorCode.EVALUATION_NOT_COMPLETED);
+        }
 
         List<Grade> grades = gradeRepository.findByStudentCode(studentCode);
 
@@ -294,11 +324,16 @@ public class GradeService {
             if (majorTotalCount == 0) { majorTotalCount = 1; majorRank = 1; }
         }
 
+        boolean isAppealPeriod;
+        try { schedulePeriodValidator.checkGradeAppeal(); isAppealPeriod = true; }
+        catch (BusinessException e) { isAppealPeriod = false; }
+
         return new GradeStudentDetailRes(
                 studentInfo,
                 gradeList,
                 new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
-                        averageScore, averageGrade, majorRank, majorTotalCount));
+                        averageScore, averageGrade, majorRank, majorTotalCount),
+                isAppealPeriod);
     }
 
     // ── 학생 이의신청 내역 조회 (GET /student/grades/appeals/my) ─────────────────
@@ -368,6 +403,8 @@ public class GradeService {
     // ── API-GPA-07: 이의신청 제출 (POST /student/grades/{gradeId}/appeal) ──────
     @Transactional
     public void submitAppeal(Long gradeId, GradeAppealReq req) {
+        schedulePeriodValidator.checkGradeAppeal();
+
         Long studentCode = MemberContext.get().memberCode();
 
         Grade grade = gradeRepository.findById(gradeId)
@@ -437,10 +474,9 @@ public class GradeService {
 
     // ── 교수 이의신청 목록 조회 (GET /professor/grades/appeals) ──────────────
     @Transactional(readOnly = true)
-    public List<GradeAppealProListRes> getProfessorAppealList() {
+    public Page<GradeAppealProListRes> getProfessorAppealList(Pageable pageable) {
         Long professorCode = MemberContext.get().memberCode();
-        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode)
-                .stream()
+        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode, pageable)
                 .map(a -> {
                     var course  = a.getGrade().getCourse();
                     var lecture = course.getLecture();
@@ -456,8 +492,7 @@ public class GradeService {
                             a.getStatus().getCode(),
                             a.getCreatedAt()
                     );
-                })
-                .toList();
+                });
     }
 
     // ── 교수 이의신청 상세 조회 (GET /professor/grades/appeals/{courseId}) ────
