@@ -17,8 +17,7 @@ public class MyLectureListReq {
     private Integer year;
     private Integer semester;
     private EnumApprovalStatus status;
-    private Integer page;
     private Integer size;
-    private Integer startIdx;
+    private Integer offset;
     private LocalDateTime createdBefore;
 }
