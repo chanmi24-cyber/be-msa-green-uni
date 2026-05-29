@@ -70,6 +70,11 @@
         <result property="responseCount"  column="response_count"/>
         <result property="totalStudents"  column="total_students"/>
         <result property="score"          column="score"/>
+        <result property="q1Avg"          column="q1_avg"/>
+        <result property="q2Avg"          column="q2_avg"/>
+        <result property="q3Avg"          column="q3_avg"/>
+        <result property="q4Avg"          column="q4_avg"/>
+        <result property="q5Avg"          column="q5_avg"/>
         <result property="totalComments"  column="total_comments"/>
         <collection property="comments" ofType="String" column="lecture_id"
                     select="findCommentsByLectureId"/>
@@ -85,6 +90,11 @@
             COUNT(le.evaluation_id)                                           AS response_count,
             (SELECT COUNT(*) FROM course c2 WHERE c2.lecture_id = l.lecture_id) AS total_students,
             AVG(le.score)                                                     AS score,
+            AVG(le.q1)                                                        AS q1_avg,
+            AVG(le.q2)                                                        AS q2_avg,
+            AVG(le.q3)                                                        AS q3_avg,
+            AVG(le.q4)                                                        AS q4_avg,
+            AVG(le.q5)                                                        AS q5_avg,
             COUNT(le.comment)                                                 AS total_comments
         FROM lecture l
                  JOIN professor_cache pc ON l.member_code = pc.member_code
