@@ -136,4 +136,22 @@
           AND l.lecture_id = #{lectureId}
     </select>
 
+    <!-- 학생 강의평가 연도 목록 -->
+    <select id="findStudentEvalYears" resultType="int">
+        SELECT DISTINCT l.year
+        FROM course c
+                 JOIN lecture l ON c.lecture_id = l.lecture_id
+        WHERE c.student_code = #{memberCode}
+        ORDER BY l.year DESC
+    </select>
+
+    <!-- 교수 강의평가 연도 목록 -->
+    <select id="findProfessorEvalYears" resultType="int">
+        SELECT DISTINCT l.year
+        FROM lecture l
+        WHERE l.member_code = #{memberCode}
+          AND l.end_date &lt; NOW()
+        ORDER BY l.year DESC
+    </select>
+
 </mapper>

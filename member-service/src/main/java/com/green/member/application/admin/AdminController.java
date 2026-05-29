@@ -29,6 +29,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -120,31 +123,47 @@ public class AdminController {
                 .build();
     }
 
-    // 학생 회원 목록 조회
+    // 학생 회원 목록 조회 (status/academicYear/collegeName/majorName/search 필터 + 페이지네이션)
     @GetMapping("/students")
-    public ResultResponse<?> findStudentList(){
+    public ResultResponse<?> findStudentList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer academicYear,
+            @RequestParam(required = false) String collegeName,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<StudentListRes> res = adminService.getStudents(loginMember.memberCode());
+        Page<StudentListRes> res = adminService.getStudents(
+                loginMember.memberCode(), status, academicYear, collegeName, majorName, search, pageable);
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 교수 회원 목록 조회
+    // 교수 회원 목록 조회 (status/majorName/position/search 필터 + 페이지네이션)
     @GetMapping("/professors")
-    public ResultResponse<?> findProfessorList(){
+    public ResultResponse<?> findProfessorList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<ProfessorListRes> res = adminService.getProfessors(loginMember.memberCode());
+        Page<ProfessorListRes> res = adminService.getProfessors(
+                loginMember.memberCode(), status, majorName, position, search, pageable);
         return ResultResponse.builder()
                 .message("교수 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 관리자 회원 목록 조회
+    // 관리자 회원 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/admins")
-    public ResultResponse<?> findAdminList(){
+    public ResultResponse<?> findAdminList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminListRes> res = adminService.getAdmins(loginMember.memberCode());
+        Page<AdminListRes> res = adminService.getAdmins(loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("관리자 목록 조회 성공")
                 .data(res)
@@ -305,13 +324,15 @@ public class AdminController {
                 .message("학생 계정 상태 변경 및 이력 기록")
                 .build();
     }
-    // 전공 변경 신청 목록 조회 (status, size 파라미터로 필터링 가능)
+    // 전공 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/major")
     public ResultResponse<?> findAllMajorRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminMajorRequestListRes> res = adminService.getMajorRequests(loginMember.memberCode(), status, size);
+        Page<AdminMajorRequestListRes> res = adminService.getMajorRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -344,14 +365,15 @@ public class AdminController {
     }
 
 
-    // 학적 변경 신청 목록 조회 (status, type, size 파라미터로 필터링 가능)
+    // 학적 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/status")
     public ResultResponse<?> findAllStatusRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminStatusRequestListRes> res = adminService.getStatusRequests(loginMember.memberCode(), status, type, size);
+        Page<AdminStatusRequestListRes> res = adminService.getStatusRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("학적 변경 신청 목록 조회 완료")
                 .data(res)

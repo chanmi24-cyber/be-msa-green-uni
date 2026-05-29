@@ -20,6 +20,7 @@ import java.util.List;
 @RequestMapping("/student/lectures")
 public class StudentLectureController {
     private final LectureService lectureService;
+    private final EvaluationService evaluationService;
 
     @GetMapping("/my")
     public ResultResponse<List<LectureListRes>> getStudentMyLectures(@ModelAttribute MyLectureListReq req) {

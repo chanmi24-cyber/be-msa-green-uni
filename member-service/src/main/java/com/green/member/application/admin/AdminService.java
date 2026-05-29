@@ -52,6 +52,8 @@ import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +66,6 @@ import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -96,21 +97,24 @@ public class AdminService {
 
     // 학생 목록 조회
     @Transactional(readOnly = true)
-    public List<StudentListRes> getStudents(Long memberCode) {
+    public Page<StudentListRes> getStudents(
+            Long memberCode, String status, Integer academicYear,
+            String collegeName, String majorName, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return studentRepository.findStudentList();
+        return studentRepository.findStudentList(status, academicYear, collegeName, majorName, search, pageable);
     }
     // 교수 목록 조회
     @Transactional(readOnly = true)
-    public List<ProfessorListRes> getProfessors(Long memberCode) {
+    public Page<ProfessorListRes> getProfessors(
+            Long memberCode, String status, String majorName, String position, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return professorRepository.findProfessorList();
+        return professorRepository.findProfessorList(status, majorName, position, search, pageable);
     }
     // 관리자 목록 조회
     @Transactional(readOnly = true)
-    public List<AdminListRes> getAdmins(Long memberCode) {
+    public Page<AdminListRes> getAdmins(Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        return adminRepository.findAdminList();
+        return adminRepository.findAdminList(status, search, pageable);
     }
 
     // 대시보드: 학생/교수/관리자 계정 수 조회
@@ -739,14 +743,12 @@ public class AdminService {
                 ;
     }
 
-    // 전공 변경 신청 목록 전체 조회 (status/size 파라미터 선택 가능)
+    // 전공 변경 신청 목록 전체 조회 (status/search 필터 + 페이지네이션)
     @Transactional(readOnly = true)
-    public List<AdminMajorRequestListRes> getMajorRequests(Long memberCode, String status, Integer size) {
+    public Page<AdminMajorRequestListRes> getMajorRequests(
+            Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        Stream<AdminMajorRequestListRes> stream = majorRequestRepository.findAllByFilter().stream();
-        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
-        if (size != null && size > 0) return stream.limit(size).toList();
-        return stream.toList();
+        return majorRequestRepository.findAllByFilter(status, search, pageable);
     }
 
     // 전공 변경 신청 상세 조회 (신청 당시 전공 정보는 MajorRequest에 스냅샷으로 저장된 값 사용)
@@ -880,15 +882,12 @@ public class AdminService {
         return majorRequestRepository.findMajorHistoryByStudentCodeForAdmin(studentCode);
     }
 
-    // 학적 변경 신청 목록 전체 조회 (status/type/size 파라미터 선택 가능)
+    // 학적 변경 신청 목록 전체 조회 (status/search 필터 + 페이지네이션)
     @Transactional(readOnly = true)
-    public List<AdminStatusRequestListRes> getStatusRequests(Long memberCode, String status, String type, Integer size) {
+    public Page<AdminStatusRequestListRes> getStatusRequests(
+            Long memberCode, String status, String search, Pageable pageable) {
         checkEmployedAdmin(memberCode);
-        Stream<AdminStatusRequestListRes> stream = statusRequestRepository.findAllByFilter().stream();
-        if (status != null) stream = stream.filter(r -> status.equals(r.getStatus()));
-        if (type != null) stream = stream.filter(r -> type.equals(r.getType()));
-        if (size != null && size > 0) return stream.limit(size).toList();
-        return stream.toList();
+        return statusRequestRepository.findAllByFilter(status, search, pageable);
     }
     // 학적 변경 신청 상세 조회
     @Transactional(readOnly = true)
