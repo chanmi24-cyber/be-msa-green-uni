@@ -23,6 +23,8 @@ import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,19 +72,24 @@ public class CourseService {
 
     // API-ENRL-01: 수강 가능 강의 전체 조회
     @Transactional(readOnly = true)
-    public List<CourseRes> getCourses() {
+    public Page<CourseRes> getCourses(
+            String lectureType,   // 탭: null=전체, "MAJOR"=전공, "GENERAL"=교양
+            Long majorId,
+            Integer academicYear,
+            String search,
+            Pageable pageable) {
+
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 
         return lectureRepository
-                .findByYearAndSemesterAndStatusAndIsDelFalse(
-                        currentYear, currentSemester, EnumApprovalStatus.APPROVED)
-                .stream()
+                .findByFilters(
+                        currentYear, currentSemester, EnumApprovalStatus.APPROVED,
+                        lectureType, majorId, academicYear, search, pageable)
                 .map(l -> {
                     int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
                             l.getLectureId(), currentYear, currentSemester);
 
-                    // 수업시간 및 강의실 정보
                     List<LectureSchedule> schedules = lectureScheduleRepository
                             .findByLecture_LectureId(l.getLectureId());
                     String dayOfWeek = null;
@@ -99,7 +106,6 @@ public class CourseService {
                         roomNumber = s.getClassRoom().getRoom();
                     }
 
-                    // 교수 이름
                     String proName = professorCacheRepository.findById(l.getMemberCode())
                             .map(ProfessorCache::getName)
                             .orElse(null);
@@ -120,8 +126,7 @@ public class CourseService {
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
                             .build();
-                })
-                .toList();
+                });
     }
 
     // API-ENRL-02: 내 수강 신청 목록 조회

@@ -8,7 +8,9 @@ import com.green.core.application.major.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +35,14 @@ public class AdminMajorController {
 
     // API-DEPT-03: 학과 전체 목록 조회
     @GetMapping
-    public ResultResponse<List<MajorRes>> getMajorList() {
-        List<MajorRes> list = majorService.getMajorList();
-        return ResultResponse.<List<MajorRes>>builder()
+    public ResultResponse<Page<MajorRes>> getMajorList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<MajorRes> page = majorService.getMajorList(status, search, pageable);
+        return ResultResponse.<Page<MajorRes>>builder()
                 .message("학과 전체 목록 조회")
-                .data(list)
+                .data(page)
                 .build();
     }
 

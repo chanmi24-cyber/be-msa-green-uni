@@ -3,6 +3,8 @@ package com.green.core.application.major;
 import com.green.common.enumcode.EnumBuilding;
 import com.green.core.entity.major.Major;
 import com.green.core.enumcode.EnumMajorStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,21 +27,41 @@ public interface MajorRepository extends JpaRepository<Major, Long> {
 
     List<Major> findByActiveNot(EnumMajorStatus active);
 
+    // ✅ 추가: 관리자 목록 조회용 페이징 쿼리
+    @Query(
+            value = """
+            SELECT m.major_id, m.name, m.major_building, m.room, m.tel,
+                   m.professor_code, m.capacity, m.college_id, m.active,
+                   COUNT(p.member_code) AS professor_count
+            FROM major m
+            LEFT JOIN professor_cache p ON p.major_id = m.major_id
+            WHERE (:status IS NULL OR m.active = :status)
+              AND (:search IS NULL OR m.name LIKE CONCAT('%', :search, '%'))
+            GROUP BY m.major_id
+            ORDER BY m.major_id DESC
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM major m
+            WHERE (:status IS NULL OR m.active = :status)
+              AND (:search IS NULL OR m.name LIKE CONCAT('%', :search, '%'))
+            """,
+            nativeQuery = true
+    )
+    Page<Object[]> findMajorListWithFilter(
+            @Param("status") String status,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
     @Query("SELECT m.majorId, COUNT(p.memberCode) FROM Major m " +
             "LEFT JOIN ProfessorCache p ON p.majorId = m.majorId " +
             "GROUP BY m.majorId")
     List<Object[]> findProfessorCountByMajor();
 
-    /**
-     * [수정 완료] DB에서 실제 학생 수를 Integer로 안전하게 조회
-     */
     @Query(value = "SELECT COUNT(*) FROM student_cache WHERE major_id = :majorId OR minor_id = :majorId", nativeQuery = true)
     int countStudentsInMajor(@Param("majorId") Long majorId);
 
-    /**
-     * [수정 완료] 기존 Service단 코드를 깨뜨리지 않기 위한 디폴트 메서드 구현
-     * 내부적으로 카운트가 0보다 큰지 비교하여 확실한 boolean 타입으로 리턴합니다.
-     */
     default boolean existsStudentsInMajor(Long majorId) {
         return countStudentsInMajor(majorId) > 0;
     }
