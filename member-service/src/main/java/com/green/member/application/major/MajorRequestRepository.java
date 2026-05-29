@@ -8,6 +8,8 @@ import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.entity.student.MajorRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +21,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
     Optional<MajorRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
     boolean existsByStudent_MemberCodeAndStatus(Long memberCode, EnumApprovalStatus status);
 
-    // 관리자 전공 변경 신청 목록 조회
+    // 관리자 전공 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @Query(value = """
             SELECT mr.request_id       AS requestId,
                    ms.member_code       AS memberCode,
@@ -35,13 +37,27 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.created_at       AS createdAt
             FROM major_request mr
             JOIN member ms      ON ms.member_code = mr.student_code
-            LEFT JOIN member ma      on ma.member_code = mr.updater_code
+            LEFT JOIN member ma ON ma.member_code = mr.updater_code
             JOIN major_cache mc ON mc.major_id  = mr.target_major_id
             JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id
             LEFT JOIN major_cache mc_minor ON mc_minor.major_id = mr.current_minor_id
+            WHERE (:status IS NULL OR mr.status = :status)
+              AND (:search IS NULL OR ms.name LIKE CONCAT('%', :search, '%'))
             ORDER BY mr.created_at DESC
-            """, nativeQuery = true)
-    List<AdminMajorRequestListRes> findAllByFilter();
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM major_request mr
+            JOIN member ms ON ms.member_code = mr.student_code
+            WHERE (:status IS NULL OR mr.status = :status)
+              AND (:search IS NULL OR ms.name LIKE CONCAT('%', :search, '%'))
+            """,
+            nativeQuery = true)
+    Page<AdminMajorRequestListRes> findAllByFilter(
+            @Param("status") String status,
+            @Param("search") String search,
+            Pageable pageable
+    );
 
     // 관리자 전공 변경 신청 상세 조회
     @Query(value = """

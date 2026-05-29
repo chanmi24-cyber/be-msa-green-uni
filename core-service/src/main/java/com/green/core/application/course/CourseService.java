@@ -23,6 +23,8 @@ import com.green.core.scheduleValidator.SchedulePeriodValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,19 +72,24 @@ public class CourseService {
 
     // API-ENRL-01: 수강 가능 강의 전체 조회
     @Transactional(readOnly = true)
-    public List<CourseRes> getCourses() {
+    public Page<CourseRes> getCourses(
+            String lectureType,   // 탭: null=전체, "MAJOR"=전공, "GENERAL"=교양
+            Long majorId,
+            Integer academicYear,
+            String search,
+            Pageable pageable) {
+
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
 
         return lectureRepository
-                .findByYearAndSemesterAndStatusAndIsDelFalse(
-                        currentYear, currentSemester, EnumApprovalStatus.APPROVED)
-                .stream()
+                .findByFilters(
+                        currentYear, currentSemester, EnumApprovalStatus.APPROVED,
+                        lectureType, majorId, academicYear, search, pageable)
                 .map(l -> {
-                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                             l.getLectureId(), currentYear, currentSemester);
 
-                    // 수업시간 및 강의실 정보
                     List<LectureSchedule> schedules = lectureScheduleRepository
                             .findByLecture_LectureId(l.getLectureId());
                     String dayOfWeek = null;
@@ -99,7 +106,6 @@ public class CourseService {
                         roomNumber = s.getClassRoom().getRoom();
                     }
 
-                    // 교수 이름
                     String proName = professorCacheRepository.findById(l.getMemberCode())
                             .map(ProfessorCache::getName)
                             .orElse(null);
@@ -120,8 +126,7 @@ public class CourseService {
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
                             .build();
-                })
-                .toList();
+                });
     }
 
     // API-ENRL-02: 내 수강 신청 목록 조회
@@ -132,11 +137,11 @@ public class CourseService {
         int currentSemester = getCurrentSemester();
 
         List<MyCourseRes> courses = courseRepository
-                .findByStudentCodeAndYearAndSemester(studentCode, currentYear, currentSemester)
+                .findByStudentCodeAndYearAndSemesterAndIsDelFalse(studentCode, currentYear, currentSemester)
                 .stream()
                 .map(c -> {
                     Lecture l = c.getLecture();
-                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+                    int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                             l.getLectureId(), currentYear, currentSemester);
 
                     List<LectureSchedule> schedules = lectureScheduleRepository
@@ -256,9 +261,9 @@ public class CourseService {
 
         log.info("4. 학과/학년 조건 확인 완료");
 
-        // 이미 신청된 강의 확인
+        // 이미 신청된 강의 확인 (활성 수강만)
         boolean alreadyEnrolled = courseRepository
-                .existsByStudentCodeAndLecture_LectureIdAndYearAndSemester(
+                .existsByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                         studentCode, req.getLectureId(), currentYear, currentSemester);
         if (alreadyEnrolled) {
             throw new BusinessException(CourseErrorCode.COURSE_ALREADY_ENROLLED);
@@ -276,13 +281,12 @@ public class CourseService {
                     newSchedule.getEndPeriod());
             if (timeConflict) {
                 throw new BusinessException(CourseErrorCode.COURSE_SCHEDULE_CONFLICT);
-
             }
         }
         log.info("6. 시간표 중복 확인 완료");
 
         // 수강 정원 초과 확인
-        int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemester(
+        int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                 req.getLectureId(), currentYear, currentSemester);
         if (enrolledCount >= lecture.getMaxStd()) {
             throw new BusinessException(CourseErrorCode.COURSE_CAPACITY_EXCEEDED);
@@ -298,22 +302,32 @@ public class CourseService {
         }
         log.info("8. 최대 학점 확인 완료 - 현재 {}학점 + 신규 {}학점", currentCredits, newCredits);
 
-        // Course 저장
-        Course course = Course.builder()
-                .studentCode(studentCode)
-                .lecture(lecture)
-                .year(currentYear)
-                .semester(currentSemester)
-                .build();
-        courseRepository.save(course);
-        log.info("9. 수강 신청 저장 완료 - courseId: {}", course.getCourseId());
+        // 수강정정 기간 중 같은 강의를 재신청하는 경우 → 기존 소프트딜리트 레코드 재활성화
+        Course course = courseRepository
+                .findByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDelTrue(
+                        studentCode, req.getLectureId(), currentYear, currentSemester)
+                .orElse(null);
 
-        // Grade Row 즉시 생성
-        Grade grade = Grade.builder()
-                .course(course)
-                .build();
-        gradeRepository.save(grade);
-        log.info("10. 성적 Row 생성 완료 - courseId: {}", course.getCourseId());
+        if (course != null) {
+            course.reactivate();
+            log.info("9. 수강 재활성화 완료 - courseId: {}", course.getCourseId());
+        } else {
+            course = Course.builder()
+                    .studentCode(studentCode)
+                    .lecture(lecture)
+                    .year(currentYear)
+                    .semester(currentSemester)
+                    .build();
+            courseRepository.save(course);
+            log.info("9. 수강 신청 저장 완료 - courseId: {}", course.getCourseId());
+
+            // Grade Row 즉시 생성 (신규 레코드만)
+            Grade grade = Grade.builder()
+                    .course(course)
+                    .build();
+            gradeRepository.save(grade);
+            log.info("10. 성적 Row 생성 완료 - courseId: {}", course.getCourseId());
+        }
 
         // 저장 후 총 학점 반환
         int totalCredits = currentCredits + newCredits;
@@ -335,12 +349,11 @@ public class CourseService {
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
 
         Course course = courseRepository
-                .findByStudentCodeAndLecture_LectureIdAndYearAndSemester(
+                .findByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                         studentCode, lectureId, currentYear, currentSemester)
                 .orElseThrow(() -> new BusinessException(CourseErrorCode.COURSE_NOT_FOUND));
 
-        // Course 삭제 시 Grade도 cascade로 함께 삭제됨 (Course 엔티티 @OneToOne cascade = ALL)
-        courseRepository.delete(course);
+        course.softDelete();
         log.info("수강 신청 취소 완료 - lectureId: {}, studentCode: {}", lectureId, studentCode);
     }
 

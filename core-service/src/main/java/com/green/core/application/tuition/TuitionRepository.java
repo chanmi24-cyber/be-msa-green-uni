@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface TuitionRepository extends JpaRepository<Tuition, Long> {
 
     // 학생: 전체납부 내역 조회
-    List<Tuition> findByStudentCodeOrderByYearDescSemesterDesc(Long studentCode);
+    Page<Tuition> findByStudentCodeOrderByYearDescSemesterDesc(Long studentCode, Pageable pageable);
 
     // 학생: 특정 학기 상세 조회 및 납부 신청용
     Optional<Tuition> findByStudentCodeAndYearAndSemester(Long studentCode, Integer year, Integer semester);

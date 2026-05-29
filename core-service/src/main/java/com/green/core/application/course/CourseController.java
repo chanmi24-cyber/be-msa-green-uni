@@ -5,6 +5,9 @@ import com.green.core.application.course.model.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,11 +32,16 @@ public class CourseController {
 
     // API-ENRL-01: 수강 가능 강의 전체 조회
     @GetMapping
-    public ResultResponse<List<CourseRes>> getCourses() {
-        List<CourseRes> list = courseService.getCourses();
-        return ResultResponse.<List<CourseRes>>builder()
+    public ResultResponse<Page<CourseRes>> getCourses(
+            @RequestParam(required = false) String lectureType,
+            @RequestParam(required = false) Long majorId,
+            @RequestParam(required = false) Integer academicYear,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<CourseRes> page = courseService.getCourses(lectureType, majorId, academicYear, search, pageable);
+        return ResultResponse.<Page<CourseRes>>builder()
                 .message("수강 가능 강의 목록 조회")
-                .data(list)
+                .data(page)
                 .build();
     }
 
