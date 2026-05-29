@@ -75,7 +75,7 @@ public class EvaluationService {
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 
         // Course 조회 (studentCode + lectureId로)
-        Course course = courseRepository.findByStudentCodeAndLecture_LectureId(
+        Course course = courseRepository.findByStudentCodeAndLecture_LectureIdAndIsDelFalse(
                         memberDto.memberCode(), req.getLectureId())
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 

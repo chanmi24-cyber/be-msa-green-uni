@@ -373,7 +373,7 @@ public class LectureService {
         // 수강 학생들 알림 발송
         int year = lecture.getYear();
         int semester = lecture.getSemester();
-        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                 lectureId, year, semester);
 
         for (Course course : courses) {
@@ -418,7 +418,7 @@ public class LectureService {
 
         lecture.changeProfessor(newMemberCode);
 
-        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemester(
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                 lectureId, lecture.getYear(), lecture.getSemester());
         for (Course course : courses) {
             notificationProducer.sendNotification(NotificationEvent.builder()
