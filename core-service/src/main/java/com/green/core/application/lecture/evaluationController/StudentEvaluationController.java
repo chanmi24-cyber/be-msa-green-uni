@@ -44,9 +44,9 @@ public class StudentEvaluationController {
     }
 
     @PostMapping("/{lectureId}")
-    public ResultResponse<?> createEvaluation(@RequestBody EvalCreateReq req) {
+    public ResultResponse<?> createEvaluation(@PathVariable Long lectureId, @RequestBody EvalCreateReq req) {
         MemberDto memberDto = MemberContext.get();
-        evaluationService.createEvaluation(memberDto, req);
+        evaluationService.createEvaluation(memberDto, lectureId, req);
         return ResultResponse.builder()
                 .message("강의평가 등록 성공")
                 .build();

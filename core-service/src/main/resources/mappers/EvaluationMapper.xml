@@ -119,7 +119,9 @@
             pc.name AS pro_name,
             sc.start_date AS start_date,
             sc.end_date   AS end_date,
+            (g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0) AS has_grade,
             le.score,
+            le.q1, le.q2, le.q3, le.q4, le.q5,
             le.comment
         FROM course c
                  JOIN lecture l ON c.lecture_id = l.lecture_id
@@ -132,6 +134,7 @@
             LIMIT 1
                  )
                  LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
+                 LEFT JOIN grade g ON g.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
           AND l.lecture_id = #{lectureId}
     </select>
