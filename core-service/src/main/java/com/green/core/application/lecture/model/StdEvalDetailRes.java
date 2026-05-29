@@ -14,6 +14,7 @@ public class StdEvalDetailRes {
     private String proName;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+    private Boolean hasGrade;
     private Double score;
     private Double q1;
     private Double q2;
