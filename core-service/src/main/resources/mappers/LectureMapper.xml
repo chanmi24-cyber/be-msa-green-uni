@@ -222,7 +222,15 @@
         AND l.status = 'APPROVED'
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
-        <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
+        <choose>
+            <when test="req.createdBefore != null">
+                AND c.created_at &lt; #{req.createdBefore}
+                AND (c.is_del = false OR c.deleted_at &gt;= #{req.createdBefore})
+            </when>
+            <otherwise>
+                AND c.is_del = false
+            </otherwise>
+        </choose>
         ORDER BY l.lecture_id DESC
         LIMIT #{req.size} OFFSET #{req.offset}
         ) paged
@@ -241,7 +249,15 @@
         AND l.status = 'APPROVED'
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
-        <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
+        <choose>
+            <when test="req.createdBefore != null">
+                AND c.created_at &lt; #{req.createdBefore}
+                AND (c.is_del = false OR c.deleted_at &gt;= #{req.createdBefore})
+            </when>
+            <otherwise>
+                AND c.is_del = false
+            </otherwise>
+        </choose>
     </select>
 
     <!-- LEC-08 전체 강의 목록 -->
@@ -413,6 +429,7 @@
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
         <include refid="scheduleJoins"/>
         WHERE c.student_code = #{memberCode}
+        AND c.is_del = false
         AND l.status = 'APPROVED'
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>

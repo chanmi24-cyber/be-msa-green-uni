@@ -40,7 +40,7 @@ public class LectureAutoCancelService {
 
         for (Lecture lecture : lectures) {
             int enrolledCount = courseRepository
-                    .countByLecture_LectureIdAndYearAndSemester(
+                    .countByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                             lecture.getLectureId(), year, semester);
 
             double enrollmentRate = (double) enrolledCount / lecture.getMaxStd();
@@ -75,7 +75,7 @@ public class LectureAutoCancelService {
 
                 // 수강 학생 알림
                 List<Course> courses = courseRepository
-                        .findByLecture_LectureIdAndYearAndSemester(
+                        .findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                                 lecture.getLectureId(), year, semester);
 
                 for (Course course : courses) {
