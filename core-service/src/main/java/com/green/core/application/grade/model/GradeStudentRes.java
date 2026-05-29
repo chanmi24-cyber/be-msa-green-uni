@@ -22,8 +22,9 @@ public class GradeStudentRes {
         private String lectureName;
         private Integer lectureCredit;
         private String lectureType;
-        private String lectureGrade;   // null = 성적 미입력
-        private Double lectureRating;  // null = 성적 미입력
+        private String lectureGrade;   // null = 성적 미입력 또는 강의평가 미완료
+        private Double lectureRating;  // null = 성적 미입력 또는 강의평가 미완료
+        private boolean evalCompleted; // 강의평가 완료 여부
     }
 
     @Getter
