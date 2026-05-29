@@ -38,4 +38,6 @@ public interface LectureMapper {
     );
 
     List<Integer> findLectureYears();
+    List<Integer> findStudentLectureYears(Long memberCode);
+    List<Integer> findProfessorLectureYears(Long memberCode);
 }
