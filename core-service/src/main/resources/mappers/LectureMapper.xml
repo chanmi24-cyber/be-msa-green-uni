@@ -30,7 +30,6 @@
         <result property="academicYear" column="academicYear"/>
         <result property="year" column="year"/>
         <result property="semester" column="semester"/>
-        <result property="totalCount" column="totalCount"/>
         <collection property="schedules" ofType="com.green.core.application.lecture.model.MyLectureListRes$ScheduleRes">
             <result property="dayOfWeek" column="dayOfWeek"/>
             <result property="startPeriod" column="startPeriod"/>
@@ -51,7 +50,6 @@
         <result property="academicYear" column="academicYear"/>
         <result property="year" column="year"/>
         <result property="semester" column="semester"/>
-        <result property="totalCount" column="totalCount"/>
         <collection property="schedules" ofType="com.green.core.application.lecture.model.LectureListRes$ScheduleRes">
             <result property="dayOfWeek" column="dayOfWeek"/>
             <result property="startPeriod" column="startPeriod"/>
@@ -123,9 +121,6 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
-        (SELECT COUNT(*) FROM lecture WHERE is_del = false
-        <if test="status != null">AND status = #{status}</if>
-        ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM (
         SELECT DISTINCT l.lecture_id
@@ -136,7 +131,7 @@
             AND l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
         </if>
         ORDER BY l.lecture_id DESC
-        LIMIT #{size} OFFSET #{startIdx}
+        LIMIT #{size} OFFSET #{offset}
         ) paged
         JOIN lecture l ON l.lecture_id = paged.lecture_id
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
@@ -144,6 +139,16 @@
         LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
         LEFT JOIN classroom lr ON ls.room_id = lr.room_id
         ORDER BY l.lecture_id DESC
+    </select>
+
+    <select id="countAdminLectures" resultType="long">
+        SELECT COUNT(*)
+        FROM lecture
+        WHERE is_del = false
+        <if test="status != null">AND status = #{status}</if>
+        <if test="lectureName != null and lectureName != ''">
+            AND lecture_name LIKE CONCAT('%', #{lectureName}, '%')
+        </if>
     </select>
 
     <!-- LEC-06 교수: 내 강의 목록 -->
@@ -160,12 +165,6 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
-        (SELECT COUNT(*) FROM lecture WHERE is_del = false
-        AND member_code = #{memberCode}
-        <if test="req.status != null">AND status = #{req.status}</if>
-        <if test="req.year != null">AND year = #{req.year}</if>
-        <if test="req.semester != null">AND semester = #{req.semester}</if>
-        ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM (
         SELECT DISTINCT l.lecture_id
@@ -179,7 +178,7 @@
         <if test="req.year != null">AND l.year = #{req.year}</if>
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
         ORDER BY l.lecture_id DESC
-        LIMIT #{req.size} OFFSET #{req.startIdx}
+        LIMIT #{req.size} OFFSET #{req.offset}
         ) paged
         JOIN lecture l ON l.lecture_id = paged.lecture_id
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
@@ -187,6 +186,19 @@
         LEFT JOIN lecture_schedule ls ON l.lecture_id = ls.lecture_id
         LEFT JOIN classroom lr ON ls.room_id = lr.room_id
         ORDER BY l.lecture_id DESC
+    </select>
+
+    <select id="countProfessorMyLectures" resultType="long">
+        SELECT COUNT(*)
+        FROM lecture
+        WHERE member_code = #{memberCode}
+        AND is_del = false
+        <if test="req.status != null">AND status = #{req.status}</if>
+        <if test="req.lectureName != null and req.lectureName != ''">
+            AND lecture_name LIKE CONCAT('%', #{req.lectureName}, '%')
+        </if>
+        <if test="req.year != null">AND year = #{req.year}</if>
+        <if test="req.semester != null">AND semester = #{req.semester}</if>
     </select>
 
     <!-- LEC-07 학생: 수강신청한 강의 -->
@@ -201,15 +213,6 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
-        (SELECT COUNT(DISTINCT l2.lecture_id)
-        FROM course c2
-        JOIN lecture l2 ON c2.lecture_id = l2.lecture_id
-        WHERE c2.student_code = #{memberCode}
-        AND l2.status = 'APPROVED'
-        <if test="req.year != null">AND l2.year = #{req.year}</if>
-        <if test="req.semester != null">AND l2.semester = #{req.semester}</if>
-        <if test="req.createdBefore != null">AND c2.created_at &lt; #{req.createdBefore}</if>
-        ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM (
         SELECT DISTINCT l.lecture_id
@@ -221,13 +224,24 @@
         <if test="req.semester != null">AND l.semester = #{req.semester}</if>
         <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
         ORDER BY l.lecture_id DESC
-        LIMIT #{req.size} OFFSET #{req.startIdx}
+        LIMIT #{req.size} OFFSET #{req.offset}
         ) paged
         JOIN lecture l                ON l.lecture_id = paged.lecture_id
         LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         ORDER BY l.lecture_id DESC
+    </select>
+
+    <select id="countStudentMyLectures" resultType="long">
+        SELECT COUNT(DISTINCT l.lecture_id)
+        FROM course c
+        JOIN lecture l ON c.lecture_id = l.lecture_id
+        WHERE c.student_code = #{memberCode}
+        AND l.status = 'APPROVED'
+        <if test="req.year != null">AND l.year = #{req.year}</if>
+        <if test="req.semester != null">AND l.semester = #{req.semester}</if>
+        <if test="req.createdBefore != null">AND c.created_at &lt; #{req.createdBefore}</if>
     </select>
 
     <!-- LEC-08 전체 강의 목록 -->
@@ -242,16 +256,6 @@
         l.academic_year AS academicYear,
         l.year,
         l.semester,
-        (SELECT COUNT(DISTINCT l2.lecture_id)
-        FROM lecture l2
-        LEFT JOIN professor_cache pc2 ON l2.member_code = pc2.member_code
-        WHERE l2.status = 'APPROVED'
-        <if test="proName != null and proName != ''">AND pc2.name LIKE CONCAT('%', #{proName}, '%')</if>
-        <if test="lectureName != null and lectureName != ''">AND l2.lecture_name LIKE CONCAT('%', #{lectureName}, '%')</if>
-        <if test="majorId != null">AND l2.major_id = #{majorId}</if>
-        <if test="year != null">AND l2.year = #{year}</if>
-        <if test="semester != null">AND l2.semester = #{semester}</if>
-        ) AS totalCount,
         <include refid="scheduleColumns"/>
         FROM (
         SELECT DISTINCT l.lecture_id
@@ -272,13 +276,33 @@
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
         ORDER BY l.lecture_id DESC
-        LIMIT #{size} OFFSET #{startIdx}
+        LIMIT #{size} OFFSET #{offset}
         ) paged
         JOIN lecture l                ON l.lecture_id = paged.lecture_id
         LEFT JOIN professor_cache pc  ON l.member_code = pc.member_code
         LEFT JOIN major mj            ON l.major_id = mj.major_id
         <include refid="scheduleJoins"/>
         ORDER BY l.lecture_id DESC
+    </select>
+
+    <select id="countAllLectures" resultType="long">
+        SELECT COUNT(DISTINCT l.lecture_id)
+        FROM lecture l
+        LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
+        WHERE l.status = 'APPROVED'
+        <if test="(lectureName != null and lectureName != '') or (proName != null and proName != '')">
+            AND (
+            <if test="lectureName != null and lectureName != ''">
+                l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
+            </if>
+            <if test="proName != null and proName != ''">
+                OR pc.name LIKE CONCAT('%', #{proName}, '%')
+            </if>
+            )
+        </if>
+        <if test="majorId != null">AND l.major_id = #{majorId}</if>
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
 
     <!-- LEC-09 교수, 관리자: 강의 상세 조회 -->
