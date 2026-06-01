@@ -65,9 +65,9 @@ public class AnnouncementService {
                         : announcementRepository.findAllByIsDelFalseOrderByCreatedAtDesc(pageable);
             }
             case PROFESSOR -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
-                        List.of(EnumTargetRole.PROFESSOR, EnumTargetRole.ALL), pageable);
+                        List.of(EnumTargetRole.PROFESSOR, EnumTargetRole.MEMBER, EnumTargetRole.ALL), pageable);
             case STUDENT   -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
-                        List.of(EnumTargetRole.STUDENT, EnumTargetRole.ALL), pageable);
+                        List.of(EnumTargetRole.STUDENT, EnumTargetRole.MEMBER, EnumTargetRole.ALL), pageable);
         };
         return page.map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
                 a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
