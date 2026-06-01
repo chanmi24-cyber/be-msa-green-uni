@@ -46,7 +46,7 @@ public class ScheduleService {
                 .endDate(req.getEndDate())
                 .build();
 
-        scheduleRepository.save(schedule);
+        Schedule saved = scheduleRepository.saveAndFlush(schedule);
         sendKafkaEvent(schedule);
     }
 
