@@ -84,7 +84,7 @@ public class AnnouncementService {
                         search, startDate, endDate, pageable);
         };
         return page.map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
-                a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
+                a.getTitle(), a.getWriterName(), a.getMemberCode(), a.getViewCount(), a.getCreatedAt()));
     }
 
     @Transactional
@@ -105,7 +105,7 @@ public class AnnouncementService {
         return announcementRepository.findByRolesWithFilters(
                         List.of(EnumTargetRole.ALL), searchParam, startDate, endDate, pageable)
                 .map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
-                        a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
+                        a.getTitle(), a.getWriterName(), a.getMemberCode(), a.getViewCount(), a.getCreatedAt()));
     }
 
     @Transactional
@@ -143,7 +143,7 @@ public class AnnouncementService {
     private AnnoDetailRes toDetailRes(Announcement anno) {
         return new AnnoDetailRes(
                 anno.getAnnoId(), anno.getTargetRole().getCode(),
-                anno.getTitle(), anno.getContent(), anno.getWriterName(),
+                anno.getTitle(), anno.getContent(), anno.getWriterName(), anno.getMemberCode(),
                 anno.getViewCount(), anno.getCreatedAt(), anno.getUpdatedAt(),
                 List.of()
         );

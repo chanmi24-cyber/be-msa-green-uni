@@ -12,6 +12,7 @@ public class AnnoListRes {
     private String targetRole;
     private String title;
     private String writerName;
+    private Long writerCode;
     private Integer viewCount;
     private LocalDateTime createdAt;
 }
