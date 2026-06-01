@@ -14,6 +14,7 @@ public class GradeListRes {
     private String memberName;
     @JsonProperty("academic_year")
     private Integer academicYear;
+    private String majorName;
     @JsonProperty("mid_score")
     private Integer midScore;
     @JsonProperty("fin_score")

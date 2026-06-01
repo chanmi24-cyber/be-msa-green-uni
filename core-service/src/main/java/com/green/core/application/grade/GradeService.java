@@ -39,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -88,20 +89,27 @@ public class GradeService {
 
         List<Grade> grades = gradeRepository.findByLectureId(lectureId);
 
+        Map<Long, String> majorNameCache = new HashMap<>();
+
         return grades.stream()
                 .map(grade -> {
                     Long studentCode = grade.getCourse().getStudentCode();
 
-                    // StudentCache에서 이름·학년 조회 (없으면 빈 값)
+                    // StudentCache에서 이름·학년·학과 조회 (없으면 빈 값)
                     StudentCache student = studentCacheRepository.findById(studentCode).orElse(null);
-                    String memberName   = student != null ? student.getName()         : null;
+                    String memberName    = student != null ? student.getName()         : null;
                     Integer academicYear = student != null ? student.getAcademicYear() : null;
+                    String majorName     = student != null
+                            ? majorNameCache.computeIfAbsent(student.getMajorId(),
+                                id -> gradeMajorRepository.findById(id).map(m -> m.getName()).orElse(null))
+                            : null;
 
                     return new GradeListRes(
                             grade.getCourseId(),
                             studentCode,
                             memberName,
                             academicYear,
+                            majorName,
                             grade.getMidScore(),
                             grade.getFinScore(),
                             grade.getAssignmentScore(),

@@ -14,6 +14,5 @@ public class GradeLectureListRes {
     private Integer year;
     private Integer semester;
     private Integer credit;
-    @JsonProperty("academic_year")
     private Integer academicYear;
 }
