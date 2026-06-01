@@ -15,7 +15,9 @@ import com.green.member.application.professor.ProfessorBatchService;
 import com.green.member.application.professor.ProfessorService;
 import com.green.member.application.professor.model.ProfessorCreateReq;
 import com.green.member.application.professor.model.ProfessorHistoryRes;
-import com.green.member.application.professor.model.ProfessorListDto;
+import com.green.member.application.admin.model.AdminListRes;
+import com.green.member.application.professor.model.ProfessorListRes;
+import com.green.member.application.student.model.StudentListRes;
 import com.green.member.application.professor.model.StatusUpdateProfessorReq;
 import com.green.member.application.status.model.AdminStatusRequestDetailRes;
 import com.green.member.application.status.model.AdminStatusRequestListRes;
@@ -27,6 +29,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -63,7 +68,7 @@ public class AdminController {
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
-        List<AdminHistoryRes> res = adminService.findStatusHistory( loginMember.memberCode() );
+        List<AdminHistoryRes> res = adminService.getStatusHistory( loginMember.memberCode(), loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자 상태 변경 이력 조회")
                 .data(res)
@@ -73,7 +78,7 @@ public class AdminController {
 
     @GetMapping("/students/{memberCode}/history")
     public ResultResponse<?> findStudentHistory(@PathVariable Long memberCode){
-        List<StudentHistoryRes> res = studentService.findStudentHistory( memberCode );
+        List<StudentHistoryRes> res = studentService.getStudentHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 학생 계정 상태 변경 이력 조회")
                 .data(res)
@@ -83,7 +88,7 @@ public class AdminController {
     @GetMapping("/students/{memberCode}/history/major")
     public ResultResponse<?> findStudentMajorHistory(@PathVariable Long memberCode) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminStudentMajorHistoryRes> res = adminService.findStudentMajorHistory(memberCode, loginMember.memberCode());
+        List<AdminStudentMajorHistoryRes> res = adminService.getStudentMajorHistory(memberCode, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("관리자의 학생 전공 변경 이력 조회")
                 .data(res)
@@ -91,7 +96,7 @@ public class AdminController {
     }
     @GetMapping("/professors/{memberCode}/history")
     public ResultResponse<?> findProfessorHistory(@PathVariable Long memberCode){
-        List<ProfessorHistoryRes> res = professorService.findStatusHistory( memberCode );
+        List<ProfessorHistoryRes> res = professorService.getStatusHistory( memberCode );
         return ResultResponse.builder()
                 .message("관리자의 교수 계정 상태 변경 이력 조회")
                 .data(res)
@@ -99,7 +104,8 @@ public class AdminController {
     }
     @GetMapping("/admins/{memberCode}/history")
     public ResultResponse<?> findAdminHistory(@PathVariable Long memberCode){
-        List<AdminHistoryRes> res = adminService.findStatusHistory( memberCode );
+        MemberDto loginMember = MemberContext.get();
+        List<AdminHistoryRes> res = adminService.getStatusHistory( memberCode, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("관리자의 관리자 계정 상태 변경 이력 조회")
                 .data(res)
@@ -109,35 +115,55 @@ public class AdminController {
     // 회원 상세 정보 조회
     @GetMapping("/{memberCode}")
     public ResultResponse<?> findMemberProfile(@PathVariable Long memberCode) {
-        MemberProfileRes res = adminService.getMemberProfile(memberCode);
+        MemberDto loginMember = MemberContext.get();
+        MemberProfileRes res = adminService.getMemberProfile(memberCode, loginMember.memberCode());
         return ResultResponse.builder()
                 .message("회원 프로파일 조회")
                 .data(res)
                 .build();
     }
 
-    // 학생 회원 목록 조회
+    // 학생 회원 목록 조회 (status/academicYear/collegeName/majorName/search 필터 + 페이지네이션)
     @GetMapping("/students")
-    public ResultResponse<?> findStudentList(){
-        List<StudentListDto> res = adminService.findStudents();
+    public ResultResponse<?> findStudentList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer academicYear,
+            @RequestParam(required = false) String collegeName,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        MemberDto loginMember = MemberContext.get();
+        Page<StudentListRes> res = adminService.getStudents(
+                loginMember.memberCode(), status, academicYear, collegeName, majorName, search, pageable);
         return ResultResponse.builder()
                 .message("학생 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 교수 회원 목록 조회
+    // 교수 회원 목록 조회 (status/majorName/position/search 필터 + 페이지네이션)
     @GetMapping("/professors")
-    public ResultResponse<?> findProfessorList(){
-        List<ProfessorListDto> res = adminService.findProfessors();
+    public ResultResponse<?> findProfessorList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String majorName,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        MemberDto loginMember = MemberContext.get();
+        Page<ProfessorListRes> res = adminService.getProfessors(
+                loginMember.memberCode(), status, majorName, position, search, pageable);
         return ResultResponse.builder()
                 .message("교수 목록 조회 성공")
                 .data(res)
                 .build();
     }
-    // 관리자 회원 목록 조회
+    // 관리자 회원 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/admins")
-    public ResultResponse<?> findAdminList(){
-        List<AdminListDto> res = adminService.findAdmins();
+    public ResultResponse<?> findAdminList(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        MemberDto loginMember = MemberContext.get();
+        Page<AdminListRes> res = adminService.getAdmins(loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("관리자 목록 조회 성공")
                 .data(res)
@@ -298,13 +324,15 @@ public class AdminController {
                 .message("학생 계정 상태 변경 및 이력 기록")
                 .build();
     }
-    // 전공 변경 신청 목록 조회 (status, size 파라미터로 필터링 가능)
+    // 전공 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/major")
     public ResultResponse<?> findAllMajorRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminMajorRequestListRes> res = adminService.findMajorRequests(loginMember.memberCode(), status, size);
+        Page<AdminMajorRequestListRes> res = adminService.getMajorRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("전공 변경 신청 목록 조회 완료")
                 .data(res)
@@ -314,7 +342,7 @@ public class AdminController {
     @GetMapping("/requests/major/{requestId}")
     public ResultResponse<?> findMajorRequestDetail(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        AdminMajorRequestDetailRes res = adminService.findMajorRequestDetail( requestId, loginMember.memberCode() );
+        AdminMajorRequestDetailRes res = adminService.getMajorRequestDetail( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청 상세 조회")
                 .data(res)
@@ -324,27 +352,28 @@ public class AdminController {
     @GetMapping("/requests/major/{requestId}/file")
     public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        return adminService.findMajorRequestFile( requestId, loginMember.memberCode() );
+        return adminService.getMajorRequestFile( requestId, loginMember.memberCode() );
     }
     // 전공 변경 신청 처리 (승인/반려)
     @PatchMapping("/requests/major/{requestId}")
     public ResultResponse<?> updateMajorRequest(@PathVariable Long requestId, @RequestBody @Valid AdminMajorRequestProcessReq req) {
         MemberDto loginMember = MemberContext.get();
-        adminService.processMajorRequest( requestId , req, loginMember.memberCode() );
+        adminService.updateMajorRequest( requestId , req, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청서 처리 완료")
                 .build();
     }
 
 
-    // 학적 변경 신청 목록 조회 (status, type, size 파라미터로 필터링 가능)
+    // 학적 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @GetMapping("/requests/status")
     public ResultResponse<?> findAllStatusRequests(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto loginMember = MemberContext.get();
-        List<AdminStatusRequestListRes> res = adminService.findStatusRequests(loginMember.memberCode(), status, type, size);
+        Page<AdminStatusRequestListRes> res = adminService.getStatusRequests(
+                loginMember.memberCode(), status, search, pageable);
         return ResultResponse.builder()
                 .message("학적 변경 신청 목록 조회 완료")
                 .data(res)
@@ -354,7 +383,7 @@ public class AdminController {
     @GetMapping("/requests/status/{requestId}")
     public ResultResponse<?> findStatusRequestDetail(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        AdminStatusRequestDetailRes res = adminService.findStatusRequestDetail( requestId, loginMember.memberCode() );
+        AdminStatusRequestDetailRes res = adminService.getStatusRequestDetail( requestId, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("전공 변경 신청 상세 조회")
                 .data(res)
@@ -364,13 +393,13 @@ public class AdminController {
     @GetMapping("/requests/status/{requestId}/file")
     public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
         MemberDto loginMember = MemberContext.get();
-        return adminService.findStatusRequestFile( requestId, loginMember.memberCode() );
+        return adminService.getStatusRequestFile( requestId, loginMember.memberCode() );
     }
     // 학적 변경 신청 처리 (승인/반려)
     @PatchMapping("/requests/status/{requestId}")
     public ResultResponse<?> processStatusRequest(@PathVariable Long requestId, @RequestBody @Valid AdminStatusRequestProcessReq req) {
         MemberDto loginMember = MemberContext.get();
-        adminService.processStatusRequest( requestId , req, loginMember.memberCode() );
+        adminService.updateStatusRequest( requestId , req, loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("학적 변경 신청서를 처리하였습니다")
                 .build();

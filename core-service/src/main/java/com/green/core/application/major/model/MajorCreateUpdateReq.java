@@ -21,4 +21,5 @@ public class MajorCreateUpdateReq {
     private EnumMajorStatus active;
     private Long collegeId;
     private String info;
+    private String closedDate;
 }

@@ -10,6 +10,10 @@ import com.green.core.entity.lecture.Classroom;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.List;
 public class ProfessorLectureController {
     private final LectureService lectureService;
     private final ClassroomRepository classroomRepository;
+    private final EvaluationService evaluationService;
 
     @PostMapping
     public ResultResponse<?> createLecture(@Valid @RequestBody LectureCreateReq req){
@@ -32,11 +37,13 @@ public class ProfessorLectureController {
     }
 
     @GetMapping("/my")
-    public ResultResponse<List<MyLectureListRes>> getProfessorMyLectures(@ModelAttribute MyLectureListReq req) {
+    public ResultResponse<Page<MyLectureListRes>> getProfessorMyLectures(
+            @ModelAttribute MyLectureListReq req,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto memberDto = MemberContext.get();
-        return ResultResponse.<List<MyLectureListRes>>builder()
+        return ResultResponse.<Page<MyLectureListRes>>builder()
                 .message("내 강의 목록 조회 성공")
-                .data(lectureService.getProfessorMyLectures(memberDto, req))
+                .data(lectureService.getProfessorMyLectures(memberDto, req, pageable))
                 .build();
     }
 
@@ -88,6 +95,12 @@ public class ProfessorLectureController {
                 .message("오늘 강의 목록 조회 성공")
                 .data(lectureService.getTodayLectures(memberDto))
                 .build();
+    }
+
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        MemberDto memberDto = MemberContext.get();
+        return ResponseEntity.ok(lectureService.getProfessorLectureYears(memberDto.memberCode()));
     }
 
 }

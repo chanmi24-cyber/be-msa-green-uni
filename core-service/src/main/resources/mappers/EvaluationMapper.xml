@@ -21,8 +21,13 @@
         JOIN lecture l ON c.lecture_id = l.lecture_id
         JOIN professor_cache pc ON l.member_code = pc.member_code
         LEFT JOIN grade g ON g.course_id = c.course_id
-        LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-            AND sc.year = l.year AND sc.semester = l.semester
+        LEFT JOIN schedule_cache sc ON sc.schedule_id = (
+        SELECT schedule_id FROM schedule_cache
+        WHERE type = 'LECTURE_EVALUATION'
+        AND year = l.year AND semester = l.semester
+        ORDER BY schedule_id DESC
+        LIMIT 1
+        )
         LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
         <if test="year != null">AND l.year = #{year}</if>
@@ -42,8 +47,13 @@
         (SELECT COUNT(*) FROM course c WHERE c.lecture_id = l.lecture_id) AS total_count
         FROM lecture l
         JOIN professor_cache pc ON l.member_code = pc.member_code
-        LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-            AND sc.year = l.year AND sc.semester = l.semester
+        LEFT JOIN schedule_cache sc ON sc.schedule_id = (
+        SELECT schedule_id FROM schedule_cache
+        WHERE type = 'LECTURE_EVALUATION'
+        AND year = l.year AND semester = l.semester
+        ORDER BY schedule_id DESC
+        LIMIT 1
+        )
         WHERE l.member_code = #{memberCode}
         AND l.end_date &lt; NOW()
         <if test="year != null">AND l.year = #{year}</if>
@@ -60,12 +70,12 @@
         <result property="responseCount"  column="response_count"/>
         <result property="totalStudents"  column="total_students"/>
         <result property="score"          column="score"/>
+        <result property="q1Avg"          column="q1_avg"/>
+        <result property="q2Avg"          column="q2_avg"/>
+        <result property="q3Avg"          column="q3_avg"/>
+        <result property="q4Avg"          column="q4_avg"/>
+        <result property="q5Avg"          column="q5_avg"/>
         <result property="totalComments"  column="total_comments"/>
-        <result property="q1Avg" column="q1_avg"/>
-        <result property="q2Avg" column="q2_avg"/>
-        <result property="q3Avg" column="q3_avg"/>
-        <result property="q4Avg" column="q4_avg"/>
-        <result property="q5Avg" column="q5_avg"/>
         <collection property="comments" ofType="String" column="lecture_id"
                     select="findCommentsByLectureId"/>
     </resultMap>
@@ -88,10 +98,15 @@
             COUNT(le.comment)                                                 AS total_comments
         FROM lecture l
                  JOIN professor_cache pc ON l.member_code = pc.member_code
-                 LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-            AND sc.year = l.year AND sc.semester = l.semester
+                 LEFT JOIN schedule_cache sc ON sc.schedule_id = (
+            SELECT schedule_id FROM schedule_cache
+            WHERE type = 'LECTURE_EVALUATION'
+                      AND year = l.year AND semester = l.semester
+            ORDER BY schedule_id DESC
+            LIMIT 1
+                 )
                  LEFT JOIN course c ON c.lecture_id = l.lecture_id
-                 LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
+            LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
         WHERE l.lecture_id = #{lectureId}
         GROUP BY l.lecture_id, l.lecture_name, pc.name, sc.start_date, sc.end_date
     </select>
@@ -114,17 +129,42 @@
             pc.name AS pro_name,
             sc.start_date AS start_date,
             sc.end_date   AS end_date,
-            le.q1, le.q2, le.q3, le.q4, le.q5,
+            (g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0) AS has_grade,
             le.score,
+            le.q1, le.q2, le.q3, le.q4, le.q5,
             le.comment
         FROM course c
                  JOIN lecture l ON c.lecture_id = l.lecture_id
                  JOIN professor_cache pc ON l.member_code = pc.member_code
-                 LEFT JOIN schedule_cache sc ON sc.type = 'LECTURE_EVALUATION'
-                     AND sc.year = l.year AND sc.semester = l.semester
+                 LEFT JOIN schedule_cache sc ON sc.schedule_id = (
+            SELECT schedule_id FROM schedule_cache
+            WHERE type = 'LECTURE_EVALUATION'
+                      AND year = l.year AND semester = l.semester
+            ORDER BY schedule_id DESC
+            LIMIT 1
+                 )
                  LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id
+                 LEFT JOIN grade g ON g.course_id = c.course_id
         WHERE c.student_code = #{memberCode}
           AND l.lecture_id = #{lectureId}
+    </select>
+
+    <!-- 학생 강의평가 연도 목록 -->
+    <select id="findStudentEvalYears" resultType="int">
+        SELECT DISTINCT l.year
+        FROM course c
+                 JOIN lecture l ON c.lecture_id = l.lecture_id
+        WHERE c.student_code = #{memberCode}
+        ORDER BY l.year DESC
+    </select>
+
+    <!-- 교수 강의평가 연도 목록 -->
+    <select id="findProfessorEvalYears" resultType="int">
+        SELECT DISTINCT l.year
+        FROM lecture l
+        WHERE l.member_code = #{memberCode}
+          AND l.end_date &lt; NOW()
+        ORDER BY l.year DESC
     </select>
 
 </mapper>

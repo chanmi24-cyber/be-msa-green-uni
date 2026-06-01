@@ -1,6 +1,6 @@
 package com.green.member.application.professor.model;
 
-public interface ProfessorListDto {
+public interface ProfessorListRes {
     Long getMemberCode();
     String getName();
     String getEmail();

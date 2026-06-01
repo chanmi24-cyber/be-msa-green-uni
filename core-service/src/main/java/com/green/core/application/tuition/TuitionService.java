@@ -63,10 +63,9 @@ public class TuitionService {
     // [학생] 서비스 로직
     // ==========================================
 
-    public List<TuitionRes> getStudentTuitionList(Long studentCode) {
-        return tuitionRepository.findByStudentCodeOrderByYearDescSemesterDesc(studentCode).stream()
-                .map(TuitionRes::new)
-                .collect(Collectors.toList());
+    public Page<TuitionRes> getStudentTuitionList(Long studentCode, Pageable pageable) {
+        return tuitionRepository.findByStudentCodeOrderByYearDescSemesterDesc(studentCode, pageable)
+                .map(TuitionRes::new);
     }
 
     @Transactional

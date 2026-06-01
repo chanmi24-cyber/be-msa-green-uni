@@ -20,12 +20,12 @@ import com.green.core.repository.ProfessorCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import java.util.List;
 
@@ -128,6 +128,14 @@ public class MajorService {
         Major major = majorRepository.findById(majorId)
                 .orElseThrow(() -> new BusinessException(MajorErrorCode.MAJOR_NOT_FOUND));
 
+        // [추가] 변경하려는 상태가 '폐지(CLOSED)'인 경우 학과 내 학생 존재 여부 검증
+        if (req.getActive() == EnumMajorStatus.CLOSED) {
+            boolean hasStudents = majorRepository.existsStudentsInMajor(majorId);
+            if (hasStudents) {
+                throw new BusinessException(MajorErrorCode.HAS_ACTIVE_STUDENTS);
+            }
+        }
+
         validateDuplicate(req.getName(), req.getMajorBuilding(), req.getRoom(),
                 req.getTel(), req.getChairProfessorCode(), majorId);
 
@@ -136,7 +144,7 @@ public class MajorService {
 
         major.update(req.getName(), req.getActive(), college,
                 req.getMajorBuilding(), req.getRoom(), req.getTel(),
-                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate());
+                req.getCapacity(), req.getChairProfessorCode(), req.getInfo(), req.getCourseDuration(), req.getFoundedDate(), req.getClosedDate());
 
         // 이벤트 발행 추가
         MajorEvent event = MajorEvent.builder()
@@ -172,29 +180,20 @@ public class MajorService {
     }
 
     // API-DEPT-03: 관리자 전체 목록 조회
-    public List<MajorRes> getMajorList() {
-        // 학과별 전임교수 수 집계 Map 생성
-        Map<Long, Long> professorCountMap = majorRepository.findProfessorCountByMajor()
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (Long) row[0],   // majorId
-                        row -> (Long) row[1]    // count
-                ));
-
-        return majorRepository.findAll().stream()
-                .map(m -> MajorRes.builder()
-                        .majorId(m.getMajorId())
-                        .name(m.getName())
-                        .majorBuilding(m.getMajorBuilding())
-                        .room(m.getRoom())
-                        .tel(m.getTel())
-                        .professorCode(m.getProfessorCode())
-                        .capacity(m.getCapacity())
-                        .collegeId(m.getCollege().getCollegeId())
-                        .active(m.getActive())
-                        .professorCount(professorCountMap.getOrDefault(m.getMajorId(), 0L).intValue()) // ← 추가
-                        .build())
-                .toList();
+    public Page<MajorRes> getMajorList(String status, String search, Pageable pageable) {
+        return majorRepository.findMajorListWithFilter(status, search, pageable)
+                .map(row -> MajorRes.builder()
+                        .majorId(((Number) row[0]).longValue())
+                        .name((String) row[1])
+                        .majorBuilding(EnumBuilding.valueOf((String) row[2]))
+                        .room((String) row[3])
+                        .tel((String) row[4])
+                        .professorCode(row[5] != null ? ((Number) row[5]).longValue() : null)
+                        .capacity(((Number) row[6]).intValue())
+                        .collegeId(((Number) row[7]).longValue())
+                        .active(EnumMajorStatus.valueOf((String) row[8]))
+                        .professorCount(((Number) row[9]).intValue())
+                        .build());
     }
 
     // API-DEPT-04: 일반 학과 목록 조회
@@ -225,6 +224,7 @@ public class MajorService {
                 .info(major.getInfo())
                 .courseDuration(major.getCourseDuration())
                 .foundedDate(major.getFoundedDate())
+                .closedDate(major.getClosedDate())
                 .build();
     }
 
@@ -307,5 +307,9 @@ public class MajorService {
                         .name(b.getValue())
                         .build())
                 .toList();
+    }
+
+    public boolean hasStudents(Long majorId) {
+        return majorRepository.existsStudentsInMajor(majorId);
     }
 }

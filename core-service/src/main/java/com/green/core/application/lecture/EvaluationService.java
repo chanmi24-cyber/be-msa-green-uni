@@ -61,22 +61,22 @@ public class EvaluationService {
 
     // 학생 - 평가 등록
     @Transactional
-    public void createEvaluation(MemberDto memberDto, EvalCreateReq req) {
+    public void createEvaluation(MemberDto memberDto, Long lectureId, EvalCreateReq req) {
         schedulePeriodValidator.checkLectureEvaluation();
 
         // 중복 평가 방지
         if (evaluationRepository.existsByCourse_StudentCodeAndLecture_LectureId(
-                memberDto.memberCode(), req.getLectureId())) {
+                memberDto.memberCode(), lectureId)) {
             throw new BusinessException(EvaluationErrorCode.EVALUATION_ALREADY_EXISTS);
         }
 
         // Lecture 조회
-        Lecture lecture = lectureRepository.findById(req.getLectureId())
+        Lecture lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 
         // Course 조회 (studentCode + lectureId로)
-        Course course = courseRepository.findByStudentCodeAndLecture_LectureId(
-                        memberDto.memberCode(), req.getLectureId())
+        Course course = courseRepository.findByStudentCodeAndLecture_LectureIdAndIsDelFalse(
+                        memberDto.memberCode(), lectureId)
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 
         LectureEvaluation evaluation = LectureEvaluation.builder()
@@ -92,5 +92,13 @@ public class EvaluationService {
                 .createdAt(LocalDateTime.now())
                 .build();
         evaluationRepository.save(evaluation);
+    }
+
+    public List<Integer> getStudentEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findStudentEvalYears(memberDto.memberCode());
+    }
+
+    public List<Integer> getProfessorEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findProfessorEvalYears(memberDto.memberCode());
     }
 }

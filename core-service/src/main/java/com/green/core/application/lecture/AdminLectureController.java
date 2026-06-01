@@ -9,9 +9,12 @@ import com.green.core.application.lecture.model.LectureApprovalReq;
 import com.green.core.application.lecture.model.MyLectureListRes;
 import com.green.core.exception.LectureErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -30,11 +33,12 @@ public class AdminLectureController {
     }
 
     @GetMapping("/my")
-    public ResultResponse<List<MyLectureListRes>> getAdminLectures(@ModelAttribute AdminLectureReq req) {
-        System.out.println("req: " + req); // 찍어보기
-        return ResultResponse.<List<MyLectureListRes>>builder()
+    public ResultResponse<Page<MyLectureListRes>> getAdminLectures(
+            @ModelAttribute AdminLectureReq req,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResultResponse.<Page<MyLectureListRes>>builder()
                 .message("강의 승인 관리 목록 조회 성공")
-                .data(lectureService.getAdminLectures(req))
+                .data(lectureService.getAdminLectures(req, pageable))
                 .build();
     }
 
@@ -65,6 +69,11 @@ public class AdminLectureController {
         }
         lectureService.changeLectureProfessor(memberDto, lectureId, reason, newMemberCode);
         return ResultResponse.builder().message("강의 담당 교수 변경 완료").build();
+    }
+
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        return ResponseEntity.ok(lectureService.getLectureYears());
     }
 
 }
