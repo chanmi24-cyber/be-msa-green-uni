@@ -20,14 +20,18 @@ public class AdminTuitionController {
     private final TuitionService tuitionService;
 
     // API-TUI-02: 등록금 납부 학생 목록 조회
+    // AdminTuitionController.java
+
     @GetMapping("/tuitions")
     public ResponseEntity<Page<TuitionRes>> getTuitionList(
             @RequestParam Integer year,
             @RequestParam Integer semester,
             @RequestParam(required = false) EnumTuitionStatus status,
+            @RequestParam(required = false) String searchKeyword, // 💡 검색어 파라미터 추가
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(tuitionService.getTuitionListForAdmin(year, semester, status, pageable));
+        // 💡 Service 호출부에 searchKeyword 추가
+        return ResponseEntity.ok(tuitionService.getTuitionListForAdmin(year, semester, status, searchKeyword, pageable));
     }
 
     // API-TUI-05: 등록금 미납자 독촉 메일 미리보기

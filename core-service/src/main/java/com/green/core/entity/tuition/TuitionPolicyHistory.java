@@ -35,4 +35,10 @@ public class TuitionPolicyHistory extends CreatedAt {
 
     @Column(name = "updator_code", nullable = false)
     private Long updatorCode;
+
+    @Column(name = "target_year", nullable = false)
+    private Integer targetYear; // 예: 2025
+
+    @Column(name = "target_semester", nullable = false)
+    private Integer targetSemester; // 예: 1
 }
