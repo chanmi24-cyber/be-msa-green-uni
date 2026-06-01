@@ -435,4 +435,12 @@ public class LectureService {
     public List<Integer> getLectureYears() {
         return lectureMapper.findLectureYears();
     }
+
+    public List<Integer> getStudentLectureYears(Long memberCode) {
+        return lectureMapper.findStudentLectureYears(memberCode);
+    }
+
+    public List<Integer> getProfessorLectureYears(Long memberCode) {
+        return lectureMapper.findProfessorLectureYears(memberCode);
+    }
 }

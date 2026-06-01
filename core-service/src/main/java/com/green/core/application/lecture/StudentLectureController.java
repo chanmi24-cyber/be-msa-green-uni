@@ -47,7 +47,8 @@ public class StudentLectureController {
 
     @GetMapping("/years")
     public ResponseEntity<?> getLectureYears() {
-        return ResponseEntity.ok(lectureService.getLectureYears());
+        MemberDto memberDto = MemberContext.get();
+        return ResponseEntity.ok(lectureService.getStudentLectureYears(memberDto.memberCode()));
     }
 
 }
