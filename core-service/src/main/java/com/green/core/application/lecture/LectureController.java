@@ -31,7 +31,12 @@ public class LectureController {
                 .build();
     }
 
-    @GetMapping("/{lectureId:[0-9]+}")
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        return ResponseEntity.ok(lectureService.getLectureYears());
+    }
+
+    @GetMapping("/{lectureId}")
     public ResultResponse<LectureDetailRes> getLectureDetail(@PathVariable Long lectureId) {
         MemberDto memberDto = MemberContext.get();
         return ResultResponse.<LectureDetailRes>builder()
@@ -40,9 +45,5 @@ public class LectureController {
                 .build();
     }
 
-    @GetMapping("/years")
-    public ResponseEntity<?> getLectureYears() {
-        return ResponseEntity.ok(lectureService.getLectureYears());
-    }
 
 }

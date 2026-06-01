@@ -32,6 +32,11 @@ public class AdminLectureController {
                 .build();
     }
 
+    @GetMapping("/years")
+    public ResponseEntity<?> getLectureYears() {
+        return ResponseEntity.ok(lectureService.getLectureYears());
+    }
+
     @GetMapping("/my")
     public ResultResponse<Page<MyLectureListRes>> getAdminLectures(
             @ModelAttribute AdminLectureReq req,
@@ -71,9 +76,5 @@ public class AdminLectureController {
         return ResultResponse.builder().message("강의 담당 교수 변경 완료").build();
     }
 
-    @GetMapping("/years")
-    public ResponseEntity<?> getLectureYears() {
-        return ResponseEntity.ok(lectureService.getLectureYears());
-    }
 
 }
