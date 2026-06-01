@@ -8,6 +8,7 @@ import com.green.core.application.grade.model.GradeListRes;
 import com.green.core.application.grade.model.GradeAppealProDetailRes;
 import com.green.core.application.grade.model.GradeAppealProListRes;
 import com.green.core.application.grade.model.GradeAppealProReq;
+import com.green.core.application.grade.model.GradeAppealSummaryRes;
 import com.green.core.application.grade.model.GradeAppealReq;
 import com.green.core.application.grade.model.GradeAppealRes;
 import com.green.core.application.grade.model.GradeAppealStuListRes;
@@ -480,19 +481,32 @@ public class GradeService {
         return score == null || score < 0 || score > 100;
     }
 
+    // ── 교수 이의신청 현황 요약 (GET /professor/grades/appeals/summary) ───────
+    @Transactional(readOnly = true)
+    public GradeAppealSummaryRes getProfessorAppealSummary() {
+        Long professorCode = MemberContext.get().memberCode();
+        long pendingCount  = gradeAppealRepository.countByProfessorCodeAndStatus(professorCode, EnumAppealStatus.PENDING);
+        long approvedCount = gradeAppealRepository.countByProfessorCodeAndStatus(professorCode, EnumAppealStatus.APPROVED);
+        long rejectedCount = gradeAppealRepository.countByProfessorCodeAndStatus(professorCode, EnumAppealStatus.REJECTED);
+        return new GradeAppealSummaryRes(pendingCount, approvedCount, rejectedCount);
+    }
+
     // ── 교수 이의신청 목록 조회 (GET /professor/grades/appeals) ──────────────
     @Transactional(readOnly = true)
-    public Page<GradeAppealProListRes> getProfessorAppealList(Pageable pageable) {
+    public Page<GradeAppealProListRes> getProfessorAppealList(EnumAppealStatus status, Pageable pageable) {
         Long professorCode = MemberContext.get().memberCode();
-        return gradeAppealRepository.findByProfessorCodeWithDetails(professorCode, pageable)
-                .map(a -> {
+        Page<GradesAppeal> page = (status != null)
+                ? gradeAppealRepository.findByProfessorCodeAndStatusWithDetails(professorCode, status, pageable)
+                : gradeAppealRepository.findByProfessorCodeWithDetails(professorCode, pageable);
+        return page.map(a -> {
                     var course  = a.getGrade().getCourse();
                     var lecture = course.getLecture();
                     StudentCache student = studentCacheRepository.findById(a.getMemberCode()).orElse(null);
                     return new GradeAppealProListRes(
                             a.getCourseId(),
                             a.getMemberCode(),
-                            student != null ? student.getName() : null,
+                            student != null ? student.getName()         : null,
+                            student != null ? student.getAcademicYear() : null,
                             lecture.getLectureName(),
                             course.getYear(),
                             course.getSemester(),

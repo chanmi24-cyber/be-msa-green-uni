@@ -10,6 +10,7 @@ public class GradeAppealProListRes {
     private Long courseId;
     private Long studentCode;
     private String studentName;
+    private Integer academicYear;
     private String lectureName;
     private Integer lectureYear;
     private Integer lectureSemester;

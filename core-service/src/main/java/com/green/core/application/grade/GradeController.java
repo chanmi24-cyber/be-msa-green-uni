@@ -4,6 +4,8 @@ import com.green.common.model.ResultResponse;
 import com.green.core.application.grade.model.GradeAppealProDetailRes;
 import com.green.core.application.grade.model.GradeAppealProListRes;
 import com.green.core.application.grade.model.GradeAppealProReq;
+import com.green.core.application.grade.model.GradeAppealSummaryRes;
+import com.green.core.enumcode.EnumAppealStatus;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
 import com.green.core.application.grade.model.GradeUpdateReq;
@@ -50,13 +52,25 @@ public class GradeController {
         return ResponseEntity.ok(new ResultResponse<>("성적 저장 성공", null));
     }
 
-    // 교수 이의신청 목록 조회
+    // 교수 이의신청 현황 요약 (대기/승인/반려 건수)
+    @GetMapping("/appeals/summary")
+    public ResponseEntity<ResultResponse<GradeAppealSummaryRes>> getProfessorAppealSummary() {
+        return ResponseEntity.ok(new ResultResponse<>("이의신청 현황 조회 성공",
+                gradeService.getProfessorAppealSummary()));
+    }
+
+    // 교수 이의신청 목록 조회 (status 필터 선택)
     @GetMapping("/appeals")
     public ResponseEntity<ResultResponse<Page<GradeAppealProListRes>>> getProfessorAppealList(
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        EnumAppealStatus appealStatus = null;
+        if (status != null && !status.isBlank()) {
+            appealStatus = EnumAppealStatus.valueOf(status.toUpperCase());
+        }
         return ResponseEntity.ok(new ResultResponse<>("이의신청 목록 조회 성공",
-                gradeService.getProfessorAppealList(PageRequest.of(page - 1, size))));
+                gradeService.getProfessorAppealList(appealStatus, PageRequest.of(page - 1, size))));
     }
 
     // 교수 이의신청 상세 조회
