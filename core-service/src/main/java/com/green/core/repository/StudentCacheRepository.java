@@ -51,4 +51,5 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
                         @Param("semester") Integer semester);
 
     List<StudentCache> findAllByStatus(EnumStudentStatus status);
+    List<StudentCache> findByNameContaining(String name);
 }

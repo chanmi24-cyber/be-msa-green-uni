@@ -11,11 +11,9 @@ import com.green.core.application.lecture.repository.LectureScheduleRepository;
 import com.green.core.entity.cache.ProfessorCache;
 import com.green.core.entity.cache.StudentCache;
 import com.green.core.entity.course.Course;
-import com.green.core.entity.grade.Grade;
 import com.green.core.entity.lecture.Lecture;
 import com.green.core.entity.lecture.LectureSchedule;
 import com.green.core.exception.CourseErrorCode;
-import com.green.core.application.grade.GradeRepository; // [수정] grade 도메인 폴더로 이동
 import com.green.core.repository.ProfessorCacheRepository;
 import com.green.core.repository.ScheduleCacheRepository;
 import com.green.core.repository.StudentCacheRepository;
@@ -41,39 +39,46 @@ public class CourseService {
     private final LectureScheduleRepository lectureScheduleRepository;
     private final ScheduleCacheRepository scheduleCacheRepository;
     private final StudentCacheRepository studentCacheRepository;
-    private final GradeRepository gradeRepository;
-    private final HttpServletRequest request;
     private final ProfessorCacheRepository professorCacheRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final LectureExcludedMajorRepository lectureExcludedMajorRepository;
+    private final HttpServletRequest request;
+    private final CourseTransactionService courseTransactionService; // 트랜잭션 분리 빈
 
+    // ──────────────────────────────────────────────────────────────
     // API-ENRL-06: 수강 신청 페이지 활성화 제어
+    // ──────────────────────────────────────────────────────────────
+    /**
+     * [수정] isOpen 반환 조건 버그 수정
+     * - 기존: isEmpty() → isOpen(true)  ← 스케줄이 없을 때 열림 (반전 버그)
+     * - 수정: isPresent() → isOpen(true) (활성 스케줄이 존재할 때만 열림)
+     */
     @Transactional(readOnly = true)
     public CourseStatusRes getCourseStatus() {
-        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isEmpty()) {
+        if (!scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isEmpty()) {
             return CourseStatusRes.builder()
                     .isOpen(true)
                     .scheduleType(EnumScheduleType.COURSE_REGISTRATION)
                     .build();
         }
-
-        if (scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isEmpty()) {
+        if (!scheduleCacheRepository.findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isEmpty()) {
             return CourseStatusRes.builder()
                     .isOpen(true)
                     .scheduleType(EnumScheduleType.COURSE_MODIFICATION)
                     .build();
         }
-
         return CourseStatusRes.builder()
                 .isOpen(false)
                 .scheduleType(null)
                 .build();
     }
 
+    // ──────────────────────────────────────────────────────────────
     // API-ENRL-01: 수강 가능 강의 전체 조회
+    // ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<CourseRes> getCourses(
-            String lectureType,   // 탭: null=전체, "MAJOR"=전공, "GENERAL"=교양
+            String lectureType,
             Long majorId,
             Integer academicYear,
             String search,
@@ -129,7 +134,9 @@ public class CourseService {
                 });
     }
 
+    // ──────────────────────────────────────────────────────────────
     // API-ENRL-02: 내 수강 신청 목록 조회
+    // ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public MyCourseListRes getMyCourses() {
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
@@ -179,7 +186,7 @@ public class CourseService {
                             .credit(l.getCredit())
                             .maxStd(l.getMaxStd())
                             .remStd(l.getMaxStd() - enrolledCount)
-                            .isAttended(0) // 수강신청 기간 중 항상 취소 가능
+                            .isAttended(0)
                             .build();
                 })
                 .toList();
@@ -193,151 +200,62 @@ public class CourseService {
                 .build();
     }
 
+    // ──────────────────────────────────────────────────────────────
     // API-ENRL-03: 수강 신청 실행
-    @Transactional
+    // ──────────────────────────────────────────────────────────────
+    /**
+     * 트랜잭션 없이 사전 검증만 수행한 뒤
+     * CourseTransactionService.execute() 에 핵심 처리를 위임한다.
+     *
+     * ① 수강 기간 검증  ← 캐시 조회, DB 커넥션 불필요
+     * ② 학생 정보 조회  ← 캐시 조회
+     * ③ 강의 조회       ← 단순 PK 조회, 트랜잭션 컨텍스트 불필요
+     * ④ 전공/학년 검증  ← 순수 비즈니스 로직
+     * ⑤~⑨ CourseTransactionService 에서 READ_COMMITTED 트랜잭션으로 처리
+     */
     public CourseCreateRes createCourse(CourseCreateReq req) {
 
+        // ① 수강 기간 검증
         schedulePeriodValidator.checkCourseRegistrationOrModification();
 
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
-
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
 
-        // 학생 정보 조회 (status 체크는 인터셉터에서 처리됨)
+        // ② 학생 정보 조회
         StudentCache student = studentCacheRepository.findById(studentCode)
                 .orElseThrow(() -> new BusinessException(CourseErrorCode.STUDENT_NOT_FOUND));
 
-        // 강의 조회 (APPROVED 상태만)
+        // ③ 강의 조회
         Lecture lecture = lectureRepository.findById(req.getLectureId())
                 .orElseThrow(() -> new BusinessException(CourseErrorCode.LECTURE_NOT_FOUND));
         if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
             throw new BusinessException(CourseErrorCode.LECTURE_NOT_APPROVED);
         }
-        log.info("3. 강의 조회 완료 - lectureId: {}", req.getLectureId());
+        log.info("강의 조회 완료 - lectureId: {}", req.getLectureId());
 
-        log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
-                student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
+        // ④ 전공/학년 조건 검증
+        validateMajorAndAcademicYear(req.getLectureId(), lecture, student, studentCode);
+        log.info("학과/학년 조건 확인 완료");
 
-        // 전공 여부 판단
-        boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
-
-        if (isMajorSubject) {
-            // 전공 과목
-            Long lectureMajorId = lecture.getMajor().getMajorId();
-
-            boolean isMyMajor = lectureMajorId.equals(student.getMajorId());
-            boolean isMyMinor = studentCacheRepository
-                    .countMinorByStudentCodeAndMajorId(studentCode, lectureMajorId) > 0;
-
-            if (!isMyMajor && !isMyMinor) {
-                throw new BusinessException(CourseErrorCode.MAJOR_NOT_MATCHED);
-            }
-
-            // 학년 조건: 부전공이면 스킵, 아니면 학생 학년 >= 강의 학년
-            boolean isMinorSubject = isMyMinor && !isMyMajor;
-            if (!isMinorSubject) {
-                if (student.getAcademicYear() < lecture.getAcademicYear()) {
-                    // 상위 학년 강의는 수강 불가, 하위/동일 학년은 허용
-                    throw new BusinessException(CourseErrorCode.ACADEMIC_YEAR_NOT_MATCHED);
-                }
-            }
-
-        } else {
-            // GENERAL_ELECTIVE : 키워드 매칭 학과 차단
-            if (lecture.getLectureType().name().equals("GENERAL_ELECTIVE")) {
-                boolean isExcluded = lectureExcludedMajorRepository
-                        .existsByLectureIdAndMajorIdOrMinorId(
-                                req.getLectureId(),
-                                student.getMajorId(),
-                                student.getMinorId()
-                        );
-
-                if (isExcluded) {
-                    throw new BusinessException(CourseErrorCode.LIBERAL_ARTS_MAJOR_RESTRICTED);
-                }
-            }
-        }
-
-        log.info("4. 학과/학년 조건 확인 완료");
-
-        // 이미 신청된 강의 확인 (활성 수강만)
-        boolean alreadyEnrolled = courseRepository
-                .existsByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
-                        studentCode, req.getLectureId(), currentYear, currentSemester);
-        if (alreadyEnrolled) {
-            throw new BusinessException(CourseErrorCode.COURSE_ALREADY_ENROLLED);
-        }
-        log.info("5. 중복 신청 확인 완료");
-
-        // 시간표 중복 확인
+        // 시간표 목록은 트랜잭션 진입 전에 미리 조회
         List<LectureSchedule> newSchedules = lectureScheduleRepository
                 .findByLecture_LectureId(req.getLectureId());
-        for (LectureSchedule newSchedule : newSchedules) {
-            boolean timeConflict = courseRepository.existsTimeConflict(
-                    studentCode, currentYear, currentSemester,
-                    newSchedule.getDayOfWeek(),
-                    newSchedule.getStartPeriod(),
-                    newSchedule.getEndPeriod());
-            if (timeConflict) {
-                throw new BusinessException(CourseErrorCode.COURSE_SCHEDULE_CONFLICT);
-            }
-        }
-        log.info("6. 시간표 중복 확인 완료");
 
-        // 수강 정원 초과 확인
-        int enrolledCount = courseRepository.countByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
-                req.getLectureId(), currentYear, currentSemester);
-        if (enrolledCount >= lecture.getMaxStd()) {
-            throw new BusinessException(CourseErrorCode.COURSE_CAPACITY_EXCEEDED);
-        }
-        log.info("7. 수강 정원 확인 완료 - 현재 {}/{}명", enrolledCount, lecture.getMaxStd());
-
-        // 최대 학점(18학점) 초과 확인
-        int currentCredits = courseRepository.sumCreditByStudentCodeAndYearAndSemester(
-                studentCode, currentYear, currentSemester);
-        int newCredits = lecture.getCredit();
-        if (currentCredits + newCredits > 18) {
-            throw new BusinessException(CourseErrorCode.CREDIT_LIMIT_EXCEEDED);
-        }
-        log.info("8. 최대 학점 확인 완료 - 현재 {}학점 + 신규 {}학점", currentCredits, newCredits);
-
-        // 수강정정 기간 중 같은 강의를 재신청하는 경우 → 기존 소프트딜리트 레코드 재활성화
-        Course course = courseRepository
-                .findByStudentCodeAndLecture_LectureIdAndYearAndSemesterAndIsDelTrue(
-                        studentCode, req.getLectureId(), currentYear, currentSemester)
-                .orElse(null);
-
-        if (course != null) {
-            course.reactivate();
-            log.info("9. 수강 재활성화 완료 - courseId: {}", course.getCourseId());
-        } else {
-            course = Course.builder()
-                    .studentCode(studentCode)
-                    .lecture(lecture)
-                    .year(currentYear)
-                    .semester(currentSemester)
-                    .build();
-            courseRepository.save(course);
-            log.info("9. 수강 신청 저장 완료 - courseId: {}", course.getCourseId());
-
-            // Grade Row 즉시 생성 (신규 레코드만)
-            Grade grade = Grade.builder()
-                    .course(course)
-                    .build();
-            gradeRepository.save(grade);
-            log.info("10. 성적 Row 생성 완료 - courseId: {}", course.getCourseId());
-        }
-
-        // 저장 후 총 학점 반환
-        int totalCredits = currentCredits + newCredits;
-        return CourseCreateRes.builder()
-                .totalEnrolledCredits(totalCredits)
-                .courses(List.of())
-                .build();
+        // ⑤~⑨ 별도 빈의 트랜잭션으로 위임 (프록시 정상 동작 보장)
+        return courseTransactionService.execute(
+                req, lecture, student, studentCode,
+                currentYear, currentSemester, newSchedules);
     }
 
+    // ──────────────────────────────────────────────────────────────
     // API-ENRL-04: 수강 신청 취소
+    // ──────────────────────────────────────────────────────────────
+    /**
+     * Course softDelete 만 수행한다.
+     * Grade 는 Course.isDel 로 함께 관리되므로 별도 처리 불필요.
+     * (성적 조회는 항상 Course.isDel = false 를 JOIN 조건으로 사용)
+     */
     @Transactional
     public void deleteCourse(Long lectureId) {
 
@@ -345,7 +263,6 @@ public class CourseService {
 
         int currentYear = LocalDate.now().getYear();
         int currentSemester = getCurrentSemester();
-
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
 
         Course course = courseRepository
@@ -355,6 +272,46 @@ public class CourseService {
 
         course.softDelete();
         log.info("수강 신청 취소 완료 - lectureId: {}, studentCode: {}", lectureId, studentCode);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 내부 헬퍼
+    // ──────────────────────────────────────────────────────────────
+
+    private void validateMajorAndAcademicYear(
+            Long lectureId, Lecture lecture, StudentCache student, Long studentCode) {
+
+        log.info("학생 majorId: {}, minorId: {}, 강의 majorId: {}",
+                student.getMajorId(), student.getMinorId(), lecture.getMajor().getMajorId());
+
+        boolean isMajorSubject = lecture.getLectureType().name().startsWith("MAJOR");
+
+        if (isMajorSubject) {
+            Long lectureMajorId = lecture.getMajor().getMajorId();
+            boolean isMyMajor = lectureMajorId.equals(student.getMajorId());
+            boolean isMyMinor = studentCacheRepository
+                    .countMinorByStudentCodeAndMajorId(studentCode, lectureMajorId) > 0;
+
+            if (!isMyMajor && !isMyMinor) {
+                throw new BusinessException(CourseErrorCode.MAJOR_NOT_MATCHED);
+            }
+
+            boolean isMinorSubject = isMyMinor && !isMyMajor;
+            if (!isMinorSubject && student.getAcademicYear() < lecture.getAcademicYear()) {
+                throw new BusinessException(CourseErrorCode.ACADEMIC_YEAR_NOT_MATCHED);
+            }
+
+        } else if (lecture.getLectureType().name().equals("GENERAL_ELECTIVE")) {
+            boolean isExcluded = lectureExcludedMajorRepository
+                    .existsByLectureIdAndMajorIdOrMinorId(
+                            lectureId,
+                            student.getMajorId(),
+                            student.getMinorId()
+                    );
+            if (isExcluded) {
+                throw new BusinessException(CourseErrorCode.LIBERAL_ARTS_MAJOR_RESTRICTED);
+            }
+        }
     }
 
     private int getCurrentSemester() {
