@@ -1,12 +1,18 @@
 package com.green.academic.application.schedule;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.academic.application.schedule.model.*;
 import com.green.academic.entity.Schedule;
 import com.green.academic.exception.ScheduleErrorCode;
 import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
+import com.green.common.kafka.KafkaTopic;
+import com.green.common.kafka.ScheduleEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,11 +20,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public void createSchedule(ScheduleCreateReq req) {
@@ -37,7 +46,8 @@ public class ScheduleService {
                 .endDate(req.getEndDate())
                 .build();
 
-        scheduleRepository.save(schedule);
+        Schedule saved = scheduleRepository.saveAndFlush(schedule);
+        sendKafkaEvent(schedule);
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +91,9 @@ public class ScheduleService {
                 .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
         schedule.update(req.getTitle(), req.getSemester(), req.getStartDate(),
                 req.getEndDate(), req.getType());
+
+        sendKafkaEvent(schedule);
+
         return ScheduleUpdateRes.builder()
                 .scheduleId(schedule.getScheduleId())
                 .semester(schedule.getSemester())
@@ -97,7 +110,48 @@ public class ScheduleService {
     public void deleteSchedule(Long scheduleId) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
+
+        sendKafkaDeleteEvent(schedule);
         scheduleRepository.delete(schedule);
+    }
+
+    // ===== Kafka 발행 공통 메서드 =====
+    private void sendKafkaEvent(Schedule schedule) {
+        try {
+            ScheduleEvent event = ScheduleEvent.builder()
+                    .scheduleId(schedule.getScheduleId())
+                    .type(schedule.getType())
+                    .year(schedule.getYear())
+                    .semester(schedule.getSemester())
+                    .startDate(schedule.getStartDate())
+                    .endDate(schedule.getEndDate())
+                    .isActive(schedule.getIsActive())
+                    .build();
+            String eventJson = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(KafkaTopic.SCHEDULE,
+                    String.valueOf(schedule.getScheduleId()), eventJson);
+        } catch (JsonProcessingException e) {
+            log.error("Kafka 직렬화 실패: {}", e.getMessage());
+        }
+    }
+
+    private void sendKafkaDeleteEvent(Schedule schedule) {
+        try {
+            ScheduleEvent event = ScheduleEvent.builder()
+                    .scheduleId(schedule.getScheduleId())
+                    .type(schedule.getType())
+                    .year(schedule.getYear())
+                    .semester(schedule.getSemester())
+                    .startDate(schedule.getStartDate())
+                    .endDate(schedule.getEndDate())
+                    .isActive(false)  // 삭제니까 false
+                    .build();
+            String eventJson = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(KafkaTopic.SCHEDULE_DELETE,
+                    String.valueOf(schedule.getScheduleId()), eventJson);
+        } catch (JsonProcessingException e) {
+            log.error("Kafka 직렬화 실패: {}", e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)

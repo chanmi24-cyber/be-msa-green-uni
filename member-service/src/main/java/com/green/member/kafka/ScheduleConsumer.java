@@ -40,4 +40,11 @@ public class ScheduleConsumer {
 
         scheduleCacheRepository.save(cache);
     }
+
+    @KafkaListener(topics = KafkaTopic.SCHEDULE_DELETE, groupId = "member-service-group")
+    @Transactional
+    public void consumeDelete(ScheduleEvent event) {
+        log.info("Schedule 삭제 이벤트 수신: {}", event);
+        scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
+    }
 }
