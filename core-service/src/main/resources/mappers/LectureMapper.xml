@@ -106,6 +106,23 @@
         ORDER BY year DESC
     </select>
 
+    <select id="findStudentLectureYears" resultType="int">
+        SELECT DISTINCT l.year
+        FROM course c
+        JOIN lecture l ON c.lecture_id = l.lecture_id
+        WHERE c.student_code = #{memberCode}
+        AND c.is_del = false
+        ORDER BY l.year DESC
+    </select>
+
+    <select id="findProfessorLectureYears" resultType="int">
+        SELECT DISTINCT year
+        FROM lecture
+        WHERE member_code = #{memberCode}
+        AND is_del = false
+        ORDER BY year DESC
+    </select>
+
 
     <!-- LEC-03 관리자: 승인관리 목록 -->
     <select id="findAdminLectures" resultMap="myLectureListResMap">
