@@ -28,6 +28,16 @@ public class ScheduleProducer {
     @Scheduled(cron = "0 0 9 * * *") // 매일 9시
     @Transactional
     public void updateActiveStatus() {
+        syncActiveStatus();
+    }
+
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    @Transactional
+    public void updateActiveStatusMidnight() {
+        syncActiveStatus();
+    }
+
+    private void syncActiveStatus() {
         LocalDateTime now = LocalDateTime.now();
         List<Schedule> schedules = scheduleRepository.findAll();
 
@@ -62,5 +72,4 @@ public class ScheduleProducer {
             log.error("Kafka 직렬화 실패: {}", e.getMessage());
         }
     }
-
 }
