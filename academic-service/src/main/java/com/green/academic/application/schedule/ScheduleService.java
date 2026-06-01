@@ -47,6 +47,7 @@ public class ScheduleService {
                 .build();
 
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
+        log.info("저장 완료 - scheduleId: {}", saved.getScheduleId());
         sendKafkaEvent(schedule);
     }
 
@@ -117,6 +118,7 @@ public class ScheduleService {
 
     // ===== Kafka 발행 공통 메서드 =====
     private void sendKafkaEvent(Schedule schedule) {
+        log.info("Kafka 발행 시작 - scheduleId: {}", schedule.getScheduleId());
         try {
             ScheduleEvent event = ScheduleEvent.builder()
                     .scheduleId(schedule.getScheduleId())
@@ -130,12 +132,14 @@ public class ScheduleService {
             String eventJson = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(KafkaTopic.SCHEDULE,
                     String.valueOf(schedule.getScheduleId()), eventJson);
+            log.info("Kafka 발행 완료"); // 추가!
         } catch (JsonProcessingException e) {
             log.error("Kafka 직렬화 실패: {}", e.getMessage());
         }
     }
 
     private void sendKafkaDeleteEvent(Schedule schedule) {
+        log.info("Kafka 발행 시작 - scheduleId: {}", schedule.getScheduleId());
         try {
             ScheduleEvent event = ScheduleEvent.builder()
                     .scheduleId(schedule.getScheduleId())
@@ -149,6 +153,7 @@ public class ScheduleService {
             String eventJson = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(KafkaTopic.SCHEDULE_DELETE,
                     String.valueOf(schedule.getScheduleId()), eventJson);
+            log.info("Kafka 발행 완료"); // 추가
         } catch (JsonProcessingException e) {
             log.error("Kafka 직렬화 실패: {}", e.getMessage());
         }
