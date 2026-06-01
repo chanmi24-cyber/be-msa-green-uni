@@ -80,7 +80,8 @@ public class AnnouncementService {
                 .orElseThrow(() -> new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_NOT_FOUND));
         checkAccess(member, anno);
         announcementRepository.incrementViewCount(annoId);
-        return toDetailRes(anno);
+        return toDetailRes(announcementRepository.findByAnnoIdAndIsDelFalse(annoId)
+                .orElseThrow(() -> new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_NOT_FOUND)));
     }
 
     public Page<AnnoListRes> getPublicList(Pageable pageable) {
@@ -98,7 +99,8 @@ public class AnnouncementService {
             throw new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_ACCESS_DENIED);
         }
         announcementRepository.incrementViewCount(annoId);
-        return toDetailRes(anno);
+        return toDetailRes(announcementRepository.findByAnnoIdAndIsDelFalse(annoId)
+                .orElseThrow(() -> new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_NOT_FOUND)));
     }
 
     private Announcement findOwnAnnouncement(Long annoId) {
