@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,6 +22,19 @@ import java.util.List;
 public class AnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
+
+    public List<Integer> getAnnouncementYears() {
+        MemberDto member = MemberContext.get();
+        return switch (member.role()) {
+            case ADMIN     -> announcementRepository.findAllDistinctYears();
+            case PROFESSOR -> announcementRepository.findDistinctYearsByRoles(List.of("PROFESSOR", "MEMBER", "ALL"));
+            case STUDENT   -> announcementRepository.findDistinctYearsByRoles(List.of("STUDENT", "MEMBER", "ALL"));
+        };
+    }
+
+    public List<Integer> getPublicAnnouncementYears() {
+        return announcementRepository.findDistinctYearsByRoles(List.of("ALL"));
+    }
 
     @Transactional
     public AnnoCreateRes create(AnnoCreateReq req) {
@@ -50,24 +64,24 @@ public class AnnouncementService {
 
     public Page<AnnoListRes> getList(AnnoListReq req, Pageable pageable) {
         MemberDto member = MemberContext.get();
+        String search       = req.getSearch() != null && !req.getSearch().isBlank() ? req.getSearch() : null;
+        LocalDateTime startDate = req.getYear() != null ? LocalDateTime.of(req.getYear(), 1, 1, 0, 0) : null;
+        LocalDateTime endDate   = req.getYear() != null ? LocalDateTime.of(req.getYear() + 1, 1, 1, 0, 0) : null;
+
         Page<Announcement> page = switch (member.role()) {
             case ADMIN -> {
-                EnumTargetRole roleFilter = req.getTargetRole() != null
+                EnumTargetRole roleFilter = req.getTargetRole() != null && !req.getTargetRole().isBlank()
                         ? EnumTargetRole.valueOf(req.getTargetRole()) : null;
-                String search = req.getSearch() != null && !req.getSearch().isBlank()
-                        ? req.getSearch() : null;
-                yield (roleFilter != null && search != null)
-                        ? announcementRepository.findByTargetRoleAndSearchAndIsDelFalse(roleFilter, search, pageable)
-                        : (roleFilter != null)
-                        ? announcementRepository.findByTargetRoleAndIsDelFalseOrderByCreatedAtDesc(roleFilter, pageable)
-                        : (search != null)
-                        ? announcementRepository.findAllBySearchAndIsDelFalse(search, pageable)
-                        : announcementRepository.findAllByIsDelFalseOrderByCreatedAtDesc(pageable);
+                yield (roleFilter != null)
+                        ? announcementRepository.findAdminByRoleWithFilters(roleFilter, search, startDate, endDate, pageable)
+                        : announcementRepository.findAdminAllWithFilters(search, startDate, endDate, pageable);
             }
-            case PROFESSOR -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
-                        List.of(EnumTargetRole.PROFESSOR, EnumTargetRole.MEMBER, EnumTargetRole.ALL), pageable);
-            case STUDENT   -> announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
-                        List.of(EnumTargetRole.STUDENT, EnumTargetRole.MEMBER, EnumTargetRole.ALL), pageable);
+            case PROFESSOR -> announcementRepository.findByRolesWithFilters(
+                        List.of(EnumTargetRole.PROFESSOR, EnumTargetRole.MEMBER, EnumTargetRole.ALL),
+                        search, startDate, endDate, pageable);
+            case STUDENT   -> announcementRepository.findByRolesWithFilters(
+                        List.of(EnumTargetRole.STUDENT, EnumTargetRole.MEMBER, EnumTargetRole.ALL),
+                        search, startDate, endDate, pageable);
         };
         return page.map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
                 a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
@@ -84,9 +98,12 @@ public class AnnouncementService {
                 .orElseThrow(() -> new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_NOT_FOUND)));
     }
 
-    public Page<AnnoListRes> getPublicList(Pageable pageable) {
-        return announcementRepository.findByTargetRoleInAndIsDelFalseOrderByCreatedAtDesc(
-                        List.of(EnumTargetRole.ALL), pageable)
+    public Page<AnnoListRes> getPublicList(String search, Integer year, Pageable pageable) {
+        String searchParam  = search != null && !search.isBlank() ? search : null;
+        LocalDateTime startDate = year != null ? LocalDateTime.of(year, 1, 1, 0, 0) : null;
+        LocalDateTime endDate   = year != null ? LocalDateTime.of(year + 1, 1, 1, 0, 0) : null;
+        return announcementRepository.findByRolesWithFilters(
+                        List.of(EnumTargetRole.ALL), searchParam, startDate, endDate, pageable)
                 .map(a -> new AnnoListRes(a.getAnnoId(), a.getTargetRole().getCode(),
                         a.getTitle(), a.getWriterName(), a.getViewCount(), a.getCreatedAt()));
     }
