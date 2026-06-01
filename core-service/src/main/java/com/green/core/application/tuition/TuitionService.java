@@ -351,10 +351,9 @@ public class TuitionService {
 
     private String createTuitionTemplate(Tuition tuition) {
         return "<h3>안녕하세요, 그린대학교 학사지원팀입니다.</h3>" +
-                "<p>귀하의 " + tuition.getYear() + "년도 " + tuition.getSemester() + "학기 등록금이 현재 <strong>미납</strong> 상태입니다.</p>" +
-                "<ul>" +
-                "<li><strong>최종 납부 금액:</strong> " + String.format("%,d", tuition.getFinalAmount()) + "원</li>" +
-                "</ul>";
+                "<p>아직 <strong>" + tuition.getYear() + "년 " + tuition.getSemester() + "학기 등록금</strong>이 납부되지 않았습니다.</p>" +
+                "<p>납부기한까지 미납 시 수강이 취소될 수 있으니 빠른 시일 내에 납부해 주시기 바랍니다.</p>" + "<br>" +
+                "<p>납부 문의: green.uni502@gmail.com</p>" ;
     }
 
     public List<TuitionRes.PolicyHistoryRes> getPolicyHistoryList(Integer year, Integer semester) {
