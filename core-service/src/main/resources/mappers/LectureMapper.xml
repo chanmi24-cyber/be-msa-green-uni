@@ -62,6 +62,7 @@
     <!-- base: status, maxStd 없음 (학생용) -->
     <resultMap id="lectureDetailResMap" type="com.green.core.application.lecture.model.LectureDetailRes">
         <id property="lectureId" column="lectureId"/>
+        <result property="memberCode" column="memberCode"/>
         <result property="majorId" column="majorId"/>
         <result property="majorName" column="majorName"/>
         <result property="proName" column="proName"/>
@@ -397,6 +398,7 @@
     <select id="findStudentLectureDetail" resultMap="lectureDetailResMap">
         SELECT
         l.lecture_id    AS lectureId,
+        l.member_code   AS memberCode,
         l.major_id      AS majorId,
         mj.name         AS majorName,
         pc.name         AS proName,
