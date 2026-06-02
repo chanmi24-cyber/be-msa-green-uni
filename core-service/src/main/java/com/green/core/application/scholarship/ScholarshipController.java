@@ -28,4 +28,13 @@ public class ScholarshipController {
                 scholarshipService.getMyScholarships(memberCode, pageable)
         );
     }
+
+    // 테스트용 수동 실행 엔드포인트 (테스트 후 제거 권장)
+//    @PostMapping("/assign")
+//    public ResponseEntity<String> assignScholarships(
+//            @RequestParam Integer year,
+//            @RequestParam Integer semester) {
+//        scholarshipService.assignScholarships(year, semester);
+//        return ResponseEntity.ok("장학금 배정 완료");
+//    }
 }

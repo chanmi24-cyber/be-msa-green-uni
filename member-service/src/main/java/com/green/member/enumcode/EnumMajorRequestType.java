@@ -10,15 +10,21 @@ import lombok.*;
 @Getter
 @RequiredArgsConstructor
 public enum EnumMajorRequestType implements EnumMapperType {
-    DOUBLE("DOUBLE", "복수전공"),
+    MINOR("MINOR", "부전공"),
     TRANSFER("TRANSFER", "전과");
 
     private final String code;
     private final String value;
 
     @JsonCreator
-    public static EnumMajorRequestType fromCode(String code) {
-        return EnumConvertUtils.ofCode(EnumMajorRequestType.class, code);
+    public static EnumMajorRequestType from(String value) {
+        if (value == null || value.isBlank()) return null;
+        for (EnumMajorRequestType type : EnumMajorRequestType.values()) {
+            if (type.getCode().equalsIgnoreCase(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 type: " + value);
     }
 
     @Converter(autoApply = true)

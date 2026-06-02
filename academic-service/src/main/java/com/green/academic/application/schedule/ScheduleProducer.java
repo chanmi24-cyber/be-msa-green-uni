@@ -24,20 +24,38 @@ public class ScheduleProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    //    // 매일 자정 실행
-//    @Scheduled(cron = "0 0 0 * * *")
-    //테스트용
-    @Scheduled(fixedDelay = 30_000) // 30초마다
+    // @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
+    @Scheduled(cron = "0 0 9 * * *") // 매일 9시
     @Transactional
     public void updateActiveStatus() {
+        syncActiveStatus();
+    }
+
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    @Transactional
+    public void updateActiveStatusMidnight() {
+        syncActiveStatus();
+    }
+
+    private void syncActiveStatus() {
         LocalDateTime now = LocalDateTime.now();
         List<Schedule> schedules = scheduleRepository.findAll();
 
         for (Schedule schedule : schedules) {
             boolean shouldBeActive = !now.isBefore(schedule.getStartDate())
                     && !now.isAfter(schedule.getEndDate());
-            schedule.updateActive(shouldBeActive);
 
+            // 활성화 상태가 바뀐 것만 Kafka 발행
+            if (schedule.getIsActive() != shouldBeActive) {
+                schedule.updateActive(shouldBeActive);
+                sendKafkaEvent(schedule, shouldBeActive);
+            }
+        }
+        log.info("학사일정 활성화 상태 업데이트 완료");
+    }
+
+    private void sendKafkaEvent(Schedule schedule, boolean isActive) {
+        try {
             ScheduleEvent event = ScheduleEvent.builder()
                     .scheduleId(schedule.getScheduleId())
                     .type(schedule.getType())
@@ -45,17 +63,13 @@ public class ScheduleProducer {
                     .semester(schedule.getSemester())
                     .startDate(schedule.getStartDate())
                     .endDate(schedule.getEndDate())
-                    .isActive(shouldBeActive)
+                    .isActive(isActive)
                     .build();
-
-            try {
-                String eventJson = objectMapper.writeValueAsString(event);
-                kafkaTemplate.send(KafkaTopic.SCHEDULE,
-                        String.valueOf(schedule.getScheduleId()), eventJson);
-            } catch (JsonProcessingException e) {
-                log.error("Kafka 직렬화 실패: {}", e.getMessage());
-            }
+            String eventJson = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(KafkaTopic.SCHEDULE,
+                    String.valueOf(schedule.getScheduleId()), eventJson);
+        } catch (JsonProcessingException e) {
+            log.error("Kafka 직렬화 실패: {}", e.getMessage());
         }
-        log.info("학사일정 활성화 상태 업데이트 완료");
     }
 }

@@ -12,12 +12,8 @@ import java.util.List;
 
 public interface ScholarshipRepository extends JpaRepository<Scholarship, Long> {
 
-    boolean existsByStudentCodeAndScholarshipTypeAndYearAndSemester(
-            Long studentCode, ScholarshipType scholarshipType, Integer year, Integer semester
-    );
-
     Page<Scholarship> findAllByStudentCode(Long studentCode, Pageable pageable);
-    List<Scholarship> findByStudentCodeAndYearAndSemester(Long studentCode, Integer year, Integer semester);
+    List<Scholarship> findByStudentCodeAndYearAndSemester(Long studentCode, Integer year, Integer semester); //등록금에서 장학금 정보 가져올 때 조회하는 것으로 페이징 처리와 관련 없음
 
     @Query("""
     SELECT s FROM Scholarship s

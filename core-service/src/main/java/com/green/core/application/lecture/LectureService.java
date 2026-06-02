@@ -6,10 +6,12 @@ import com.green.common.enumcode.EnumChangeType;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.exception.BusinessException;
 import com.green.common.model.MemberDto;
+import com.green.core.application.course.CourseRepository;
 import com.green.core.application.lecture.mapper.LectureMapper;
 import com.green.core.application.lecture.model.*;
 import com.green.core.application.lecture.repository.*;
 import com.green.core.application.major.MajorRepository;
+import com.green.core.entity.course.Course;
 import com.green.core.entity.lecture.*;
 import com.green.core.entity.major.Major;
 import com.green.core.exception.LectureErrorCode;
@@ -23,6 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.green.common.constants.EventType;
 import com.green.common.kafka.NotificationEvent;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -44,6 +50,7 @@ public class LectureService {
     private final LectureHistoryRepository lectureHistoryRepository;
     private final ObjectMapper objectMapper;
     private final NotificationProducer notificationProducer;
+    private final CourseRepository courseRepository;
 
     @Transactional//DB 작업을 하나의 묶음으로 처리
     public void createLecture(MemberDto memberDto, LectureCreateReq req) {
@@ -150,31 +157,43 @@ public class LectureService {
     }
 
     // LEC-03 관리자: 승인관리 목록
-    public List<MyLectureListRes> getAdminLectures(AdminLectureReq req) {
-        return lectureMapper.findAdminLectures(req);
+    public Page<MyLectureListRes> getAdminLectures(AdminLectureReq req, Pageable pageable) {
+        long total = lectureMapper.countAdminLectures(req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findAdminLectures(req), pageable, total);
     }
 
     // LEC-06 교수: 내 강의 목록
-    public List<MyLectureListRes> getProfessorMyLectures(MemberDto memberDto, MyLectureListReq req) {
-        return lectureMapper.findProfessorMyLectures(memberDto.memberCode(), req);
+    public Page<MyLectureListRes> getProfessorMyLectures(MemberDto memberDto, MyLectureListReq req, Pageable pageable) {
+        long total = lectureMapper.countProfessorMyLectures(memberDto.memberCode(), req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findProfessorMyLectures(memberDto.memberCode(), req), pageable, total);
     }
 
     // LEC-07 학생: 내 강의 목록
     // [수정] 수강신청 기간: 빈 리스트
     //        수강정정 기간: 정정 시작일 이전 신청분만 표시 (수강신청 확정 목록 고정)
     //        정정 종료 후: 전체 목록 표시
-    public List<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req) {
+    public Page<LectureListRes> getStudentMyLectures(MemberDto memberDto, MyLectureListReq req, Pageable pageable) {
         if (schedulePeriodValidator.isCourseRegistrationPeriod()) {
-            return List.of();
+            return Page.empty(pageable);
         }
         schedulePeriodValidator.getCourseModificationStartDate()
                 .ifPresent(req::setCreatedBefore);
-        return lectureMapper.findStudentMyLectures(memberDto.memberCode(), req);
+        long total = lectureMapper.countStudentMyLectures(memberDto.memberCode(), req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findStudentMyLectures(memberDto.memberCode(), req), pageable, total);
     }
 
     // LEC-08 전체 강의 목록
-    public List<LectureListRes> getAllLectures(LectureListReq req) {
-        return lectureMapper.findAllLectures(req);
+    public Page<LectureListRes> getAllLectures(LectureListReq req, Pageable pageable) {
+        long total = lectureMapper.countAllLectures(req);
+        req.setOffset((int) pageable.getOffset());
+        req.setSize(pageable.getPageSize());
+        return new PageImpl<>(lectureMapper.findAllLectures(req), pageable, total);
     }
 
     // LEC-09, 10 공통
@@ -320,5 +339,108 @@ public class LectureService {
         return lectureMapper.findTodayLectures(memberDto.memberCode(), dayOfWeek, year, semester);
     }
 
+    //강의 수동폐강 로직
+    @Transactional
+    public void cancelLecture(MemberDto memberDto, Long lectureId, String reason) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
 
+        if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_CANCELLABLE);
+        }
+
+        // 히스토리 저장
+        try {
+            String beforeData = objectMapper.writeValueAsString(Map.of(
+                    "lectureId", lecture.getLectureId(),
+                    "lectureName", lecture.getLectureName(),
+                    "status", lecture.getStatus().getCode()
+            ));
+            lectureHistoryRepository.save(LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.CANCEL)
+                    .beforeData(beforeData)
+                    .changeReason(reason)
+                    .updatorCode(memberDto.memberCode())
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        // 상태 변경
+        lecture.updateStatus(EnumApprovalStatus.CANCELLED);
+
+        // 수강 학생들 알림 발송
+        int year = lecture.getYear();
+        int semester = lecture.getSemester();
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
+                lectureId, year, semester);
+
+        for (Course course : courses) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(course.getStudentCode())
+                    .type("LECTURE_CANCELLED")
+                    .message("수강 중인 '" + lecture.getLectureName() + "' 강의가 폐강되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+        }
+    }
+
+    // 강의 담당 교수 변경
+    @Transactional
+    public void changeLectureProfessor(MemberDto memberDto, Long lectureId, String reason, Long newMemberCode) {
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new BusinessException(LectureErrorCode.LECTURE_NOT_FOUND));
+
+        if (lecture.getStatus() != EnumApprovalStatus.APPROVED) {
+            throw new BusinessException(LectureErrorCode.LECTURE_NOT_CANCELLABLE);
+        }
+
+        try {
+            String beforeData = objectMapper.writeValueAsString(Map.of(
+                    "lectureId", lecture.getLectureId(),
+                    "lectureName", lecture.getLectureName(),
+                    "originalMemberCode", lecture.getMemberCode(),
+                    "newMemberCode", newMemberCode
+            ));
+            lectureHistoryRepository.save(LectureHistory.builder()
+                    .lecture(lecture)
+                    .changeType(EnumChangeType.UPDATE)
+                    .beforeData(beforeData)
+                    .changeReason("[교수변경] " + reason)
+                    .updatorCode(memberDto.memberCode())
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("히스토리 저장 실패", e);
+        }
+
+        lecture.changeProfessor(newMemberCode);
+
+        List<Course> courses = courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
+                lectureId, lecture.getYear(), lecture.getSemester());
+        for (Course course : courses) {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .eventType(EventType.E_CREATED)
+                    .memberCode(course.getStudentCode())
+                    .type("LECTURE_PROFESSOR_CHANGED")
+                    .message("'" + lecture.getLectureName() + "' 강의의 담당 교수가 변경되었습니다.")
+                    .url("/lectures/" + lectureId)
+                    .refId(lectureId)
+                    .build());
+        }
+    }
+
+    public List<Integer> getLectureYears() {
+        return lectureMapper.findLectureYears();
+    }
+
+    public List<Integer> getStudentLectureYears(Long memberCode) {
+        return lectureMapper.findStudentLectureYears(memberCode);
+    }
+
+    public List<Integer> getProfessorLectureYears(Long memberCode) {
+        return lectureMapper.findProfessorLectureYears(memberCode);
+    }
 }

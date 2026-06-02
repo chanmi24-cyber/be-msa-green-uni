@@ -17,6 +17,10 @@ server:
   port: ${CORE_PORT}
 
 spring:
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true   # 프론트 page=1 → Spring 내부 page=0 자동 변환
   config:
     import:
       - optional:classpath:application-common.yaml
@@ -61,10 +65,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true   # 발행 시 타입 헤더 포함
     # [수신] Student, Professor, Calendar 캐시를 업데이트
     consumer:
       group-id: core-service-group
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 추가
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 변경
       properties:
         spring.json.trusted.packages: "*"
 outbox:

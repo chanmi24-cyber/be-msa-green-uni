@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.enumcode.EnumChangeType;
-import com.green.common.exception.BusinessException;
+import com.green.common.kafka.TuitionPaidEvent;
 import com.green.core.application.major.MajorRepository;
 import com.green.core.application.scholarship.ScholarshipRepository;
 import com.green.core.application.tuition.model.TuitionReq;
@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +47,7 @@ public class TuitionService {
     private final TuitionMailLogRepository tuitionMailLogRepository;
     private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // ❌ private final KafkaTemplate<String, Object> kafkaTemplate; // 더 이상 카프카를 거치지 않으므로 제거
 
@@ -57,14 +59,59 @@ public class TuitionService {
     // 🎯 [주입] 같은 core 모듈에 새로 생성한 EmailSender를 주입합니다.
     private final EmailSender emailSender;
 
+    @Transactional
+    public void syncTuitionAmountWithCurrentMajor(Long studentCode, Integer year, Integer semester) {
+        Tuition tuition = tuitionRepository.findByStudentCodeAndYearAndSemester(studentCode, year, semester)
+                .orElseThrow(() -> new IllegalArgumentException("해당 학기의 등록금 고지 내역이 존재하지 않습니다."));
+
+        // 💡 핵심 방어벽: 이미 납부한 과거 학기는 절대로 건드리지 않음!
+        if (tuition.getStatus() == EnumTuitionStatus.PAID) {
+            log.info("[전과 반영 스킵] 학생 {}의 {}-{} 학기 등록금은 이미 납부 완료되어 스냅샷을 유지합니다.", studentCode, year, semester);
+            return;
+        }
+
+        StudentCache student = studentCacheRepository.findByMemberCode(studentCode)
+                .orElseThrow(() -> new IllegalArgumentException("학생 정보가 캐시에 존재하지 않습니다."));
+
+        Major major = majorRepository.findById(student.getMajorId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학과 ID입니다."));
+
+        TuitionPolicy policy = tuitionPolicyRepository.findByCollegeCollegeId(major.getCollege().getCollegeId())
+                .orElseThrow(() -> new IllegalArgumentException(major.getCollege().getName() + "의 등록금 정책이 설정되지 않았습니다."));
+
+        Long newBaseAmount = policy.getBaseAmount();
+        List<Scholarship> studentScholarships = scholarshipRepository.findByStudentCodeAndYearAndSemester(studentCode, year, semester);
+        long calculatedDiscount = studentScholarships.stream().mapToLong(Scholarship::getScholarshipAmount).sum();
+        long newFinalAmount = Math.max(0, newBaseAmount - calculatedDiscount);
+
+        // 💡 변경된 majorId(student.getMajorId())를 함께 넘겨 고지서의 학과를 경영학과로 새로 고칩니다.
+        tuition.updatePolicyAndBaseAmount(policy, newBaseAmount, newFinalAmount, student.getMajorId());
+        tuition.updateScholarshipDeduction(calculatedDiscount, newFinalAmount);
+    }
+
+    @Transactional
+    public void handleStudentMajorChangedEvent(Long studentCode) {
+        // 현재 시점 기준으로 동기화가 필요한 타겟 학기 산출 (현재 날짜 기준)
+        LocalDateTime now = LocalDateTime.now();
+        int currentYear = now.getYear();
+        int currentSemester = (now.getMonthValue() <= 6) ? 1 : 2;
+
+        try {
+            syncTuitionAmountWithCurrentMajor(studentCode, currentYear, currentSemester);
+        } catch (Exception e) {
+            // 학기 전이라 고지서가 아직 발급 안 되었거나, 예외 케이스 발생 시 로그 처리 후 스킵
+            log.warn("[전과 반영 스킵] 학생코드: {} - 전과 등록금 재계산이 완료되지 않았습니다. 사유: {}",
+                    studentCode, e.getMessage());
+        }
+    }
+
     // ==========================================
     // [학생] 서비스 로직
     // ==========================================
 
-    public List<TuitionRes> getStudentTuitionList(Long studentCode) {
-        return tuitionRepository.findByStudentCodeOrderByYearDescSemesterDesc(studentCode).stream()
-                .map(TuitionRes::new)
-                .collect(Collectors.toList());
+    public Page<TuitionRes> getStudentTuitionList(Long studentCode, Pageable pageable) {
+        return tuitionRepository.findByStudentCodeOrderByYearDescSemesterDesc(studentCode, pageable)
+                .map(TuitionRes::new);
     }
 
     @Transactional
@@ -111,20 +158,50 @@ public class TuitionService {
     // [관리자] 서비스 로직
     // ==========================================
 
-    public Page<TuitionRes> getTuitionListForAdmin(Integer year, Integer semester, EnumTuitionStatus status, Pageable pageable) {
-        Page<Tuition> tuitionPage = (status != null)
-                ? tuitionRepository.findByYearAndSemesterAndStatus(year, semester, status, pageable)
-                : tuitionRepository.findByYearAndSemester(year, semester, pageable);
+    public Page<TuitionRes> getTuitionListForAdmin(Integer year, Integer semester, EnumTuitionStatus status, String searchKeyword, Pageable pageable) { // 💡 1. searchKeyword 파라미터 추가
+        Long searchStudentCode = null;
+        List<Long> searchedStudentCodes = null;
 
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            String keyword = searchKeyword.trim();
+
+            if (keyword.matches("\\d+")) {
+                // 1) 숫자인 경우 -> 학번 단건 검색
+                searchStudentCode = Long.parseLong(keyword);
+            } else {
+                // 2) 문자인 경우 -> 이름 포함 검색
+                List<StudentCache> students = studentCacheRepository.findByNameContaining(keyword);
+
+                if (!students.isEmpty()) {
+                    searchedStudentCodes = students.stream()
+                            .map(StudentCache::getMemberCode)
+                            .collect(Collectors.toList());
+                } else {
+                    // 검색어에 매칭되는 학생이 캐시에 없으면 즉시 빈 페이지를 리턴합니다.
+                    return Page.empty(pageable);
+                }
+            }
+        }
+
+        // 💡 2. 데이터베이스 조건 검색 실행 (중복 덮어쓰기 코드 제거 완료)
+        Page<Tuition> tuitionPage = tuitionRepository.findTuitionWithFilters(
+                year, semester, status, searchStudentCode, searchedStudentCodes, pageable
+        );
+
+        // 3. 페이징된 결과 데이터를 기반으로 화면에 뿌려줄 학생 및 학과 정보 조립
         List<Long> memberCodes = tuitionPage.getContent().stream()
                 .map(Tuition::getStudentCode)
                 .collect(Collectors.toList());
 
+        if (memberCodes.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
         Map<Long, StudentCache> studentMap = studentCacheRepository.findAllById(memberCodes).stream()
                 .collect(Collectors.toMap(StudentCache::getMemberCode, s -> s));
 
-        Set<Long> majorIds = studentMap.values().stream()
-                .map(StudentCache::getMajorId)
+        Set<Long> majorIds = tuitionPage.getContent().stream()
+                .map(Tuition::getMajorId)
                 .collect(Collectors.toSet());
 
         Map<Long, String> majorNameMap = majorRepository.findAllById(majorIds).stream()
@@ -132,7 +209,8 @@ public class TuitionService {
 
         return tuitionPage.map(t -> {
             StudentCache sc = studentMap.get(t.getStudentCode());
-            String majorName = (sc != null) ? majorNameMap.get(sc.getMajorId()) : "학과 정보 없음";
+            // 💡 학생 캐시의 전공이 아니라, 고지서 엔티티(t)가 들고 있는 당해 학기 majorId로 이름을 찾음!
+            String majorName = majorNameMap.getOrDefault(t.getMajorId(), "학과 정보 없음");
             return new TuitionRes(t, sc, majorName);
         });
     }
@@ -156,7 +234,21 @@ public class TuitionService {
             tuition.updateScholarshipDeduction(calculatedDiscount, finalAmount);
         }
 
+        // 1. 등록금 상태를 PAID 등으로 변경
         tuition.updateStatus(status, adminCode);
+
+        // 🎯 2. 만약 변경된 상태가 'PAID(납부완료)'라면 Kafka 이벤트 발행!
+        if (status == EnumTuitionStatus.PAID) {
+            TuitionPaidEvent event = new TuitionPaidEvent(
+                    tuition.getStudentCode(),
+                    tuition.getYear(),
+                    tuition.getSemester()
+            );
+
+            kafkaTemplate.send("tuition-paid-topic", event);
+            log.info("[Kafka 발행] 등록금 납부 완료 이벤트 전송 - 학생코드: {}, 학기: {}-{}",
+                    tuition.getStudentCode(), tuition.getYear(), tuition.getSemester());
+        }
     }
 
     public TuitionRes.TuitionRemindRes previewReminderMails(Integer year, Integer semester) {
@@ -223,9 +315,9 @@ public class TuitionService {
             throw new IllegalStateException("등록금 책정액은 1,000,000원보다 커야 합니다. 금액을 다시 확인해주세요.");
         }
 
-        ScheduleCache tuitionSchedule = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .orElse(null);
+        List<ScheduleCache> tuitionScheduleList = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        ScheduleCache tuitionSchedule = tuitionScheduleList.isEmpty() ? null : tuitionScheduleList.get(0);
 
         if (tuitionSchedule != null) {
             LocalDateTime now = LocalDateTime.now();
@@ -234,14 +326,22 @@ public class TuitionService {
             }
         }
 
+        // 🎯 [추가] 이력이 어느 학기에 귀속되는지 현재 날짜 기준으로 계산
+        LocalDateTime now = LocalDateTime.now();
+        int targetYear = now.getYear();
+        int targetSemester = (now.getMonthValue() <= 6) ? 1 : 2;
+
         String beforeDataSnapshot = String.format("{\"baseAmount\": %d}", policy.getBaseAmount());
 
+        // 🎯 [수정] 빌더 패턴에 targetYear와 targetSemester를 명시적으로 주입합니다.
         TuitionPolicyHistory history = TuitionPolicyHistory.builder()
                 .tuitionPolicy(policy)
                 .changeType(EnumChangeType.UPDATE)
                 .beforeData(beforeDataSnapshot)
                 .changeReason("관리자 정책 조정")
                 .updatorCode(adminCode)
+                .targetYear(targetYear)         // ◀ 추가
+                .targetSemester(targetSemester) // ◀ 추가
                 .build();
 
         tuitionPolicyHistoryRepository.save(history);
@@ -251,10 +351,9 @@ public class TuitionService {
 
     private String createTuitionTemplate(Tuition tuition) {
         return "<h3>안녕하세요, 그린대학교 학사지원팀입니다.</h3>" +
-                "<p>귀하의 " + tuition.getYear() + "년도 " + tuition.getSemester() + "학기 등록금이 현재 <strong>미납</strong> 상태입니다.</p>" +
-                "<ul>" +
-                "<li><strong>최종 납부 금액:</strong> " + String.format("%,d", tuition.getFinalAmount()) + "원</li>" +
-                "</ul>";
+                "<p>아직 <strong>" + tuition.getYear() + "년 " + tuition.getSemester() + "학기 등록금</strong>이 납부되지 않았습니다.</p>" +
+                "<p>납부기한까지 미납 시 수강이 취소될 수 있으니 빠른 시일 내에 납부해 주시기 바랍니다.</p>" + "<br>" +
+                "<p>납부 문의: green.uni502@gmail.com</p>" ;
     }
 
     public List<TuitionRes.PolicyHistoryRes> getPolicyHistoryList(Integer year, Integer semester) {
@@ -284,9 +383,9 @@ public class TuitionService {
     }
 
     public TuitionRes.PaymentPeriodRes getTuitionPaymentPeriod() {
-        ScheduleCache schedule = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .orElse(null);
+        List<ScheduleCache> scheduleList = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT);
+        ScheduleCache schedule = scheduleList.isEmpty() ? null : scheduleList.get(0);
 
         if (schedule == null) {
             return new TuitionRes.PaymentPeriodRes(false, null, null);

@@ -54,4 +54,15 @@ public class Student extends UpdatedAt {
     public void updateStatus(EnumStudentStatus status){
         if(status != null) this.status = status;
     }
+
+    // 학기 자동 갱신: 1학기 → 2학기, 2학기 → 다음 학년 1학기 (초과학기 상한 없음)
+    public void advanceSemester() {
+        if (this.semester == null || this.academicYear == null) return;
+        if (this.semester == 1) {
+            this.semester = 2;
+        } else {
+            this.semester = 1;
+            this.academicYear = this.academicYear + 1;
+        }
+    }
 }

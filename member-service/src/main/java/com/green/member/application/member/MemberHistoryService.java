@@ -16,7 +16,7 @@ public class MemberHistoryService {
     private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
 
-    public void save(Long memberCode, Long updatorCode, Map<String, Object> beforeData) {
+    public void save(Long memberCode, Long updaterCode, Map<String, Object> beforeData) {
         if (beforeData.isEmpty()) return;
         try {
             String json = objectMapper.writeValueAsString(beforeData);
@@ -24,7 +24,7 @@ public class MemberHistoryService {
                     .member(memberRepository.getReferenceById(memberCode))
                     .changeType(EnumChangeType.UPDATE)
                     .beforeData(json)
-                    .updatorCode(updatorCode)
+                    .updaterCode(updaterCode)
                     .build();
             memberHistoryRepository.save(history);
         } catch (JsonProcessingException e) {

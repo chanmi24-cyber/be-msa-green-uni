@@ -1,5 +1,7 @@
 package com.green.member.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.ScheduleEvent;
@@ -18,12 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleConsumer {
 
     private final ScheduleCacheRepository scheduleCacheRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     @KafkaListener(topics = KafkaTopic.SCHEDULE, groupId = "member-service-group")
-    public void consume(ScheduleEvent event) {
-        // MAJOR_CHANGE만 저장
-        if (event.getType() != EnumScheduleType.MAJOR_CHANGE) return;
+    public void consume(String message) throws JsonProcessingException {
+        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+
+        // MAJOR_CHANGE, SEMESTER_START, SEMESTER_END만 저장
+        if (event.getType() != EnumScheduleType.MAJOR_CHANGE
+                && event.getType() != EnumScheduleType.SEMESTER_START
+                && event.getType() != EnumScheduleType.SEMESTER_END) return;
         log.info("Schedule 이벤트 수신: {}", event);
 
         ScheduleCache cache = ScheduleCache.builder()
@@ -37,5 +44,13 @@ public class ScheduleConsumer {
                 .build();
 
         scheduleCacheRepository.save(cache);
+    }
+
+    @KafkaListener(topics = KafkaTopic.SCHEDULE_DELETE, groupId = "member-service-group")
+    @Transactional
+    public void consumeDelete(String message) throws JsonProcessingException {
+        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+        log.info("Schedule 삭제 이벤트 수신: {}", event);
+        scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
     }
 }

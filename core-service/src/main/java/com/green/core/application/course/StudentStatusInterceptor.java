@@ -41,10 +41,10 @@ public class StudentStatusInterceptor implements HandlerInterceptor {
         log.info("학생 상태 확인 완료 - memberCode: {}, status: {}", member.memberCode(), student.getStatus());
 
         // 2. 수강 신청 기간 확인
-        boolean isRegistrationOpen = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isPresent();
-        boolean isModificationOpen = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isPresent();
+        boolean isRegistrationOpen = !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION).isEmpty();
+        boolean isModificationOpen = !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION).isEmpty();
 
         if (!isRegistrationOpen && !isModificationOpen) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수강 신청 기간이 아닙니다.");
