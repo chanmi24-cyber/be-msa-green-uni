@@ -8,5 +8,7 @@ public interface StudentStatusRequestListRes {
     String getStatus();
     Integer getAcademicYear();
     Integer getSemester();
+    Integer getReturnYear();
+    Integer getReturnSemester();
     LocalDateTime getCreatedAt();
 }

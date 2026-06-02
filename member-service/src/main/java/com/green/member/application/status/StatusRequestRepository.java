@@ -28,6 +28,8 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    sr.status           AS status,
                    sr.academic_year    AS academicYear,
                    sr.semester         AS semester,
+                   sr.return_year      AS returnYear,
+                   sr.return_semester  AS returnSemester,
                    sr.created_at       AS createdAt
             FROM status_request sr
             WHERE sr.student_code = :memberCode

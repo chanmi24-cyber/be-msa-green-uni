@@ -351,12 +351,14 @@ public class StudentService {
         statusRequestRepository.findStudentStatusRequests(memberCode).forEach(r ->
                 merged.add(new StudentDashboardRequestRes(
                         r.getRequestId(), "STATUS", r.getType(), null,
+                        r.getReturnYear(), r.getReturnSemester(),
                         r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
                 ))
         );
         majorRequestRepository.findStudentMajorRequests(memberCode).forEach(r ->
                 merged.add(new StudentDashboardRequestRes(
                         r.getRequestId(), "MAJOR", r.getType(), r.getTargetMajorName(),
+                        null, null,
                         r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
                 ))
         );

@@ -1,7 +1,5 @@
-package com.green.member.enumcode;
+package com.green.common.enumcode;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.green.common.enumcode.AbstractEnumCodeConverter;
-import com.green.common.enumcode.EnumMapperType;
 import jakarta.persistence.Converter;
 import lombok.*;
 @Getter
