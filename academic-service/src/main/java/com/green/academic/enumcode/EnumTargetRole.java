@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 public enum EnumTargetRole implements EnumMapperType {
     STUDENT("STUDENT", "학생"),
     PROFESSOR("PROFESSOR", "교수"),
+    MEMBER("MEMBER", "교내 전체"),
     ALL("ALL", "전체"),
     ;
     private final String code;

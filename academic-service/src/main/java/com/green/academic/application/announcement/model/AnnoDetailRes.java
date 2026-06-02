@@ -14,6 +14,7 @@ public class AnnoDetailRes {
     private String title;
     private String content;
     private String writerName;
+    private Long writerCode;
     private Integer viewCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

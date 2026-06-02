@@ -8,4 +8,5 @@ import lombok.Setter;
 public class AnnoListReq {
     private String targetRole;
     private String search;
+    private Integer year;
 }

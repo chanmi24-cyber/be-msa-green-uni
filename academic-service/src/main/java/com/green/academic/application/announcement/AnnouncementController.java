@@ -5,6 +5,8 @@ import com.green.academic.application.announcement.model.AnnoListReq;
 import com.green.academic.application.announcement.model.AnnoListRes;
 import com.green.common.model.ResultResponse;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,6 +19,13 @@ import org.springframework.web.bind.annotation.*;
 public class AnnouncementController {
 
     private final AnnouncementService announcementService;
+
+    // 공지사항이 존재하는 연도 목록 (역할별)
+    @GetMapping("/years")
+    public ResponseEntity<ResultResponse<List<Integer>>> getYears() {
+        return ResponseEntity.ok(new ResultResponse<>("연도 조회 성공",
+                announcementService.getAnnouncementYears()));
+    }
 
     // ANNO-03 공지사항 목록 조회 (학생/교수/관리자 - 역할별 필터)
     @GetMapping
