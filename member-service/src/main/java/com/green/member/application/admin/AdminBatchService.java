@@ -4,7 +4,7 @@ import com.green.common.auth.MemberContext;
 import com.green.member.application.admin.model.AdminCreateReq;
 import com.green.member.application.admin.model.FailRowRes;
 import com.green.member.application.member.MemberBatchService;
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

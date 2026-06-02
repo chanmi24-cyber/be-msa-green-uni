@@ -1,6 +1,6 @@
 package com.green.member.application.admin.model;
 
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import lombok.Data;
 import lombok.ToString;
 
