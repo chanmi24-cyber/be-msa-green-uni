@@ -5,22 +5,32 @@ import com.green.core.enumcode.EnumTuitionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface TuitionRepository extends JpaRepository<Tuition, Long> {
 
-    // 학생: 전체납부 내역 조회
     Page<Tuition> findByStudentCodeOrderByYearDescSemesterDesc(Long studentCode, Pageable pageable);
-
-    // 학생: 특정 학기 상세 조회 및 납부 신청용
     Optional<Tuition> findByStudentCodeAndYearAndSemester(Long studentCode, Integer year, Integer semester);
-
-    // 관리자: 등록금 목록 조회 (학기별 페이징 및 상태 필터링)
     Page<Tuition> findByYearAndSemesterAndStatus(Integer year, Integer semester, EnumTuitionStatus status, Pageable pageable);
     Page<Tuition> findByYearAndSemester(Integer year, Integer semester, Pageable pageable);
-
-    // 관리자: 미납자 목록 조회 (이메일 발송용)
     List<Tuition> findByYearAndSemesterAndStatus(Integer year, Integer semester, EnumTuitionStatus status);
+
+    // 💡 [관리자용 동적 동기화 쿼리 추가]
+    // 학번 검색(studentCode)이나 이름 검색 결과(studentCodes)가 있을 때 유연하게 필터링하기 위한 쿼리입니다.
+    @Query("SELECT t FROM Tuition t WHERE t.year = :year AND t.semester = :semester " +
+            "AND (:status IS NULL OR t.status = :status) " +
+            "AND (:studentCode IS NULL OR t.studentCode = :studentCode) " +
+            "AND (:studentCodes IS NULL OR t.studentCode IN :studentCodes)")
+    Page<Tuition> findTuitionWithFilters(
+            @Param("year") Integer year,
+            @Param("semester") Integer semester,
+            @Param("status") EnumTuitionStatus status,
+            @Param("studentCode") Long studentCode,
+            @Param("studentCodes") List<Long> studentCodes,
+            Pageable pageable
+    );
 }

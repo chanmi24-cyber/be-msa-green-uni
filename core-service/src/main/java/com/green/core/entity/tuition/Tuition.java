@@ -58,6 +58,20 @@ public class Tuition extends CreatedAt {
     @Builder.Default
     private EnumTuitionStatus status = EnumTuitionStatus.UNPAID;
 
+    @Column(name = "major_id", nullable = false)
+    private Long majorId; // 고지서 해당 학기 당시의 학과 ID (★ 추가)
+
+    // 전과 동기화 메서드도 majorId를 함께 변경하도록 수정
+    public void updatePolicyAndBaseAmount(TuitionPolicy newPolicy, Long newBaseAmount, Long newFinalAmount, Long newMajorId) {
+        if (this.status == EnumTuitionStatus.PAID) {
+            throw new IllegalStateException("이미 등록금을 납부한 학생은 정책을 변경할 수 없습니다.");
+        }
+        this.tuitionPolicy = newPolicy;
+        this.baseAmount = newBaseAmount;
+        this.finalAmount = newFinalAmount;
+        this.majorId = newMajorId; // 학과 ID 스냅샷 업데이트
+    }
+
     public void requestPayment() {
         if (this.status == EnumTuitionStatus.PAID) {
             throw new BusinessException(TuitionErrorCode.ALREADY_PAID);
@@ -82,5 +96,17 @@ public class Tuition extends CreatedAt {
     public void updateScholarshipDeduction(long totalDiscount, long finalAmount) {
         this.totalDiscount = totalDiscount;
         this.finalAmount = finalAmount;
+    }
+
+    /**
+     * 전과로 인한 등록금 정책 변경 및 기본 금액 재책정
+     */
+    public void updatePolicyAndBaseAmount(TuitionPolicy newPolicy, Long newBaseAmount, Long newFinalAmount) {
+        if (this.status == EnumTuitionStatus.PAID) {
+            throw new IllegalStateException("이미 등록금을 납부한 학생은 정책을 변경할 수 없습니다.");
+        }
+        this.tuitionPolicy = newPolicy;
+        this.baseAmount = newBaseAmount;
+        this.finalAmount = newFinalAmount;
     }
 }

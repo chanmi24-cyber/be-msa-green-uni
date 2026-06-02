@@ -1,5 +1,6 @@
 package com.green.core.application.tuition;
 
+import com.green.core.entity.major.College;
 import com.green.core.entity.tuition.TuitionPolicy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
