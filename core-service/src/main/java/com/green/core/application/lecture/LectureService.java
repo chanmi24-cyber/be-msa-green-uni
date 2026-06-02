@@ -130,6 +130,7 @@ public class LectureService {
                     .lecture(lecture)
                     .reason(req.getReason())
                     .updatorCode(memberDto.memberCode())
+                    .updatorName(req.getAdminName())
                     .build();
             lectureRejectionRepository.save(rejection);
 
@@ -143,6 +144,8 @@ public class LectureService {
                     .build());
 
         } else if (req.getStatus() == EnumApprovalStatus.APPROVED) {
+            lecture.approve(memberDto.memberCode(), req.getAdminName());
+
             notificationProducer.sendNotification(NotificationEvent.builder()
                     .eventType(EventType.E_CREATED)
                     .memberCode(lecture.getMemberCode())
@@ -151,6 +154,7 @@ public class LectureService {
                     .url("/lectures/" + lectureId)
                     .refId(lectureId)
                     .build());
+            return; // approve()에서 이미 status 변경
         }
 
         lecture.updateStatus(req.getStatus());

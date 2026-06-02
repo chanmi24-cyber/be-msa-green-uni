@@ -8,5 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
     public class LectureApprovalReq {
         private EnumApprovalStatus status; // PENDING / APPROVED / REJECTED
-        private String reason; // 반려 사유
+        private String reason;    // 반려 사유
+        private String adminName; // 처리 관리자 이름 (스냅샷)
 }

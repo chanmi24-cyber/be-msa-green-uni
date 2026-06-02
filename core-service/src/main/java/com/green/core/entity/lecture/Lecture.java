@@ -69,6 +69,12 @@ public class Lecture extends CreatedUpdatedAt {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
+    @Column(name = "approver_code")
+    private Long approverCode;
+
+    @Column(name = "approver_name", length = 30)
+    private String approverName;
+
     @Column(name = "is_del", nullable = false)
     @Builder.Default
     private Boolean isDel = false;
@@ -85,6 +91,12 @@ public class Lecture extends CreatedUpdatedAt {
 
     public void updateStatus(EnumApprovalStatus status) {
         this.status = status;
+    }
+
+    public void approve(Long adminCode, String adminName) {
+        this.status = EnumApprovalStatus.APPROVED;
+        this.approverCode = adminCode;
+        this.approverName = adminName;
     }
 
     public void changeProfessor(Long newMemberCode) {
