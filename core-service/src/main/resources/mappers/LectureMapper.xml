@@ -92,6 +92,10 @@
         <result property="maxStd" column="maxStd"/>
         <result property="rejectionReason" column="rejectionReason"/>
         <result property="rejectionAt" column="rejectionAt"/>
+        <result property="rejectorCode" column="rejectorCode"/>
+        <result property="rejectorName" column="rejectorName"/>
+        <result property="approverCode" column="approverCode"/>
+        <result property="approverName" column="approverName"/>
         <result property="cancelReason" column="cancelReason"/>
         <result property="cancelAt" column="cancelAt"/>
     </resultMap>
@@ -359,10 +363,14 @@
         l.start_date    AS startDate,
         l.end_date      AS endDate,
         l.member_code   AS memberCode,
-        lrj.reason      AS rejectionReason,
-        lrj.created_at AS rejectionAt,
-        lh.change_reason AS cancelReason,
-        lh.created_at    AS cancelAt,
+        lrj.reason        AS rejectionReason,
+        lrj.created_at    AS rejectionAt,
+        lrj.updator_code  AS rejectorCode,
+        lrj.updator_name  AS rejectorName,
+        l.approver_code   AS approverCode,
+        l.approver_name   AS approverName,
+        lh.change_reason  AS cancelReason,
+        lh.created_at     AS cancelAt,
         <include refid="scheduleColumns"/>
         FROM lecture l
         LEFT JOIN major mj            ON l.major_id = mj.major_id
