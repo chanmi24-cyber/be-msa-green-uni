@@ -48,10 +48,10 @@ public class Major extends CreatedUpdatedAt {
     @Column(name = "info", length = 255)
     private String info;
 
-    @Column(name = "course_duration")
+    @Column(name = "course_duration", nullable = false)
     private Integer courseDuration;
 
-    @Column(name = "founded_date", length = 10)
+    @Column(name = "founded_date", length = 10, nullable = false)
     private String foundedDate;
 
     // ↓ 폐지일 필드 추가 (Nullable 허용)
