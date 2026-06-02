@@ -27,7 +27,7 @@ public interface MajorRepository extends JpaRepository<Major, Long> {
 
     List<Major> findByActiveNot(EnumMajorStatus active);
 
-    // ✅ 추가: 관리자 목록 조회용 페이징 쿼리
+    // ✅ 수정: ORDER BY 대상을 m.active로 변경
     @Query(
             value = """
             SELECT m.major_id, m.name, m.major_building, m.room, m.tel,
@@ -38,7 +38,7 @@ public interface MajorRepository extends JpaRepository<Major, Long> {
             WHERE (:status IS NULL OR m.active = :status)
               AND (:search IS NULL OR m.name LIKE CONCAT('%', :search, '%'))
             GROUP BY m.major_id
-            ORDER BY m.major_id DESC
+            ORDER BY m.active DESC, m.name ASC
             """,
             countQuery = """
             SELECT COUNT(*)

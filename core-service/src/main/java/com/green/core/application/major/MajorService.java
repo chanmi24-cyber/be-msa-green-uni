@@ -242,10 +242,21 @@ public class MajorService {
         if (telDup) throw new BusinessException(MajorErrorCode.TEL_DUPLICATED);
 
         if (professorCode != null) {
+            // 1. 타 학과 학과장 중복 검증 (기존 로직)
             boolean profDup = majorId == null
                     ? majorRepository.existsByProfessorCode(professorCode)
                     : majorRepository.existsByProfessorCodeAndMajorIdNot(professorCode, majorId);
             if (profDup) throw new BusinessException(MajorErrorCode.CHAIR_PROFESSOR_DUPLICATED);
+
+            // 2. [추가] 교수 소속 학과 검증 (수정 시점)
+            if (majorId != null) {
+                var professor = professorCacheRepository.findById(professorCode)
+                        .orElseThrow(() -> new BusinessException(MajorErrorCode.PROFESSOR_NOT_FOUND));
+
+                if (majorId != null && !majorId.equals(professor.getMajorId())) {
+                    throw new BusinessException(MajorErrorCode.INVALID_CHAIR_PROFESSOR_MAJOR);
+                }
+            }
         }
 
         boolean buildingRoomDup = majorId == null
