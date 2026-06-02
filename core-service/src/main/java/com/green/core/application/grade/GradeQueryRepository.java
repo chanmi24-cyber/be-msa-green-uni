@@ -28,7 +28,7 @@ public class GradeQueryRepository {
 
     // 학생의 weighted GPA 계산 (F 포함 전체 성적 기준) (전공변경 신청에 사용)
     public Double calcWeightedGpaByStudentCode(Long studentCode) {
-        return (Double) em.createNativeQuery("""
+        Number result = (Number) em.createNativeQuery("""
                 SELECT COALESCE(
                     SUM(
                         CASE g.grade_letter
@@ -52,5 +52,6 @@ public class GradeQueryRepository {
                 """)
                 .setParameter("studentCode", studentCode)
                 .getSingleResult();
+        return result != null ? result.doubleValue() : null;
     }
 }
