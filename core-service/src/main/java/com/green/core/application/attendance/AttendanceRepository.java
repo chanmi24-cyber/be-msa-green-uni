@@ -2,6 +2,7 @@ package com.green.core.application.attendance;
 
 import com.green.core.entity.attendance.Attendance;
 import com.green.core.entity.attendance.AttendanceSession;
+import com.green.core.enumcode.EnumAttendStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,14 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
   java.util.Optional<Attendance> findByAttendsessionAndStudentCode(AttendanceSession attendsession, Long studentCode);
 
   List<Attendance> findByAttendsession_AttendsessionId(Long sessionId);
+
+  // N+1 방지: 강의별 출석 상태 GROUP BY 집계 (성적 계산용)
+  @Query("SELECT a.course.courseId, COUNT(a) FROM Attendance a " +
+         "WHERE a.course.lecture.lectureId = :lectureId " +
+         "AND a.status = :status GROUP BY a.course.courseId")
+  List<Object[]> countGroupByCourseAndStatus(
+          @Param("lectureId") Long lectureId,
+          @Param("status") EnumAttendStatus status);
 
   @Query("SELECT a FROM Attendance a JOIN FETCH a.attendsession s WHERE a.attendId = :attendId AND s.lecture.lectureId = :lectureId")
   java.util.Optional<Attendance> findByAttendIdAndLectureId(@Param("lectureId") Long lectureId, @Param("attendId") Long attendId);

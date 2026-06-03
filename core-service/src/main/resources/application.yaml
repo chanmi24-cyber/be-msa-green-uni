@@ -31,15 +31,23 @@ spring:
     name: core-service
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/my_gu_core?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/my_gu_core?createDatabaseIfNotExist=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&useServerPrepStmts=false
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      connection-timeout: 60000
+      max-lifetime: 180000
+      maximum-pool-size: 10
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
         # 하이버네이트 7의 메타데이터 조회 버그 방지
         temp:
           use_jdbc_metadata_defaults: false

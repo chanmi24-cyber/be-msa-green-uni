@@ -18,8 +18,12 @@ spring:
   application:
     name: member-service
   datasource:
+    hikari:
+      connection-timeout: 60000
+      max-lifetime: 180000
+      maximum-pool-size: 10
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/my_gu_member?createDatabaseIfNotExist=true&characterEncoding=UTF-8
+    url: jdbc:log4jdbc:mysql://${DB_HOST}:${DB_PORT}/my_gu_member?createDatabaseIfNotExist=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&useServerPrepStmts=false
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   data:
@@ -33,6 +37,10 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
         temp:
           use_jdbc_metadata_defaults: false
   servlet:
