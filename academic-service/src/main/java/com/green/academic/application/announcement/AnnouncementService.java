@@ -133,8 +133,10 @@ public class AnnouncementService {
         boolean allowed = switch (member.role()) {
             case ADMIN     -> true;
             case PROFESSOR -> anno.getTargetRole() == EnumTargetRole.PROFESSOR
+                             || anno.getTargetRole() == EnumTargetRole.MEMBER
                              || anno.getTargetRole() == EnumTargetRole.ALL;
             case STUDENT   -> anno.getTargetRole() == EnumTargetRole.STUDENT
+                             || anno.getTargetRole() == EnumTargetRole.MEMBER
                              || anno.getTargetRole() == EnumTargetRole.ALL;
         };
         if (!allowed) throw new BusinessException(AnnouncementErrorCode.ANNOUNCEMENT_ACCESS_DENIED);
