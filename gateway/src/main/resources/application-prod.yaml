@@ -39,6 +39,11 @@ spring:
               predicates:
                 - Path=/api/member/**, /api/member/**
 
+            - id: member-file
+              uri: http://member-service:80
+              predicates:
+                - Path=/file/member/**
+
             - id: core-service
               uri: http://core-service:80
               predicates:

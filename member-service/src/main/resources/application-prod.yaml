@@ -3,6 +3,7 @@ constants:
       prefix: /api/member
   file:
     directory: ${FILE_DIRECTORY}
+    max-size: 5242880
 
 server:
   port: 8080
@@ -21,6 +22,10 @@ spring:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_MEMBER}?createDatabaseIfNotExist=true&characterEncoding=UTF-8
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
@@ -39,9 +44,13 @@ spring:
       group-id: member-service-group
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.green.common.model"
+        spring.json.trusted.packages: "*"
 outbox:
   enabled: true
+
+core-service:
+  url: http://core-service:80
+
 logging:
   level:
     org.springframework.web: DEBUG

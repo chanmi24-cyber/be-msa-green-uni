@@ -1,7 +1,7 @@
 package com.green.member.entity.member;
 
 import com.green.common.entity.UpdatedAt;
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

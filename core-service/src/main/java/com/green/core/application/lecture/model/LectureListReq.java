@@ -15,7 +15,6 @@ public class LectureListReq {
     private Long majorId;
     private Integer year;
     private Integer semester;
-    private Integer page;
     private Integer size;
-    private Integer startIdx;
+    private Integer offset;
 }

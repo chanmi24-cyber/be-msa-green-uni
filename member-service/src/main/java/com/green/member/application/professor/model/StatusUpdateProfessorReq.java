@@ -1,7 +1,6 @@
 package com.green.member.application.professor.model;
 
 import com.green.common.enumcode.EnumProfessorStatus;
-import com.green.member.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumProfessorPosition;
 import lombok.Data;
 import lombok.NoArgsConstructor;

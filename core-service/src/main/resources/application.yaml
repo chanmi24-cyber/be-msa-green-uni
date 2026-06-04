@@ -4,9 +4,9 @@ constants:
 
 school:
   network:
-    cidr: "192.168.0.0/24" 
-    # /24는 앞에 32비트중 24비트를 가리고 뒤에남은 8비트 값만 바뀔수있다는 뜻
-    # 즉 192.168.0 까지는 동일하고 뒤에 .0 부분[본인기기정보]만 바뀌는값 허용
+    # 개발 기본값: 모든 IP 허용 (ngrok 경유 테스트용)
+    # 운영 배포 시 application-prod.yaml의 192.168.0.0/24 가 덮어씀
+    cidr: "0.0.0.0/0"
 
 mybatis:
   mapper-locations: classpath:mappers/**/*.xml
@@ -17,6 +17,10 @@ server:
   port: ${CORE_PORT}
 
 spring:
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true   # 프론트 page=1 → Spring 내부 page=0 자동 변환
   config:
     import:
       - optional:classpath:application-common.yaml
@@ -39,16 +43,35 @@ spring:
         # 하이버네이트 7의 메타데이터 조회 버그 방지
         temp:
           use_jdbc_metadata_defaults: false
+
+  # 🎯 [추가] core 모듈에서 직접 이메일을 쏘기 위한 지메일 SMTP 연동 설정
+  mail:
+    host: smtp.gmail.com        # Gmail SMTP 서버 주소
+    port: 587                   # STARTTLS 방식의 표준 포트
+    username: ${MAIL_USERNAME}  # .env 또는 환경 변수에 설정된 Gmail 주소
+    password: ${MAIL_PASSWORD}  # Gmail 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true            # SMTP 인증 사용 (필수)
+          starttls:
+            enable: true        # 보안 연결(TLS) 사용 (필수)
+            required: true
+          timeout: 5000
+
   kafka:
     bootstrap-servers: localhost:9092
     # [발행] Major, Collage 이벤트를 Outbox에 담아 보냄
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true   # 발행 시 타입 헤더 포함
     # [수신] Student, Professor, Calendar 캐시를 업데이트
     consumer:
       group-id: core-service-group
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 추가
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 변경
       properties:
         spring.json.trusted.packages: "*"
 outbox:

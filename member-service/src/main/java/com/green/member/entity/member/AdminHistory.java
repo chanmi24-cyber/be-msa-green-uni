@@ -1,7 +1,7 @@
 package com.green.member.entity.member;
 
 import com.green.common.entity.CreatedAt;
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.NullableAdminStatusConverter;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
@@ -44,6 +44,6 @@ public class AdminHistory extends CreatedAt {
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "updator_code")
-    private Long updatorCode;
+    @Column(name = "updater_code")
+    private Long updaterCode;
 }

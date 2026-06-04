@@ -3,12 +3,22 @@ package com.green.member.application.student;
 import com.green.common.auth.MemberContext;
 import com.green.common.model.MemberDto;
 import com.green.common.model.ResultResponse;
-import com.green.member.application.student.model.StudentHistoryRes;
+import com.green.member.application.major.model.StudentMajorHistoryRes;
+import com.green.member.application.major.model.StudentMajorRequestDetailRes;
+import com.green.member.application.major.model.StudentMajorRequestListRes;
+import com.green.member.application.major.model.StudentMajorRequestReq;
+import com.green.member.application.status.model.StudentStatusRequestDetailRes;
+import com.green.member.application.status.model.StudentStatusRequestListRes;
+import com.green.member.application.status.model.StudentStatusRequestReq;
+import com.green.member.application.student.model.*;
+import com.green.member.application.student.model.StudentDashboardRequestRes;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,13 +29,128 @@ import java.util.List;
 public class StudentController {
     private final StudentService studentService;
 
+    // 대시보드: 학적변경 + 전공변경 신청 통합 목록 조회
+    @GetMapping("/requests/dashboard")
+    public ResultResponse<?> findDashboardRequests(
+            @RequestParam(defaultValue = "3") int size) {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentDashboardRequestRes> res = studentService.getDashboardRequests(loginMember.memberCode(), size);
+        return ResultResponse.builder()
+                .message("내 신청서 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+
     @GetMapping("/history")
     public ResultResponse<?> findHistory(){
         MemberDto loginMember = MemberContext.get();
-        List<StudentHistoryRes> res = studentService.findStudentHistory( loginMember.memberCode() );
+        List<StudentHistoryRes> res = studentService.getStudentHistory( loginMember.memberCode() );
         return ResultResponse.builder()
                 .message("학생 상태 변경 이력 조회")
                 .data(res)
                 .build();
+    }
+
+    // 전공 변경 신청
+    @PostMapping("/requests/major")
+    public ResultResponse<?> applyMajorRequest(@RequestPart @Valid StudentMajorRequestReq req,
+                                           @RequestPart(required = false) MultipartFile file) {
+        MemberDto loginMember = MemberContext.get();
+        studentService.createMajorRequest(req, file, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 신청을 성공했습니다")
+                .build();
+    }
+    // 전공 변경 신청 취소
+    @DeleteMapping("/requests/major/{requestId}")
+    public ResultResponse<?> deleteMajorRequest(@PathVariable("requestId") Long requestId){
+        MemberDto loginMember = MemberContext.get();
+        studentService.deleteMajorRequest(requestId, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 신청을 취소하였습니다")
+                .build();
+    }
+    // 전공 변경 신청서 목록 조회
+    @GetMapping("/requests/major")
+    public ResultResponse<?> findMajorRequests() {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentMajorRequestListRes> res = studentService.getMajorRequests( loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 전공 변경 신청 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+    // 전공 변경 신청 상세 조회
+    @GetMapping("/requests/major/{requestId}")
+    public ResultResponse<?> findMajorRequestsDetail(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        StudentMajorRequestDetailRes res = studentService.getMajorRequest( requestId, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 전공 변경 신청서 상세 조회")
+                .data(res)
+                .build();
+    }
+    // 전공 변경 신청서 파일 다운로드
+    @GetMapping("/requests/major/{requestId}/file")
+    public ResponseEntity<Resource> downloadMajorRequestFile(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        return studentService.getMajorRequestFile(requestId, loginMember.memberCode());
+    }
+
+    // 내 전공 변경 이력 조회
+    @GetMapping("/history/major")
+    public ResultResponse<?> findMajorHistory() {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentMajorHistoryRes> res = studentService.getMajorHistory(loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("전공 변경 이력 조회")
+                .data(res)
+                .build();
+    }
+
+    // 학적 변경 신청
+    @PostMapping("/requests/status")
+    public ResultResponse<?> applyStatusRequest(@RequestPart @Valid StudentStatusRequestReq req,
+                                               @RequestPart(required = false) MultipartFile file) {
+        MemberDto loginMember = MemberContext.get();
+        studentService.createStatusRequest(req, file, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("학적 변경 신청이 완료되었습니다.")
+                .build();
+    }
+    // 학적 변경 신청 취소
+    @DeleteMapping("/requests/status/{requestId}")
+    public ResultResponse<?> deleteStatusRequest(@PathVariable("requestId") Long requestId){
+        MemberDto loginMember = MemberContext.get();
+        studentService.deleteStatusRequest(requestId, loginMember.memberCode());
+        return ResultResponse.builder()
+                .message("학적 변경 신청을 취소하였습니다.")
+                .build();
+    }
+    // 학적 변경 신청서 목록 조회
+    @GetMapping("/requests/status")
+    public ResultResponse<?> findStatusRequests() {
+        MemberDto loginMember = MemberContext.get();
+        List<StudentStatusRequestListRes> res = studentService.getStatusRequests( loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 학적 변경 신청 목록 조회 완료")
+                .data(res)
+                .build();
+    }
+    // 학적 변경 신청 상세 조회
+    @GetMapping("/requests/status/{requestId}")
+    public ResultResponse<?> findStatusRequestsDetail(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        StudentStatusRequestDetailRes res = studentService.getStatusRequest( requestId, loginMember.memberCode() );
+        return ResultResponse.builder()
+                .message("내 학적 변경 신청서 상세 조회")
+                .data(res)
+                .build();
+    }
+    // 학적 변경 신청서 파일 다운로드
+    @GetMapping("/requests/status/{requestId}/file")
+    public ResponseEntity<Resource> downloadStatusRequestFile(@PathVariable Long requestId) {
+        MemberDto loginMember = MemberContext.get();
+        return studentService.getStatusRequestFile(requestId, loginMember.memberCode());
     }
 }

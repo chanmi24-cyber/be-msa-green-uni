@@ -41,11 +41,6 @@ public class EvaluationService {
         return evaluationMapper.findProfessorEvalList(req);
     }
 
-    // 평가 기간 조회 (공통)
-    public EvalPeriodRes getEvalPeriod(EvalPeriodReq req) {
-        return evaluationMapper.findEvalPeriod(req);
-    }
-
     // 교수 - 평가 상세
     public ProEvalDetailRes getProfessorEvalDetail(MemberDto memberDto, Long lectureId) {
         ProEvalDetailRes res = evaluationMapper.findProEvalDetail(memberDto.memberCode(), lectureId);
@@ -66,31 +61,44 @@ public class EvaluationService {
 
     // 학생 - 평가 등록
     @Transactional
-    public void createEvaluation(MemberDto memberDto, EvalCreateReq req) {
+    public void createEvaluation(MemberDto memberDto, Long lectureId, EvalCreateReq req) {
         schedulePeriodValidator.checkLectureEvaluation();
 
         // 중복 평가 방지
         if (evaluationRepository.existsByCourse_StudentCodeAndLecture_LectureId(
-                memberDto.memberCode(), req.getLectureId())) {
+                memberDto.memberCode(), lectureId)) {
             throw new BusinessException(EvaluationErrorCode.EVALUATION_ALREADY_EXISTS);
         }
 
         // Lecture 조회
-        Lecture lecture = lectureRepository.findById(req.getLectureId())
+        Lecture lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 
         // Course 조회 (studentCode + lectureId로)
-        Course course = courseRepository.findByStudentCodeAndLecture_LectureId(
-                        memberDto.memberCode(), req.getLectureId())
+        Course course = courseRepository.findByStudentCodeAndLecture_LectureIdAndIsDelFalse(
+                        memberDto.memberCode(), lectureId)
                 .orElseThrow(() -> new BusinessException(EvaluationErrorCode.EVALUATION_NOT_FOUND));
 
         LectureEvaluation evaluation = LectureEvaluation.builder()
                 .lecture(course.getLecture())
                 .course(course)
+                .q1(req.getQ1())
+                .q2(req.getQ2())
+                .q3(req.getQ3())
+                .q4(req.getQ4())
+                .q5(req.getQ5())
                 .score(req.getScore())
                 .comment(req.getComment())
                 .createdAt(LocalDateTime.now())
                 .build();
         evaluationRepository.save(evaluation);
+    }
+
+    public List<Integer> getStudentEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findStudentEvalYears(memberDto.memberCode());
+    }
+
+    public List<Integer> getProfessorEvalYears(MemberDto memberDto) {
+        return evaluationMapper.findProfessorEvalYears(memberDto.memberCode());
     }
 }

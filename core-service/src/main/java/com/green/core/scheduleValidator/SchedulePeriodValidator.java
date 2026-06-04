@@ -3,9 +3,14 @@ package com.green.core.scheduleValidator;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.exception.BusinessException;
 import com.green.common.exception.SchedulePeriodErrorCode;
+import com.green.core.entity.cache.ScheduleCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import com.green.core.repository.ScheduleCacheRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -30,57 +35,82 @@ public class SchedulePeriodValidator {
 
     // 성적입력 기간 체크
     public void checkGradeInput() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.GRADE_INPUT)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_INPUT_PERIOD);
     }
 
     // 성적조회 기간 체크
     public void checkGradeView() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.GRADE_VIEW)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_VIEW_PERIOD);
     }
 
     // 성적이의신청 기간 체크
     public void checkGradeAppeal() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.GRADE_APPEAL)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_APPEAL_PERIOD);
     }
 
     // 강의평가 기간 체크
     public void checkLectureEvaluation() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.LECTURE_EVALUATION)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_LECTURE_EVALUATION_PERIOD);
     }
 
     // 등록금납부 기간 체크
     public void checkTuitionPayment() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.TUITION_PAYMENT)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_TUITION_PAYMENT_PERIOD);
     }
 
     // 강의개설신청 기간 체크
-    public void checkCourseOpen() {
-        boolean isActive = scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_OPEN)
-                .isPresent();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_COURSE_OPEN_PERIOD);
+    public void checkLectureRegistration() {
+        boolean isActive = !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.LECTURE_REGISTRATION)
+                .isEmpty();
+        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_LECTURE_REGISTRATION_PERIOD);
     }
 
     // 전과 신청 기간 체크
     public void checkMajorChange() {
-        boolean isActive = scheduleCacheRepository
+        boolean isActive = !scheduleCacheRepository
                 .findByTypeAndIsActiveTrue(EnumScheduleType.MAJOR_CHANGE)
-                .isPresent();
+                .isEmpty();
         if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_MAJOR_CHANGE_PERIOD);
+    }
+
+    // 수강신청 또는 수강정정 기간 여부 확인 (예외 없이 boolean 반환)
+    public boolean isCourseRegistrationOrModificationPeriod() {
+        boolean isRegistration = !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
+                .isEmpty();
+        boolean isModification = !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION)
+                .isEmpty();
+        return isRegistration || isModification;
+    }
+
+    // 수강신청 기간 여부만 확인 (예외 없이 boolean 반환)
+    public boolean isCourseRegistrationPeriod() {
+        return !scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_REGISTRATION)
+                .isEmpty();
+    }
+
+    // 수강정정 기간 시작일 반환 (활성 상태인 경우에만)
+    public Optional<LocalDateTime> getCourseModificationStartDate() {
+        List<ScheduleCache> list = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.COURSE_MODIFICATION);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0).getStartDate());
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
@@ -60,6 +61,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .getDefaultMessage();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ResultResponse<>(message, null));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body,
+            HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        if (ex instanceof MaxUploadSizeExceededException) {
+            log.warn("MaxUploadSizeExceededException: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+                    .body(new ResultResponse<>("파일 용량이 초과되었습니다. (최대 5MB)", null));
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 
     // 일반적인 모든 예외(Exception) 처리
@@ -152,5 +164,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ResultResponse<>(CommonErrorCode.DUPLICATE_ENTRY.getMessage(), null));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ResultResponse<String>> handleIllegalState(IllegalStateException ex) {
+        log.warn("IllegalStateException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ResultResponse<>(ex.getMessage(), null));
     }
 }

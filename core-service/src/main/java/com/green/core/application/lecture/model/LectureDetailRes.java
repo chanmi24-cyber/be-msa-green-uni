@@ -32,7 +32,13 @@ public class LectureDetailRes {
     private LocalDateTime endDate;
     private List<ScheduleRes> schedules;
     private String rejectionReason;
-    private LocalDateTime rejectionAt;// 반려사유 (REJECTED일 때만 값 있음)
+    private LocalDateTime rejectionAt;
+    private Long rejectorCode;
+    private String rejectorName;
+    private Long approverCode;
+    private String approverName;
+    private String cancelReason;
+    private LocalDateTime cancelAt;
 
     @Getter
     @NoArgsConstructor

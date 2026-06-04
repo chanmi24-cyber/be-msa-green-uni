@@ -7,7 +7,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface StudentCacheRepository extends JpaRepository<StudentCache, Long> {
+    Optional<StudentCache> findByMemberCode(Long memberCode);
+
     @Modifying
     @Query("UPDATE StudentCache s SET s.email = :email WHERE s.memberCode = :memberCode")
     void updateEmail(@Param("memberCode") Long memberCode, @Param("email") String email);
@@ -33,8 +38,18 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
                        @Param("isVeteran") Boolean isVeteran);
 
     // 상태 변경 시
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE StudentCache s SET s.status = :status WHERE s.memberCode = :memberCode")
-    void updateStatus(@Param("memberCode") Long memberCode,
-                      @Param("status") EnumStudentStatus status);
+    int updateStatus(@Param("memberCode") Long memberCode,
+                     @Param("status") EnumStudentStatus status);
+
+    // 학기 자동 갱신 시
+    @Modifying
+    @Query("UPDATE StudentCache s SET s.academicYear = :academicYear, s.semester = :semester WHERE s.memberCode = :memberCode")
+    void updateSemester(@Param("memberCode") Long memberCode,
+                        @Param("academicYear") Integer academicYear,
+                        @Param("semester") Integer semester);
+
+    List<StudentCache> findAllByStatus(EnumStudentStatus status);
+    List<StudentCache> findByNameContaining(String name);
 }
