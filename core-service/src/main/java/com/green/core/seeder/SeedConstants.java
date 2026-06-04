@@ -49,4 +49,8 @@ public final class SeedConstants {
 
     // PERF 학생 memberCode 시작값 (실제 데이터 충돌 방지)
     public static final long PERF_STUDENT_BASE = 99990000L;
+
+    // PERF 전용 학기 (실제 학기와 분리)
+    public static final int PERF_YEAR     = 9999;
+    public static final int PERF_SEMESTER = 9;
 }

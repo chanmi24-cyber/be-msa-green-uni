@@ -37,6 +37,11 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
                        @Param("isMultiChild") Boolean isMultiChild,
                        @Param("isVeteran") Boolean isVeteran);
 
+    // 매 학기 시작 시 전체 초기화 (누적 상태 방지)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE StudentCache s SET s.status = :status")
+    void resetAllToUnregistered(@Param("status") EnumStudentStatus status);
+
     // 상태 변경 시
     @Modifying(clearAutomatically = true)
     @Query("UPDATE StudentCache s SET s.status = :status WHERE s.memberCode = :memberCode")

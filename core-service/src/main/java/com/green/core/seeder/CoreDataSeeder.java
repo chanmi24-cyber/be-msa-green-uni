@@ -66,6 +66,7 @@ public class CoreDataSeeder implements CommandLineRunner {
     private final ScholarshipTypeRepository scholarshipTypeRepository;
     private final GradeAppealRepository gradeAppealRepository;
     private final ClassroomRepository classroomRepository;
+    private final EvaluationRepository evaluationRepository;
     private final SeederVersionRepository seederVersionRepository;
     private final EntityManager em;
     private final JdbcTemplate jdbcTemplate;
@@ -198,8 +199,11 @@ public class CoreDataSeeder implements CommandLineRunner {
             // 9. 출석 생성
             generateAttendances(approvedIds, sessionsByLecture, sem.year(), sem.semester(), sem.isPast());
 
-            // 10. [과거 학기만] 성적 계산
-            if (sem.isPast()) prevGpaMap = calculateAndUpdateGrades(approvedIds, sem.year(), sem.semester());
+            // 10. [과거 학기만] 성적 계산 + 강의 평가 (전체 완료)
+            if (sem.isPast()) {
+                prevGpaMap = calculateAndUpdateGrades(approvedIds, sem.year(), sem.semester());
+                generateLectureEvaluations(approvedIds, sem.year(), sem.semester());
+            }
 
             log.info("[CoreDataSeeder] {}학년도 {}학기 완료", sem.year(), sem.semester());
         }
@@ -482,13 +486,14 @@ public class CoreDataSeeder implements CommandLineRunner {
 
     // ══════════════════════════════════════════════════════════════════════════
     // 8. 납부 상태 → 학적 상태 업데이트
+    //    ⚠️ 매 학기 전체 UNREGISTERED 초기화 후 PAID 학생만 ENROLLED 승격
+    //       (이전 학기 상태 누적 방지)
     // ══════════════════════════════════════════════════════════════════════════
     private void updateStatusByTuition(int year, int semester) {
+        studentCacheRepository.resetAllToUnregistered(EnumStudentStatus.UNREGISTERED);
         tuitionRepository.findByYearAndSemesterAndStatus(year, semester, EnumTuitionStatus.PAID)
                 .forEach(t -> studentCacheRepository.updateStatus(t.getStudentCode(), EnumStudentStatus.ENROLLED));
-        tuitionRepository.findByYearAndSemesterAndStatus(year, semester, EnumTuitionStatus.UNPAID)
-                .forEach(t -> studentCacheRepository.updateStatus(t.getStudentCode(), EnumStudentStatus.UNREGISTERED));
-        log.info("[CoreDataSeeder] {}학년도 {}학기 학적 업데이트 완료", year, semester);
+        log.info("[CoreDataSeeder] {}학년도 {}학기 학적 업데이트 완료 (전체 초기화 후 ENROLLED 적용)", year, semester);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -740,7 +745,35 @@ public class CoreDataSeeder implements CommandLineRunner {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 14. 성적 이의신청 (과거 학기만, 학과별 3~5건)
+    // 14. 강의 평가 생성 (과거 학기 전체 완료)
+    //     course_id unique 제약 → 강의당 수강학생 1:1 생성
+    // ══════════════════════════════════════════════════════════════════════════
+    private void generateLectureEvaluations(List<Long> approvedIds, int year, int semester)
+            throws InterruptedException {
+        for (Long lectureId : approvedIds) {
+            List<Course> courses = courseRepository
+                    .findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(lectureId, year, semester);
+            for (Course course : courses) {
+                double q1 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+                double q2 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+                double q3 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+                double q4 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+                double q5 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+
+                LectureEvaluation eval = LectureEvaluation.builder()
+                        .lecture(em.getReference(Lecture.class, lectureId))
+                        .course(em.getReference(Course.class, course.getCourseId()))
+                        .build();
+                eval.submit(q1, q2, q3, q4, q5, "좋은 강의였습니다.");
+                evaluationRepository.save(eval);
+                batchFlush();
+            }
+        }
+        log.info("[CoreDataSeeder] {}학년도 {}학기 LectureEvaluation 생성 완료", year, semester);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 15. 성적 이의신청 (과거 학기만, 학과별 3~5건)
     //     ⚠️ 2026-1 완전 제외 / courseId PK 중복 방지
     // ══════════════════════════════════════════════════════════════════════════
     private void generateGradesAppeals() throws InterruptedException {
@@ -762,6 +795,8 @@ public class CoreDataSeeder implements CommandLineRunner {
                 int created = 0;
                 for (Lecture lec : lectures) {
                     if (created >= appealGoal) break;
+                    em.flush();
+                    em.clear();
                     for (Course c : courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                             lec.getLectureId(), sem.year(), sem.semester())) {
                         if (created >= appealGoal) break;
@@ -847,7 +882,7 @@ public class CoreDataSeeder implements CommandLineRunner {
             long lectureId = PERF_ID.incrementAndGet();
             int credit = (i % 3 == 0) ? 3 : 2;
             result.add(new long[]{lectureId, credit});
-            rows.add(new Object[]{lectureId, profCode, majorId, 2026, 1,
+            rows.add(new Object[]{lectureId, profCode, majorId, SeedConstants.PERF_YEAR, SeedConstants.PERF_SEMESTER,
                     "PERF강의" + i, credit, "MAJOR_ELECTIVE",
                     "참고도서", "목표", "주차계획", 1, 35, "APPROVED",
                     startDt, endDt, profCode, "관리자1", false, null, LocalDateTime.now()});
@@ -895,7 +930,7 @@ public class CoreDataSeeder implements CommandLineRunner {
                 long courseId  = PERF_ID.incrementAndGet();
 
                 result.add(new long[]{courseId, studentCode, lectureId, ld[1]});
-                courseRows.add(new Object[]{courseId, studentCode, lectureId, 2026, 1, false, null, now});
+                courseRows.add(new Object[]{courseId, studentCode, lectureId, SeedConstants.PERF_YEAR, SeedConstants.PERF_SEMESTER, false, null, now});
                 gradeRows.add(new Object[]{courseId, 0, 0, 0, 0, 0, null, now});
 
                 if (courseRows.size() == batch) {
