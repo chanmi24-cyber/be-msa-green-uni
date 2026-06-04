@@ -2,6 +2,7 @@ package com.green.academic.application.announcement;
 
 import com.green.academic.application.announcement.model.AnnoCreateReq;
 import com.green.academic.application.announcement.model.AnnoCreateRes;
+import com.green.academic.application.announcement.model.AnnoDetailRes;
 import com.green.academic.application.announcement.model.AnnoUpdateReq;
 import com.green.common.model.ResultResponse;
 import jakarta.validation.Valid;
@@ -15,6 +16,13 @@ import org.springframework.web.bind.annotation.*;
 public class AdminAnnouncementController {
 
     private final AnnouncementService announcementService;
+
+    // ANNO-00 공지사항 상세 조회 (관리자)
+    @GetMapping("/{annoId}")
+    public ResponseEntity<ResultResponse<AnnoDetailRes>> getDetail(@PathVariable Long annoId) {
+        return ResponseEntity.ok(new ResultResponse<>("공지사항 상세 조회 성공",
+                announcementService.getDetail(annoId)));
+    }
 
     // ANNO-01 공지사항 등록
     @PostMapping
