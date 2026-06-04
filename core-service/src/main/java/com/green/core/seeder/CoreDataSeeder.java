@@ -777,6 +777,7 @@ public class CoreDataSeeder implements CommandLineRunner {
     //     ⚠️ 2026-1 완전 제외 / courseId PK 중복 방지
     // ══════════════════════════════════════════════════════════════════════════
     private void generateGradesAppeals() throws InterruptedException {
+        em.clear();
         Set<Long> usedCourseIds = new HashSet<>();
 
         for (SemesterInfo sem : SEMESTERS) {
@@ -795,13 +796,14 @@ public class CoreDataSeeder implements CommandLineRunner {
                 int created = 0;
                 for (Lecture lec : lectures) {
                     if (created >= appealGoal) break;
-                    em.flush();
-                    em.clear();
                     for (Course c : courseRepository.findByLecture_LectureIdAndYearAndSemesterAndIsDelFalse(
                             lec.getLectureId(), sem.year(), sem.semester())) {
                         if (created >= appealGoal) break;
                         if (usedCourseIds.contains(c.getCourseId())) continue;
                         usedCourseIds.add(c.getCourseId());
+
+                        em.flush();
+                        em.clear();
 
                         boolean approved = RANDOM.nextBoolean();
                         gradeAppealRepository.save(GradesAppeal.builder()
@@ -888,7 +890,7 @@ public class CoreDataSeeder implements CommandLineRunner {
                     startDt, endDt, profCode, "관리자1", false, null, LocalDateTime.now()});
             if (rows.size() == batch) {
                 jdbcTemplate.batchUpdate(
-                    "INSERT INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
+                    "INSERT IGNORE INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
                     "credit,lecture_type,ref_books,goal,weekly_plan,academic_year,max_std,status," +
                     "start_date,end_date,approver_code,approver_name,is_del,deleted_at,created_at) " +
                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows);
@@ -897,7 +899,7 @@ public class CoreDataSeeder implements CommandLineRunner {
             }
         }
         if (!rows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
+            "INSERT IGNORE INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
             "credit,lecture_type,ref_books,goal,weekly_plan,academic_year,max_std,status," +
             "start_date,end_date,approver_code,approver_name,is_del,deleted_at,created_at) " +
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows);
@@ -935,10 +937,10 @@ public class CoreDataSeeder implements CommandLineRunner {
 
                 if (courseRows.size() == batch) {
                     jdbcTemplate.batchUpdate(
-                        "INSERT INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
+                        "INSERT IGNORE INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
                         "VALUES (?,?,?,?,?,?,?,?)", courseRows);
                     jdbcTemplate.batchUpdate(
-                        "INSERT INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
+                        "INSERT IGNORE INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
                         "VALUES (?,?,?,?,?,?,?,?)", gradeRows);
                     courseRows.clear();
                     gradeRows.clear();
@@ -948,10 +950,10 @@ public class CoreDataSeeder implements CommandLineRunner {
         }
         if (!courseRows.isEmpty()) {
             jdbcTemplate.batchUpdate(
-                "INSERT INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
+                "INSERT IGNORE INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
                 "VALUES (?,?,?,?,?,?,?,?)", courseRows);
             jdbcTemplate.batchUpdate(
-                "INSERT INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
+                "INSERT IGNORE INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
                 "VALUES (?,?,?,?,?,?,?,?)", gradeRows);
         }
         return result;
@@ -1005,7 +1007,7 @@ public class CoreDataSeeder implements CommandLineRunner {
                 attendRows.add(new Object[]{attendId, sessionId, courseId, studentCode, status, null, now});
                 if (attendRows.size() == batch) {
                     jdbcTemplate.batchUpdate(
-                        "INSERT INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
+                        "INSERT IGNORE INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
                         "VALUES (?,?,?,?,?,?,?)", attendRows);
                     attendRows.clear();
                     Thread.sleep(1);
@@ -1013,7 +1015,7 @@ public class CoreDataSeeder implements CommandLineRunner {
             }
         }
         if (!attendRows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
+            "INSERT IGNORE INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
             "VALUES (?,?,?,?,?,?,?)", attendRows);
     }
 
@@ -1046,6 +1048,8 @@ public class CoreDataSeeder implements CommandLineRunner {
             em.flush();
             em.clear();
             Thread.sleep(1);
+        } else if (flushCounter % 100 == 0) {
+            em.createNativeQuery("SELECT 1").getSingleResult();
         }
     }
 }
