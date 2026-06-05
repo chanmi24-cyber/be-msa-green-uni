@@ -13,6 +13,8 @@ import lombok.*;
 public class AdminLectureReq {
         private EnumApprovalStatus status;
         private String lectureName;
+        private Integer year;
+        private Integer semester;
         private Integer size;
         private Integer offset;
 }
