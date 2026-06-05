@@ -33,6 +33,8 @@ public class ScheduleConsumer {
                 && event.getType() != EnumScheduleType.SEMESTER_END) return;
         log.info("Schedule 이벤트 수신: {}", event);
 
+        scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
+
         ScheduleCache cache = ScheduleCache.builder()
                 .scheduleId(event.getScheduleId())
                 .type(event.getType())
