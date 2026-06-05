@@ -65,6 +65,8 @@
         <result property="lectureId"      column="lecture_id"/>
         <result property="lectureName"    column="lecture_name"/>
         <result property="proName"        column="pro_name"/>
+        <result property="year"           column="year"/>
+        <result property="semester"       column="semester"/>
         <result property="startDate"      column="start_date"/>
         <result property="endDate"        column="end_date"/>
         <result property="responseCount"  column="response_count"/>
@@ -85,6 +87,8 @@
             l.lecture_id,
             l.lecture_name,
             pc.name AS pro_name,
+            l.year,
+            l.semester,
             sc.start_date AS start_date,
             sc.end_date   AS end_date,
             COUNT(le.evaluation_id)                                           AS response_count,
@@ -127,6 +131,8 @@
             l.lecture_id,
             l.lecture_name,
             pc.name AS pro_name,
+            l.year,
+            l.semester,
             sc.start_date AS start_date,
             sc.end_date   AS end_date,
             (g.mid_score > 0 AND g.fin_score > 0 AND g.assignment_score > 0) AS has_grade,

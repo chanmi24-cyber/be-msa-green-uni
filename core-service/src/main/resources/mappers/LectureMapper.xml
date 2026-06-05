@@ -108,6 +108,7 @@
         FROM lecture
         WHERE status = 'APPROVED'
         AND is_del = false
+        AND year != 9999
         ORDER BY year DESC
     </select>
 
@@ -300,6 +301,8 @@
         FROM lecture l
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
         WHERE l.status = 'APPROVED'
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="year == null">AND l.year != 9999</if>
         <if test="(lectureName != null and lectureName != '') or (proName != null and proName != '')">
             AND (
             <if test="lectureName != null and lectureName != ''">
@@ -311,7 +314,6 @@
             )
         </if>
         <if test="majorId != null">AND l.major_id = #{majorId}</if>
-        <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{size} OFFSET #{offset}
@@ -328,6 +330,8 @@
         FROM lecture l
         LEFT JOIN professor_cache pc ON l.member_code = pc.member_code
         WHERE l.status = 'APPROVED'
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="year == null">AND l.year != 9999</if>
         <if test="(lectureName != null and lectureName != '') or (proName != null and proName != '')">
             AND (
             <if test="lectureName != null and lectureName != ''">
@@ -339,7 +343,6 @@
             )
         </if>
         <if test="majorId != null">AND l.major_id = #{majorId}</if>
-        <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
 
