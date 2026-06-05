@@ -644,7 +644,8 @@ public class AdminService {
         EnumStudentStatus oldStatus = student.getStatus();
         EnumStudentStatus newStatus = req.getStatus();
 
-        if (oldStatus == EnumStudentStatus.EXPULSION || oldStatus == EnumStudentStatus.QUIT) {
+        if (oldStatus == EnumStudentStatus.EXPULSION || oldStatus == EnumStudentStatus.QUIT
+                || oldStatus == EnumStudentStatus.GRADUATION) {
             throw new BusinessException(MemberErrorCode.ALREADY_TERMINATED);
         }
         if (oldStatus == newStatus) {
