@@ -30,7 +30,7 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     @Query("SELECT s, a FROM AttendanceSession s " +
            "LEFT JOIN Attendance a ON a.attendsession = s AND a.studentCode = :studentCode " +
            "WHERE s.lecture.lectureId IN :lectureIds " +
-           "ORDER BY s.lecture.lectureId ASC, s.classDate ASC")
+           "ORDER BY s.lecture.lectureId ASC, s.classDate DESC")
     List<Object[]> findSessionsWithAttendance(
             @org.springframework.data.repository.query.Param("lectureIds") List<Long> lectureIds,
             @org.springframework.data.repository.query.Param("studentCode") Long studentCode);
