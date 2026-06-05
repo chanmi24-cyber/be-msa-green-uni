@@ -153,6 +153,8 @@
         <if test="lectureName != null and lectureName != ''">
             AND l.lecture_name LIKE CONCAT('%', #{lectureName}, '%')
         </if>
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
         ORDER BY l.lecture_id DESC
         LIMIT #{size} OFFSET #{offset}
         ) paged
@@ -172,6 +174,8 @@
         <if test="lectureName != null and lectureName != ''">
             AND lecture_name LIKE CONCAT('%', #{lectureName}, '%')
         </if>
+        <if test="year != null">AND year = #{year}</if>
+        <if test="semester != null">AND semester = #{semester}</if>
     </select>
 
     <!-- LEC-06 교수: 내 강의 목록 -->
