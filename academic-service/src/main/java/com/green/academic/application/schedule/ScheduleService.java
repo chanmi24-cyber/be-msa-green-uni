@@ -16,6 +16,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -56,7 +58,12 @@ public class ScheduleService {
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
         log.info("저장 완료 - scheduleId: {}", saved.getScheduleId());
         sendKafkaEvent(schedule);
-        messagingTemplate.convertAndSend("/topic/banner", "refresh");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/banner", "refresh");
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +113,12 @@ public class ScheduleService {
         schedule.updateActive(isActive);
 
         sendKafkaEvent(schedule);
-        messagingTemplate.convertAndSend("/topic/banner", "refresh");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/banner", "refresh");
+            }
+        });
 
         return ScheduleUpdateRes.builder()
                 .scheduleId(schedule.getScheduleId())
@@ -127,7 +139,12 @@ public class ScheduleService {
 
         sendKafkaDeleteEvent(schedule);
         scheduleRepository.delete(schedule);
-        messagingTemplate.convertAndSend("/topic/banner", "refresh");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend("/topic/banner", "refresh");
+            }
+        });
     }
 
     // ===== Kafka 발행 공통 메서드 =====
