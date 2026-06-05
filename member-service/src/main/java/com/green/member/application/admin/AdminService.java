@@ -48,7 +48,7 @@ import com.green.member.entity.member.AdminHistory;
 import com.green.member.entity.member.Member;
 import com.green.member.entity.professor.Professor;
 import com.green.member.entity.professor.ProfessorHistory;
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.EnumMajorRequestType;
 import com.green.member.enumcode.EnumProfessorPosition;
 import org.springframework.core.io.Resource;
@@ -480,6 +480,7 @@ public class AdminService {
         if (!before.isEmpty()) {
             memberHistoryService.save(memberCode, updaterCode, before);
         }
+
     }
 
     @Transactional
@@ -537,6 +538,7 @@ public class AdminService {
                     .build();
             outboxService.saveToOutbox(MemberTopic.AUTH_MEMBER, memberCode, authEvent);
         }
+
     }
 
     @Transactional
@@ -642,7 +644,8 @@ public class AdminService {
         EnumStudentStatus oldStatus = student.getStatus();
         EnumStudentStatus newStatus = req.getStatus();
 
-        if (oldStatus == EnumStudentStatus.EXPULSION || oldStatus == EnumStudentStatus.QUIT) {
+        if (oldStatus == EnumStudentStatus.EXPULSION || oldStatus == EnumStudentStatus.QUIT
+                || oldStatus == EnumStudentStatus.GRADUATION) {
             throw new BusinessException(MemberErrorCode.ALREADY_TERMINATED);
         }
         if (oldStatus == newStatus) {

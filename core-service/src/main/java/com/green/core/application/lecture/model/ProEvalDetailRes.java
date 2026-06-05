@@ -10,6 +10,8 @@ public class ProEvalDetailRes {
     private Long lectureId;
     private String lectureName;
     private String proName;
+    private Integer year;
+    private Integer semester;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Integer responseCount;

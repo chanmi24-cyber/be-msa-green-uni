@@ -24,4 +24,7 @@ public class LectureRejection extends CreatedAt {
 
     @Column(name = "updator_code", nullable = false)
     private Long updatorCode;
+
+    @Column(name = "updator_name", length = 30)
+    private String updatorName;
 }

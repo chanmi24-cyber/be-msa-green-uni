@@ -1,7 +1,7 @@
 package com.green.member.entity.member;
 
 import com.green.common.entity.CreatedAt;
-import com.green.member.enumcode.EnumAdminStatus;
+import com.green.common.enumcode.EnumAdminStatus;
 import com.green.member.enumcode.NullableAdminStatusConverter;
 import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;

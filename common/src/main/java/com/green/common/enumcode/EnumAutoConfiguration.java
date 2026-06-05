@@ -24,7 +24,8 @@ public class EnumAutoConfiguration {
         log.info("scanPackage: {}", scanPackage);
         // 스캔할 패키지 리스트 준비
         List<String> scanPackages = new ArrayList<>();
-        scanPackages.add(getBasePackage(applicationContext)); //메인 애플리케이션의 패키지 경로를 가져와서 스캔
+        scanPackages.add(getBasePackage(applicationContext)); // 메인 애플리케이션의 패키지 경로를 가져와서 스캔
+        scanPackages.add("com.green.common.enumcode");        // common 공용 enum 항상 포함
         if(scanPackage != null) {
             scanPackages.add(scanPackage);
         }

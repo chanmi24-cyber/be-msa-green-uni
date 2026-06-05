@@ -183,30 +183,37 @@ public class StudentService {
                     : null;
         }
 
-        // GPA 조회 (core-service 직접 호출)
-        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+        try {
+            // GPA 조회 (core-service 직접 호출)
+            GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
 
-        // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
-        MajorRequest request = MajorRequest.builder()
-                .student(student)
-                .type(req.getType())
-                .targetMajorId(req.getTargetMajorId())
-                .reason(req.getReason())
-                .file(savedFileName)
-                .originalFileName(originalFileName)
-                .gpa(gpaResult.getGpa())
-                .academicYear(student.getAcademicYear())
-                .semester(student.getSemester())
-                .currentMajorId(activeMajors.stream()
-                        .filter(m -> m.getType() == EnumMajorType.PRIMARY)
-                        .map(StudentMajor::getMajorId)
-                        .findFirst()
-                        .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND)))
-                .currentMinorId(activeMajors.stream()
-                        .filter(m -> m.getType() == EnumMajorType.MINOR)
-                        .map(StudentMajor::getMajorId).findFirst().orElse(null))
-                .build();
-        majorRequestRepository.save(request);
+            // major_request 저장 (신청 당시 학년,학기,전공 함께 기록)
+            MajorRequest request = MajorRequest.builder()
+                    .student(student)
+                    .type(req.getType())
+                    .targetMajorId(req.getTargetMajorId())
+                    .reason(req.getReason())
+                    .file(savedFileName)
+                    .originalFileName(originalFileName)
+                    .gpa(gpaResult.getGpa())
+                    .academicYear(student.getAcademicYear())
+                    .semester(student.getSemester())
+                    .currentMajorId(activeMajors.stream()
+                            .filter(m -> m.getType() == EnumMajorType.PRIMARY)
+                            .map(StudentMajor::getMajorId)
+                            .findFirst()
+                            .orElseThrow(() -> new BusinessException(MemberErrorCode.MAJOR_NOT_FOUND)))
+                    .currentMinorId(activeMajors.stream()
+                            .filter(m -> m.getType() == EnumMajorType.MINOR)
+                            .map(StudentMajor::getMajorId).findFirst().orElse(null))
+                    .build();
+            majorRequestRepository.save(request);
+        } catch (Exception e) {
+            if (savedFileName != null) {
+                fileService.delete("request/major/" + memberCode + "/" + savedFileName);
+            }
+            throw e;
+        }
     }
     // 내 전공 변경 신청 취소
     @Transactional
@@ -300,23 +307,30 @@ public class StudentService {
                     : null;
         }
 
-        // GPA/취득학점 조회 (core-service 직접 호출)
-        GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
+        try {
+            // GPA/취득학점 조회 (core-service 직접 호출)
+            GpaResult gpaResult = coreServiceClient.getGpa(memberCode);
 
-        StatusRequest request = StatusRequest.builder()
-                .student(student)
-                .type(req.getType())
-                .reason(req.getReason())
-                .file(savedFileName)
-                .originalFileName(originalFileName)
-                .academicYear(student.getAcademicYear())
-                .semester(student.getSemester())
-                .startDate(req.getStartDate())
-                .returnYear(req.getReturnYear())
-                .returnSemester(req.getReturnSemester())
-                .totalCredits(gpaResult.getTotalCredits())
-                .build();
-        statusRequestRepository.save(request);
+            StatusRequest request = StatusRequest.builder()
+                    .student(student)
+                    .type(req.getType())
+                    .reason(req.getReason())
+                    .file(savedFileName)
+                    .originalFileName(originalFileName)
+                    .academicYear(student.getAcademicYear())
+                    .semester(student.getSemester())
+                    .startDate(req.getStartDate())
+                    .returnYear(req.getReturnYear())
+                    .returnSemester(req.getReturnSemester())
+                    .totalCredits(gpaResult.getTotalCredits())
+                    .build();
+            statusRequestRepository.save(request);
+        } catch (Exception e) {
+            if (savedFileName != null) {
+                fileService.delete("request/status/" + memberCode + "/" + savedFileName);
+            }
+            throw e;
+        }
     }
     // 내 학적 변경 신청 취소
     @Transactional
@@ -351,12 +365,14 @@ public class StudentService {
         statusRequestRepository.findStudentStatusRequests(memberCode).forEach(r ->
                 merged.add(new StudentDashboardRequestRes(
                         r.getRequestId(), "STATUS", r.getType(), null,
+                        r.getReturnYear(), r.getReturnSemester(),
                         r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
                 ))
         );
         majorRequestRepository.findStudentMajorRequests(memberCode).forEach(r ->
                 merged.add(new StudentDashboardRequestRes(
                         r.getRequestId(), "MAJOR", r.getType(), r.getTargetMajorName(),
+                        null, null,
                         r.getStatus(), r.getAcademicYear(), r.getSemester(), r.getCreatedAt()
                 ))
         );
