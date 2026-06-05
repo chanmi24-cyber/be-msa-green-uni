@@ -762,6 +762,12 @@ public class AttendService {
     // ── IP가 CIDR 범위 내에 있는지 확인 ──────────────────────────────────────────
     private boolean isInNetwork(String clientIp, String cidr) {
         try {
+            // 0.0.0.0/0 (개발 환경) 모든 IP 허용
+            if ("0.0.0.0/0".equals(cidr)) return true;
+            // IPv6 매핑된 IPv4 처리 (예: ::ffff:192.168.0.1 → 192.168.0.1)
+            if (clientIp.startsWith("::ffff:")) {
+                clientIp = clientIp.substring(7);
+            }
             String[] parts  = cidr.split("/");
             int prefix      = Integer.parseInt(parts[1]);
             int networkInt  = ipToInt(parts[0]);

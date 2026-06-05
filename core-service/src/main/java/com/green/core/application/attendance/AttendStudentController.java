@@ -41,8 +41,14 @@ public class AttendStudentController {
     private String extractClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank()) {
-            return request.getRemoteAddr();
+            ip = request.getRemoteAddr();
+        } else {
+            ip = ip.split(",")[0].trim();
         }
-        return ip.split(",")[0].trim();
+        // IPv6 매핑된 IPv4 처리 (예: ::ffff:192.168.0.1 → 192.168.0.1)
+        if (ip.startsWith("::ffff:")) {
+            ip = ip.substring(7);
+        }
+        return ip;
     }
 }
