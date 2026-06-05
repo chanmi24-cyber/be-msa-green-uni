@@ -2,6 +2,7 @@ package com.green.auth.application.auth;
 
 import com.green.auth.application.auth.model.*;
 import com.green.auth.entity.AuthMember;
+import com.green.common.constants.ConstJwt;
 import com.green.common.exception.AuthErrorCode;
 import com.green.common.exception.EmailErrorCode;
 import com.green.common.exception.BusinessException;
@@ -19,6 +20,7 @@ public class AuthService {
     private final AuthMemberRepository authMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisService redisService;
+    private final ConstJwt constJwt;
 
     // 로그인
     @Transactional(readOnly = true)
@@ -130,6 +132,16 @@ public class AuthService {
         AuthMember authMember = authMemberRepository.findById(memberCode)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.MEMBER_NOT_FOUND));
         authMember.deactivate();
-        redisService.deleteAllByMemberCode(memberCode);
+    }
+
+    // 로그인 불가 처리 후 기존 세션(refresh token) 삭제 + AT 블랙리스트 등록
+    public void deleteSessionAfterDeactivate(long memberCode){
+        try {
+            redisService.deleteAllByMemberCode(memberCode);
+            // AT는 Redis에 없으므로 블랙리스트로 즉시 무효화 (AT 만료 시간과 동일하게 유지)
+            redisService.save("DEACTIVATED:" + memberCode, "true", constJwt.accessTokenCookieValiditySeconds());
+        } catch (Exception e) {
+            log.warn("Redis 세션 삭제 실패 (isActive=false는 유지됨): memberCode={}, error={}", memberCode, e.getMessage());
+        }
     }
 }
