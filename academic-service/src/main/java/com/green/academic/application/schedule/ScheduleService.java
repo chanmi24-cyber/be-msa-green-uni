@@ -13,6 +13,7 @@ import com.green.common.kafka.ScheduleEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void createSchedule(ScheduleCreateReq req) {
@@ -54,6 +56,7 @@ public class ScheduleService {
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
         log.info("저장 완료 - scheduleId: {}", saved.getScheduleId());
         sendKafkaEvent(schedule);
+        messagingTemplate.convertAndSend("/topic/banner", "refresh");
     }
 
     @Transactional(readOnly = true)
@@ -103,6 +106,7 @@ public class ScheduleService {
         schedule.updateActive(isActive);
 
         sendKafkaEvent(schedule);
+        messagingTemplate.convertAndSend("/topic/banner", "refresh");
 
         return ScheduleUpdateRes.builder()
                 .scheduleId(schedule.getScheduleId())
@@ -123,6 +127,7 @@ public class ScheduleService {
 
         sendKafkaDeleteEvent(schedule);
         scheduleRepository.delete(schedule);
+        messagingTemplate.convertAndSend("/topic/banner", "refresh");
     }
 
     // ===== Kafka 발행 공통 메서드 =====
@@ -170,8 +175,10 @@ public class ScheduleService {
 
     @Transactional(readOnly = true)
     public ScheduleBannerRes getActiveBannerSchedule() {
-        return scheduleRepository.findByIsActiveTrue().stream()
+        LocalDateTime now = LocalDateTime.now();
+        return scheduleRepository.findAll().stream()
                 .filter(s -> s.getType() != EnumScheduleType.ETC)
+                .filter(s -> !now.isBefore(s.getStartDate()) && !now.isAfter(s.getEndDate()))
                 .findFirst()
                 .map(s -> ScheduleBannerRes.builder()
                         .type(s.getType().getCode())
@@ -184,8 +191,10 @@ public class ScheduleService {
 
     @Transactional(readOnly = true)
     public List<ScheduleBannerRes> getActiveBannerSchedules() {
-        return scheduleRepository.findByIsActiveTrue().stream()
+        LocalDateTime now = LocalDateTime.now();
+        return scheduleRepository.findAll().stream()
                 .filter(s -> s.getType() != EnumScheduleType.ETC)
+                .filter(s -> !now.isBefore(s.getStartDate()) && !now.isAfter(s.getEndDate()))
                 .map(s -> ScheduleBannerRes.builder()
                         .type(s.getType().getCode())
                         .title(s.getTitle())
