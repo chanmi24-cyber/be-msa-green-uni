@@ -1,7 +1,5 @@
 package com.green.core.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.core.application.lecture.LectureAutoCancelService;
 import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.kafka.KafkaTopic;
@@ -24,12 +22,10 @@ public class ScheduleConsumer {
 
     private final ScheduleCacheRepository scheduleCacheRepository;
     private final LectureAutoCancelService lectureAutoCancelService;
-    private final ObjectMapper objectMapper;
 
     @Transactional
     @KafkaListener(topics = KafkaTopic.SCHEDULE, groupId = "core-service-group")
-    public void consume(String message) throws JsonProcessingException {
-        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+    public void consume(ScheduleEvent event){
         log.info("Schedule 이벤트 수신: {}", event);
 
         scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
@@ -77,8 +73,7 @@ public class ScheduleConsumer {
 
     @KafkaListener(topics = KafkaTopic.SCHEDULE_DELETE, groupId = "core-service-group")
     @Transactional
-    public void consumeDelete(String message) throws JsonProcessingException {
-        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+    public void consumeDelete(ScheduleEvent event){
         log.info("Schedule 삭제 이벤트 수신: {}", event);
         scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
     }
