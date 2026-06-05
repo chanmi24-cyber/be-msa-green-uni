@@ -12,6 +12,8 @@ public class StdEvalDetailRes {
     private Long lectureId;
     private String lectureName;
     private String proName;
+    private Integer year;
+    private Integer semester;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Boolean hasGrade;
