@@ -16,6 +16,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,9 @@ public class ScheduleService {
             throw new BusinessException(ScheduleErrorCode.INVALID_DATE_RANGE);
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        boolean isActive = !now.isBefore(req.getStartDate()) && !now.isAfter(req.getEndDate());
+
         Schedule schedule = Schedule.builder()
                 .memberCode(MemberContext.get().memberCode())
                 .title(req.getTitle())
@@ -44,6 +48,7 @@ public class ScheduleService {
                 .type(req.getType())
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
+                .isActive(isActive)
                 .build();
 
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
@@ -92,6 +97,10 @@ public class ScheduleService {
                 .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
         schedule.update(req.getTitle(), req.getSemester(), req.getStartDate(),
                 req.getEndDate(), req.getType());
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean isActive = !now.isBefore(schedule.getStartDate()) && !now.isAfter(schedule.getEndDate());
+        schedule.updateActive(isActive);
 
         sendKafkaEvent(schedule);
 
