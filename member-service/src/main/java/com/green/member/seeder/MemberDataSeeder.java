@@ -25,13 +25,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 @Component
@@ -49,8 +53,60 @@ public class MemberDataSeeder implements CommandLineRunner {
     private final MajorRequestRepository majorRequestRepository;
     private final SeederVersionRepository seederVersionRepository;
     private final EntityManager em;
+    private final JdbcTemplate jdbcTemplate;
 
     private int flushCounter = 0;
+    private int nameIdx = 0;
+    private final List<Object[]> memberCreatedAtRows = new ArrayList<>();
+
+    private static final Random RANDOM = new Random(42);
+
+    private static final String[] SURNAMES = {
+        "김","이","박","최","정","강","조","윤","장","임",
+        "한","오","서","신","권","황","안","송","홍","류",
+        "전","고","문","양","손","배","백","허","남","심",
+        "봉","소","엄","편","구","추","노","위","표","변"
+    };
+    private static final String[] DOUBLE_SURNAMES = {"남궁","황보","선우","사공","독고"};
+    private static final String[] GIVEN_FIRST = {
+        "민","지","서","현","예","수","진","은","하","유",
+        "도","준","재","성","태","동","경","승","나","정",
+        "호","우","연","혜","아","빈","기","희","혁","철"
+    };
+    private static final String[] GIVEN_SECOND = {
+        "준","서","현","원","수","진","아","은","우","영",
+        "호","민","기","나","희","연","혜","빈","람","래",
+        "혁","철","훈","석","윤","재","성","하","욱","린"
+    };
+
+    private static final EnumProfessorPosition[] POSITION_WEIGHTS = {
+        EnumProfessorPosition.PROFESSOR,           EnumProfessorPosition.PROFESSOR,
+        EnumProfessorPosition.PROFESSOR,           EnumProfessorPosition.PROFESSOR,
+        EnumProfessorPosition.PROFESSOR,           EnumProfessorPosition.PROFESSOR,
+        EnumProfessorPosition.ASSOCIATE_PROFESSOR, EnumProfessorPosition.ASSOCIATE_PROFESSOR,
+        EnumProfessorPosition.ASSOCIATE_PROFESSOR, EnumProfessorPosition.ASSOCIATE_PROFESSOR,
+        EnumProfessorPosition.ASSOCIATE_PROFESSOR,
+        EnumProfessorPosition.ASSISTANT_PROFESSOR, EnumProfessorPosition.ASSISTANT_PROFESSOR,
+        EnumProfessorPosition.ASSISTANT_PROFESSOR, EnumProfessorPosition.ASSISTANT_PROFESSOR,
+        EnumProfessorPosition.ASSISTANT_PROFESSOR,
+        EnumProfessorPosition.LECTURER, EnumProfessorPosition.LECTURER, EnumProfessorPosition.LECTURER,
+        EnumProfessorPosition.EMERITUS_PROFESSOR
+    };
+    private static final EnumProfessorDegree[] DEGREE_WEIGHTS = {
+        EnumProfessorDegree.DOCTOR, EnumProfessorDegree.DOCTOR, EnumProfessorDegree.DOCTOR,
+        EnumProfessorDegree.DOCTOR, EnumProfessorDegree.DOCTOR, EnumProfessorDegree.DOCTOR,
+        EnumProfessorDegree.DOCTOR,
+        EnumProfessorDegree.MASTER, EnumProfessorDegree.MASTER, EnumProfessorDegree.MASTER
+    };
+
+    private String randomKoreanName(int idx) {
+        String surname = (idx % 10 == 7)
+            ? DOUBLE_SURNAMES[(idx / 10) % DOUBLE_SURNAMES.length]
+            : SURNAMES[idx % SURNAMES.length];
+        String g1 = GIVEN_FIRST[(idx * 7 + 3) % GIVEN_FIRST.length];
+        String g2 = GIVEN_SECOND[(idx * 11 + 5) % GIVEN_SECOND.length];
+        return surname + g1 + g2;
+    }
 
     @Override
     @Transactional
@@ -66,6 +122,9 @@ public class MemberDataSeeder implements CommandLineRunner {
         generateAdmins();       // ② 관리자 5명 (SYSTEM_ADMIN_CODE 먼저 확보)
         generateProfessors();   // ③ 교수 120명 + ProfessorHistory
         generateStudents();     // ④ 학생 2850명 + StudentMajor + StudentHistory + 전과
+
+        em.flush();
+        applyMemberCreatedAt(); // ⑤ member.created_at 일괄 업데이트 (auditing 우회)
 
         seederVersionRepository.save(new SeederVersion("MEMBER_V1", LocalDateTime.now()));
         log.info("[MemberDataSeeder] MEMBER_V1 완료");
@@ -107,16 +166,17 @@ public class MemberDataSeeder implements CommandLineRunner {
             EnumAdminStatus status = (seq == 5) ? EnumAdminStatus.RETIREMENT : EnumAdminStatus.EMPLOYMENT;
             LocalDate exitDate = (seq == 5) ? LocalDate.of(2023, 8, 31) : null;
 
-            // em.merge() 반환값 사용 필수 — 원본 member는 비관리 상태
+            LocalDateTime adminCreatedAt = entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60));
             Member member = memberRepository.save(Member.builder()
                     .memberCode(memberCode)
                     .email("admin" + seq + "@green-uni.ac.kr")
-                    .name("관리자" + seq)
+                    .name(randomKoreanName(nameIdx++))
                     .birth(LocalDate.of(1975 + seq, 1, 1))
-                    .tel("010-9999-" + String.format("%04d", seq))
+                    .tel("01099990" + String.format("%03d", seq))
                     .entryDate(entryDate)
                     .exitDate(exitDate)
                     .build());
+            memberCreatedAtRows.add(new Object[]{Timestamp.valueOf(adminCreatedAt), memberCode});
 
             // @MapsId → memberCode는 member에서 자동 파생
             Admin admin = Admin.builder()
@@ -141,13 +201,6 @@ public class MemberDataSeeder implements CommandLineRunner {
         // ⚠️ DB count() 조회 금지 — per-year in-memory 카운터만 사용
         Map<Integer, Integer> seqByYear = new HashMap<>();
 
-        EnumProfessorDegree[] degrees = EnumProfessorDegree.values();
-        EnumProfessorPosition[] positions = {
-                EnumProfessorPosition.PROFESSOR,
-                EnumProfessorPosition.ASSOCIATE_PROFESSOR,
-                EnumProfessorPosition.ASSISTANT_PROFESSOR
-        };
-
         for (int i = 0; i < 120; i++) {
             int entryYear = 2020 + (i % 5);
             int seq = seqByYear.getOrDefault(entryYear, 0) + 1;
@@ -169,23 +222,26 @@ public class MemberDataSeeder implements CommandLineRunner {
             LocalDate exitDate = (status == EnumProfessorStatus.RETIREMENT)
                     ? LocalDate.of(2025, 2, 28) : null;
 
-            // em.merge() 반환값 사용 필수 — 원본 member는 비관리 상태
+            EnumProfessorPosition position = POSITION_WEIGHTS[RANDOM.nextInt(POSITION_WEIGHTS.length)];
+            EnumProfessorDegree degree = DEGREE_WEIGHTS[RANDOM.nextInt(DEGREE_WEIGHTS.length)];
+
+            LocalDateTime profCreatedAt = entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60));
             Member member = memberRepository.save(Member.builder()
                     .memberCode(memberCode)
                     .email("p" + memberCode + "@green-uni.ac.kr")
-                    .name("교수" + (i + 1))
+                    .name(randomKoreanName(nameIdx++))
                     .birth(LocalDate.of(1968 + (i % 20), (i % 12) + 1, 15))
-                    .tel("010-2000-" + String.format("%04d", i + 1))
+                    .tel("010200" + String.format("%05d", i + 1))
                     .entryDate(entryDate)
                     .exitDate(exitDate)
                     .build());
+            memberCreatedAtRows.add(new Object[]{Timestamp.valueOf(profCreatedAt), memberCode});
 
-            // @MapsId → memberCode는 member에서 자동 파생
             Professor professor = Professor.builder()
                     .member(member)
                     .majorId(majorId)
-                    .degree(degrees[i % degrees.length])
-                    .position(positions[i % positions.length])
+                    .degree(degree)
+                    .position(position)
                     .status(status)
                     .build();
             professorRepository.save(professor);
@@ -195,7 +251,7 @@ public class MemberDataSeeder implements CommandLineRunner {
                     .professor(professor)
                     .changeType("신규임용")
                     .newStatus(EnumProfessorStatus.EMPLOYMENT)
-                    .newPosition(positions[i % positions.length])
+                    .newPosition(position)
                     .startDate(entryDate)
                     .updaterCode(SeedConstants.SYSTEM_ADMIN_CODE)
                     .build());
@@ -230,15 +286,16 @@ public class MemberDataSeeder implements CommandLineRunner {
                     long memberCode = Long.parseLong(year + "1" + String.format("%03d", seq));
                     LocalDate entryDate = LocalDate.of(year, 3, 4);
 
-                    // em.merge() 반환값 사용 필수 — 원본 member는 비관리 상태
+                    LocalDateTime studentCreatedAt = entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60));
                     Member member = memberRepository.save(Member.builder()
                             .memberCode(memberCode)
                             .email("s" + memberCode + "@green-uni.ac.kr")
-                            .name("학생" + memberCode)
+                            .name(randomKoreanName(nameIdx++))
                             .birth(LocalDate.of(year - 19, (majorIdx % 12) + 1, Math.min(28, i + 1)))
-                            .tel("010-" + String.format("%04d", year % 10000) + "-" + String.format("%04d", seq))
+                            .tel("010" + String.format("%04d", year % 10000) + String.format("%04d", seq))
                             .entryDate(entryDate)
                             .build());
+                    memberCreatedAtRows.add(new Object[]{Timestamp.valueOf(studentCreatedAt), memberCode});
 
                     // @MapsId → memberCode는 member에서 자동 파생
                     // status default=UNREGISTERED, isTransfer default=false
@@ -281,15 +338,16 @@ public class MemberDataSeeder implements CommandLineRunner {
                     long memberCode = Long.parseLong(year + "1" + String.format("%03d", transferSeq));
                     LocalDate entryDate = LocalDate.of(year, 3, 4);
 
-                    // em.merge() 반환값 사용 필수 — 원본 member는 비관리 상태
+                    LocalDateTime transferCreatedAt = entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60));
                     Member member = memberRepository.save(Member.builder()
                             .memberCode(memberCode)
                             .email("t" + memberCode + "@green-uni.ac.kr")
-                            .name("편입" + memberCode)
+                            .name(randomKoreanName(nameIdx++))
                             .birth(LocalDate.of(year - 22, (majorIdx % 12) + 1, Math.min(28, t + 1)))
-                            .tel("010-8000-" + String.format("%04d", transferSeq))
+                            .tel("0108000" + String.format("%04d", transferSeq))
                             .entryDate(entryDate)
                             .build());
+                    memberCreatedAtRows.add(new Object[]{Timestamp.valueOf(transferCreatedAt), memberCode});
 
                     Student student = Student.builder()
                             .member(member)
@@ -373,6 +431,16 @@ public class MemberDataSeeder implements CommandLineRunner {
         em.flush();
         em.clear();
         log.info("[MemberDataSeeder] 전과 처리 25건 완료");
+    }
+
+    // @CreatedDate auditing은 @PrePersist에서 현재 시각으로 덮어쓰므로
+    // 모든 member 저장 완료 후 JDBC로 직접 UPDATE
+    private void applyMemberCreatedAt() {
+        jdbcTemplate.batchUpdate(
+            "UPDATE member SET created_at = ? WHERE member_code = ?",
+            memberCreatedAtRows
+        );
+        log.info("[MemberDataSeeder] member created_at 갱신 {}건", memberCreatedAtRows.size());
     }
 
     // ────────────────────────────────────────────────────────

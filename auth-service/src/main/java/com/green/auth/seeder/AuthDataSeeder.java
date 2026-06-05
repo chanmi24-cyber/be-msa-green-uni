@@ -10,10 +10,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import jakarta.persistence.EntityManager;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 @Component
@@ -24,8 +31,11 @@ public class AuthDataSeeder implements CommandLineRunner {
     private final SeederVersionRepository seederVersionRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager em;
+    private final JdbcTemplate jdbcTemplate;
 
+    private static final Random RANDOM = new Random(42);
     private int flushCounter = 0;
+    private final List<Object[]> authCreatedAtRows = new ArrayList<>();
 
     @Override
     @Transactional
@@ -44,6 +54,13 @@ public class AuthDataSeeder implements CommandLineRunner {
         generateProfessorAuth(encodedPw);  // ② 교수 120명
         generateStudentAuth(encodedPw);    // ③ 학생 2850명
 
+        em.flush();
+        jdbcTemplate.batchUpdate(
+            "UPDATE auth_member SET created_at = ? WHERE member_code = ?",
+            authCreatedAtRows
+        );
+        log.info("[AuthDataSeeder] auth_member created_at 갱신 {}건", authCreatedAtRows.size());
+
         seederVersionRepository.save(new SeederVersion("AUTH_V1", LocalDateTime.now()));
         log.info("[AuthDataSeeder] AUTH_V1 완료");
     }
@@ -54,17 +71,19 @@ public class AuthDataSeeder implements CommandLineRunner {
     //    MemberDataSeeder와 동일한 결정론적 규칙
     // ────────────────────────────────────────────────────────
     private void generateAdminAuth(String encodedPw) throws InterruptedException {
+        LocalDate entryDate = LocalDate.of(2020, 3, 2);
         for (int seq = 1; seq <= 5; seq++) {
             long memberCode = Long.parseLong("2020" + "3" + String.format("%03d", seq));
-            String email = "admin" + seq + "@green-uni.ac.kr";
-
             authMemberRepository.save(AuthMember.builder()
                     .memberCode(memberCode)
                     .password(encodedPw)
                     .role(EnumMemberRole.ADMIN)
-                    .email(email)
+                    .email("admin" + seq + "@green-uni.ac.kr")
                     .build());
-
+            authCreatedAtRows.add(new Object[]{
+                Timestamp.valueOf(entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60))),
+                memberCode
+            });
             batchFlush();
         }
         log.info("[AuthDataSeeder] Admin 5명 생성");
@@ -87,15 +106,17 @@ public class AuthDataSeeder implements CommandLineRunner {
             seqByYear.put(entryYear, seq);
 
             long memberCode = Long.parseLong(entryYear + "2" + String.format("%03d", seq));
-            String email = "p" + memberCode + "@green-uni.ac.kr";
-
+            LocalDate entryDate = LocalDate.of(entryYear, 3, 2);
             authMemberRepository.save(AuthMember.builder()
                     .memberCode(memberCode)
                     .password(encodedPw)
                     .role(EnumMemberRole.PROFESSOR)
-                    .email(email)
+                    .email("p" + memberCode + "@green-uni.ac.kr")
                     .build());
-
+            authCreatedAtRows.add(new Object[]{
+                Timestamp.valueOf(entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60))),
+                memberCode
+            });
             batchFlush();
         }
         log.info("[AuthDataSeeder] Professor 120명 생성");
@@ -112,6 +133,8 @@ public class AuthDataSeeder implements CommandLineRunner {
 
         for (int year : entryYears) {
 
+            LocalDate entryDate = LocalDate.of(year, 3, 4);
+
             // ── 일반 학생 (seq 1 ~ 875) ──────────────────────────
             int seq = 1;
             for (int majorIdx = 0; majorIdx < SeedConstants.MAJOR_IDS.size(); majorIdx++) {
@@ -120,15 +143,16 @@ public class AuthDataSeeder implements CommandLineRunner {
                             "Student seq overflow: year=" + year + ", seq=" + seq);
 
                     long memberCode = Long.parseLong(year + "1" + String.format("%03d", seq));
-                    String email = "s" + memberCode + "@green-uni.ac.kr";
-
                     authMemberRepository.save(AuthMember.builder()
                             .memberCode(memberCode)
                             .password(encodedPw)
                             .role(EnumMemberRole.STUDENT)
-                            .email(email)
+                            .email("s" + memberCode + "@green-uni.ac.kr")
                             .build());
-
+                    authCreatedAtRows.add(new Object[]{
+                        Timestamp.valueOf(entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60))),
+                        memberCode
+                    });
                     seq++;
                     batchFlush();
                 }
@@ -142,15 +166,16 @@ public class AuthDataSeeder implements CommandLineRunner {
                             "Transfer seq overflow: year=" + year + ", seq=" + transferSeq);
 
                     long memberCode = Long.parseLong(year + "1" + String.format("%03d", transferSeq));
-                    String email = "t" + memberCode + "@green-uni.ac.kr";
-
                     authMemberRepository.save(AuthMember.builder()
                             .memberCode(memberCode)
                             .password(encodedPw)
                             .role(EnumMemberRole.STUDENT)
-                            .email(email)
+                            .email("t" + memberCode + "@green-uni.ac.kr")
                             .build());
-
+                    authCreatedAtRows.add(new Object[]{
+                        Timestamp.valueOf(entryDate.atTime(9 + RANDOM.nextInt(4), RANDOM.nextInt(60))),
+                        memberCode
+                    });
                     transferSeq++;
                     batchFlush();
                 }

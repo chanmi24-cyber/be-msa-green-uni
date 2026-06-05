@@ -41,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -106,9 +105,6 @@ public class CoreDataSeeder implements CommandLineRunner {
     private Map<Long, Major>             majorById;
     private List<Long>                   activeProfessorCodes;
 
-    // PERF ID 생성기 (Thread-safe)
-    private static final AtomicLong PERF_ID = new AtomicLong(5_000_000_000_000L);
-
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
@@ -118,9 +114,7 @@ public class CoreDataSeeder implements CommandLineRunner {
             log.warn("[CoreDataSeeder] student_cache 비어있음 → member-service 먼저 실행 필요");
             return;
         }
-        boolean bizDone  = seederVersionRepository.existsById("CORE_BIZ_V1");
-        boolean perfDone = seederVersionRepository.existsById("CORE_PERF_V1");
-        if (bizDone && perfDone) {
+        if (seederVersionRepository.existsById("CORE_BIZ_V1")) {
             log.info("[CoreDataSeeder] 이미 완료됨, 건너뜀");
             return;
         }
@@ -128,18 +122,10 @@ public class CoreDataSeeder implements CommandLineRunner {
         flushCounter = 0;
         loadMasterData();
 
-        if (!bizDone) {
-            log.info("[CoreDataSeeder] CORE_BIZ_V1 시작...");
-            runBusinessData();
-            seederVersionRepository.save(new SeederVersion("CORE_BIZ_V1", LocalDateTime.now()));
-            log.info("[CoreDataSeeder] CORE_BIZ_V1 완료");
-        }
-        if (!perfDone) {
-            log.info("[CoreDataSeeder] CORE_PERF_V1 시작...");
-            runPerformanceData();
-            seederVersionRepository.save(new SeederVersion("CORE_PERF_V1", LocalDateTime.now()));
-            log.info("[CoreDataSeeder] CORE_PERF_V1 완료");
-        }
+        log.info("[CoreDataSeeder] CORE_BIZ_V1 시작...");
+        runBusinessData();
+        seederVersionRepository.save(new SeederVersion("CORE_BIZ_V1", LocalDateTime.now()));
+        log.info("[CoreDataSeeder] CORE_BIZ_V1 완료");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -175,13 +161,13 @@ public class CoreDataSeeder implements CommandLineRunner {
             if (sem.year() == 2025 && sem.semester() == 1) applyTransferMajorUpdate();
 
             // 2. 특기 장학금 (해당 학기)
-            generateSpecialScholarships(sem.year(), sem.semester());
+            generateSpecialScholarships(sem.year(), sem.semester(), sem.start());
 
             // 3. 성적 장학금 반영 (직전 학기 GPA 기반, 현재 학기에 지급)
-            if (!prevGpaMap.isEmpty()) generateGradeScholarships(prevGpaMap, sem.year(), sem.semester());
+            if (!prevGpaMap.isEmpty()) generateGradeScholarships(prevGpaMap, sem.year(), sem.semester(), sem.start());
 
             // 4. Tuition 생성
-            generateTuition(sem.year(), sem.semester());
+            generateTuition(sem.year(), sem.semester(), sem.start());
 
             // 5. 학적 상태 업데이트
             updateStatusByTuition(sem.year(), sem.semester());
@@ -194,7 +180,7 @@ public class CoreDataSeeder implements CommandLineRunner {
                     generateAttendanceSessions(approvedIds, sem.year(), sem.semester(), sem.start(), sem.isPast());
 
             // 8. 수강신청 생성 (ENROLLED 학생만)
-            generateCourses(approvedIds, sem.year(), sem.semester());
+            generateCourses(approvedIds, sem.year(), sem.semester(), sem.start(), sem.isPast());
 
             // 9. 출석 생성
             generateAttendances(approvedIds, sessionsByLecture, sem.year(), sem.semester(), sem.isPast());
@@ -202,13 +188,14 @@ public class CoreDataSeeder implements CommandLineRunner {
             // 10. [과거 학기만] 성적 계산 + 강의 평가 (전체 완료)
             if (sem.isPast()) {
                 prevGpaMap = calculateAndUpdateGrades(approvedIds, sem.year(), sem.semester());
-                generateLectureEvaluations(approvedIds, sem.year(), sem.semester());
+                generateLectureEvaluations(approvedIds, sem.year(), sem.semester(), sem.start());
             }
 
             log.info("[CoreDataSeeder] {}학년도 {}학기 완료", sem.year(), sem.semester());
         }
 
         generateGradesAppeals();
+        applyFinalStudentStatuses();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -367,33 +354,44 @@ public class CoreDataSeeder implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 5. 특기 장학금 (편입생/보훈/다자녀 — 해당 학기 기준)
     // ══════════════════════════════════════════════════════════════════════════
-    private void generateSpecialScholarships(int year, int semester) throws InterruptedException {
+    private void generateSpecialScholarships(int year, int semester, LocalDate semStart) throws InterruptedException {
         ScholarshipType tType = schTypeByName.get("편입학");
         ScholarshipType vType = schTypeByName.get("보훈");
         ScholarshipType mType = schTypeByName.get("다자녀");
+        List<Object[]> rows = new ArrayList<>();
 
         for (StudentCache sc : studentCacheRepository.findAll()) {
             if (Boolean.TRUE.equals(sc.getIsTransfer()) && tType != null) {
-                scholarshipRepository.save(Scholarship.builder()
+                LocalDateTime ca = semScholarshipAt(semStart);
+                Scholarship s = scholarshipRepository.save(Scholarship.builder()
                         .studentCode(sc.getMemberCode()).scholarshipType(tType)
                         .scholarshipAmount(tType.getScholarshipAmount())
                         .year(year).semester(semester).build());
+                rows.add(new Object[]{java.sql.Timestamp.valueOf(ca), s.getScholarshipId()});
                 batchFlush();
             }
             if (Boolean.TRUE.equals(sc.getIsVeteran()) && vType != null) {
-                scholarshipRepository.save(Scholarship.builder()
+                LocalDateTime ca = semScholarshipAt(semStart);
+                Scholarship s = scholarshipRepository.save(Scholarship.builder()
                         .studentCode(sc.getMemberCode()).scholarshipType(vType)
                         .scholarshipAmount(vType.getScholarshipAmount())
                         .year(year).semester(semester).build());
+                rows.add(new Object[]{java.sql.Timestamp.valueOf(ca), s.getScholarshipId()});
                 batchFlush();
             }
             if (Boolean.TRUE.equals(sc.getIsMultiChild()) && mType != null) {
-                scholarshipRepository.save(Scholarship.builder()
+                LocalDateTime ca = semScholarshipAt(semStart);
+                Scholarship s = scholarshipRepository.save(Scholarship.builder()
                         .studentCode(sc.getMemberCode()).scholarshipType(mType)
                         .scholarshipAmount(mType.getScholarshipAmount())
                         .year(year).semester(semester).build());
+                rows.add(new Object[]{java.sql.Timestamp.valueOf(ca), s.getScholarshipId()});
                 batchFlush();
             }
+        }
+        if (!rows.isEmpty()) {
+            em.flush(); em.clear();
+            jdbcTemplate.batchUpdate("UPDATE scholarship SET created_at = ? WHERE scholarship_id = ?", rows);
         }
         log.info("[CoreDataSeeder] {}학년도 {}학기 특기 장학금 생성", year, semester);
     }
@@ -402,12 +400,13 @@ public class CoreDataSeeder implements CommandLineRunner {
     // 6. 성적 장학금 (직전 학기 GPA 상위 5%, 현재 학기에 지급)
     //    동점자 전원 포함
     // ══════════════════════════════════════════════════════════════════════════
-    private void generateGradeScholarships(Map<Long, Double> gpaMap, int year, int semester)
+    private void generateGradeScholarships(Map<Long, Double> gpaMap, int year, int semester, LocalDate semStart)
             throws InterruptedException {
         ScholarshipType r1 = schTypeByName.get("성적1등");
         ScholarshipType r2 = schTypeByName.get("성적2등");
         ScholarshipType r3 = schTypeByName.get("성적3등");
         if (r1 == null) return;
+        List<Object[]> schRows = new ArrayList<>();
 
         // majorId+academicYear 그룹별 처리
         Map<Long, StudentCache> scMap = studentCacheRepository
@@ -432,13 +431,19 @@ public class CoreDataSeeder implements CommandLineRunner {
                 if (e.getValue() < threshold) break;
                 ScholarshipType type = (rank == 1) ? r1 : (rank == 2 && r2 != null) ? r2 :
                                        (rank == 3 && r3 != null) ? r3 : r1;
-                scholarshipRepository.save(Scholarship.builder()
+                LocalDateTime ca = semScholarshipAt(semStart);
+                Scholarship s = scholarshipRepository.save(Scholarship.builder()
                         .studentCode(e.getKey()).scholarshipType(type)
                         .scholarshipAmount(type.getScholarshipAmount())
                         .year(year).semester(semester).build());
+                schRows.add(new Object[]{java.sql.Timestamp.valueOf(ca), s.getScholarshipId()});
                 batchFlush();
                 rank++;
             }
+        }
+        if (!schRows.isEmpty()) {
+            em.flush(); em.clear();
+            jdbcTemplate.batchUpdate("UPDATE scholarship SET created_at = ? WHERE scholarship_id = ?", schRows);
         }
         log.info("[CoreDataSeeder] {}학년도 {}학기 성적 장학금 생성", year, semester);
     }
@@ -446,8 +451,9 @@ public class CoreDataSeeder implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 7. Tuition 생성 (scholarship discount 반영, 95% PAID / 5% UNPAID)
     // ══════════════════════════════════════════════════════════════════════════
-    private void generateTuition(int year, int semester) throws InterruptedException {
+    private void generateTuition(int year, int semester, LocalDate semStart) throws InterruptedException {
         List<StudentCache> students = studentCacheRepository.findAll();
+        List<Object[]> rows = new ArrayList<>();
 
         for (int i = 0; i < students.size(); i++) {
             StudentCache sc = students.get(i);
@@ -468,8 +474,9 @@ public class CoreDataSeeder implements CommandLineRunner {
             long discount = scholarships.stream().mapToLong(Scholarship::getScholarshipAmount).sum();
             long finalAmt = Math.max(0, baseAmount - discount);
             EnumTuitionStatus status = (i % 20 < 19) ? EnumTuitionStatus.PAID : EnumTuitionStatus.UNPAID;
+            LocalDateTime ca = semTuitionAt(semStart);
 
-            tuitionRepository.save(Tuition.builder()
+            Tuition tuition = tuitionRepository.save(Tuition.builder()
                     .studentCode(studentCode)
                     .year(year).semester(semester)
                     .tuitionPolicy(em.getReference(TuitionPolicy.class, policy.getPolicyId()))
@@ -479,8 +486,11 @@ public class CoreDataSeeder implements CommandLineRunner {
                     .majorId(majorId)
                     .status(status)
                     .build());
+            rows.add(new Object[]{java.sql.Timestamp.valueOf(ca), tuition.getTuitionId()});
             batchFlush();
         }
+        em.flush(); em.clear();
+        jdbcTemplate.batchUpdate("UPDATE tuition SET created_at = ? WHERE tuition_id = ?", rows);
         log.info("[CoreDataSeeder] {}학년도 {}학기 Tuition {} 건 생성", year, semester, students.size());
     }
 
@@ -498,24 +508,28 @@ public class CoreDataSeeder implements CommandLineRunner {
 
     // ══════════════════════════════════════════════════════════════════════════
     // 9. 강의 생성 (학기당 400개)
-    //    APPROVED 85% / REJECTED 10% / PENDING 5%
+    //    APPROVED 75% / PENDING 15% / REJECTED 10%
     // ══════════════════════════════════════════════════════════════════════════
     private List<Long> generateLectures(int year, int semester, LocalDate semStart)
             throws InterruptedException {
         List<Long> approvedIds = new ArrayList<>();
         EnumLectureType[] types = EnumLectureType.values();
+        List<Object[]> lectureRows = new ArrayList<>();
+        List<Object[]> rejectionRows = new ArrayList<>();
 
         for (int i = 0; i < 400; i++) {
             Long majorId  = SeedConstants.MAJOR_IDS.get(i % 25);
             Long profCode = activeProfessorCodes.get(RANDOM.nextInt(activeProfessorCodes.size()));
             int credit    = (i % 3 == 0) ? 3 : 2;
 
+            // APPROVED 75%(0~14) / PENDING 15%(15~17) / REJECTED 10%(18~19)
             int roll = i % 20;
             EnumApprovalStatus status =
-                    (roll < 17) ? EnumApprovalStatus.APPROVED :
-                    (roll < 19) ? EnumApprovalStatus.REJECTED :
-                                  EnumApprovalStatus.PENDING;
+                    (roll < 15) ? EnumApprovalStatus.APPROVED :
+                    (roll < 18) ? EnumApprovalStatus.PENDING :
+                                  EnumApprovalStatus.REJECTED;
 
+            LocalDateTime lecCa = semLectureAt(semStart);
             Lecture lecture = lectureRepository.save(Lecture.builder()
                     .memberCode(profCode)
                     .major(em.getReference(Major.class, majorId))
@@ -534,6 +548,7 @@ public class CoreDataSeeder implements CommandLineRunner {
                     .approverCode(status == EnumApprovalStatus.APPROVED ? SeedConstants.SYSTEM_ADMIN_CODE : null)
                     .approverName(status == EnumApprovalStatus.APPROVED ? "관리자1" : null)
                     .build());
+            lectureRows.add(new Object[]{java.sql.Timestamp.valueOf(lecCa), lecture.getLectureId()});
 
             if (status == EnumApprovalStatus.APPROVED) {
                 approvedIds.add(lecture.getLectureId());
@@ -547,15 +562,21 @@ public class CoreDataSeeder implements CommandLineRunner {
                             .build());
                 }
             } else if (status == EnumApprovalStatus.REJECTED) {
-                lectureRejectionRepository.save(LectureRejection.builder()
+                LocalDateTime rejCa = semRejectionAt(semStart);
+                LectureRejection rejection = lectureRejectionRepository.save(LectureRejection.builder()
                         .lecture(lecture)
                         .reason("강의계획서 미흡")
                         .updatorCode(SeedConstants.SYSTEM_ADMIN_CODE)
                         .updatorName("관리자1")
                         .build());
+                rejectionRows.add(new Object[]{java.sql.Timestamp.valueOf(rejCa), rejection.getRejectionId()});
             }
             batchFlush();
         }
+        em.flush(); em.clear();
+        jdbcTemplate.batchUpdate("UPDATE lecture SET created_at = ? WHERE lecture_id = ?", lectureRows);
+        if (!rejectionRows.isEmpty())
+            jdbcTemplate.batchUpdate("UPDATE lecture_rejection SET created_at = ? WHERE rejection_id = ?", rejectionRows);
         log.info("[CoreDataSeeder] {}학년도 {}학기 강의 400개 (APPROVED: {})", year, semester, approvedIds.size());
         return approvedIds;
     }
@@ -606,10 +627,13 @@ public class CoreDataSeeder implements CommandLineRunner {
     // 11. 수강신청 + Grade 생성 (ENROLLED 학생만, 최대 18학점, 5~7과목)
     //     ⚠️ Grade 별도 save 필수 (cascade 없음)
     // ══════════════════════════════════════════════════════════════════════════
-    private void generateCourses(List<Long> approvedIds, int year, int semester)
+    private void generateCourses(List<Long> approvedIds, int year, int semester,
+                                  LocalDate semStart, boolean isPast)
             throws InterruptedException {
         List<StudentCache> enrolled = studentCacheRepository.findAllByStatus(EnumStudentStatus.ENROLLED);
         Map<Long, Integer> enrollCount = new HashMap<>();
+        List<Object[]> courseRows = new ArrayList<>();
+        List<Object[]> gradeRows  = new ArrayList<>();
 
         for (StudentCache sc : enrolled) {
             long studentCode = sc.getMemberCode();
@@ -628,14 +652,18 @@ public class CoreDataSeeder implements CommandLineRunner {
                 int credit = (approvedIds.indexOf(lectureId) % 3 == 0) ? 3 : 2;
                 if (totalCredit + credit > 18) continue;
 
+                LocalDateTime courseAt = semCourseAt(semStart);
+                LocalDateTime gradeAt  = isPast ? semGradeAt(semStart) : courseAt;
                 Course course = courseRepository.save(Course.builder()
                         .studentCode(studentCode)
                         .lecture(em.getReference(Lecture.class, lectureId))
                         .year(year).semester(semester)
                         .build());
+                courseRows.add(new Object[]{java.sql.Timestamp.valueOf(courseAt), course.getCourseId()});
 
                 // ⚠️ Grade 별도 저장 (cascade 없음 — 누락 시 성적 전체 소실)
                 gradeRepository.save(Grade.builder().course(course).build());
+                gradeRows.add(new Object[]{java.sql.Timestamp.valueOf(gradeAt), course.getCourseId()});
 
                 assigned.add(lectureId);
                 enrollCount.merge(lectureId, 1, Integer::sum);
@@ -643,6 +671,9 @@ public class CoreDataSeeder implements CommandLineRunner {
                 batchFlush();
             }
         }
+        em.flush(); em.clear();
+        jdbcTemplate.batchUpdate("UPDATE course SET created_at = ? WHERE course_id = ?", courseRows);
+        jdbcTemplate.batchUpdate("UPDATE grade SET created_at = ? WHERE course_id = ?",  gradeRows);
         log.info("[CoreDataSeeder] {}학년도 {}학기 Course 생성 완료", year, semester);
     }
 
@@ -748,7 +779,7 @@ public class CoreDataSeeder implements CommandLineRunner {
     // 14. 강의 평가 생성 (과거 학기 전체 완료)
     //     course_id unique 제약 → 강의당 수강학생 1:1 생성
     // ══════════════════════════════════════════════════════════════════════════
-    private void generateLectureEvaluations(List<Long> approvedIds, int year, int semester)
+    private void generateLectureEvaluations(List<Long> approvedIds, int year, int semester, LocalDate semStart)
             throws InterruptedException {
         for (Long lectureId : approvedIds) {
             List<Course> courses = courseRepository
@@ -759,12 +790,16 @@ public class CoreDataSeeder implements CommandLineRunner {
                 double q3 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
                 double q4 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
                 double q5 = Math.round((3 + RANDOM.nextDouble() * 2) * 10.0) / 10.0;
+                double score = Math.round(((q1 + q2 + q3 + q4 + q5) / 5) * 10.0) / 10.0;
 
                 LectureEvaluation eval = LectureEvaluation.builder()
                         .lecture(em.getReference(Lecture.class, lectureId))
                         .course(em.getReference(Course.class, course.getCourseId()))
+                        .q1(q1).q2(q2).q3(q3).q4(q4).q5(q5)
+                        .score(score)
+                        .comment("좋은 강의였습니다.")
+                        .createdAt(semEvalAt(semStart))
                         .build();
-                eval.submit(q1, q2, q3, q4, q5, "좋은 강의였습니다.");
                 evaluationRepository.save(eval);
                 batchFlush();
             }
@@ -779,6 +814,7 @@ public class CoreDataSeeder implements CommandLineRunner {
     private void generateGradesAppeals() throws InterruptedException {
         em.clear();
         Set<Long> usedCourseIds = new HashSet<>();
+        List<Object[]> appealRows = new ArrayList<>();
 
         for (SemesterInfo sem : SEMESTERS) {
             if (!sem.isPast()) continue;
@@ -806,13 +842,15 @@ public class CoreDataSeeder implements CommandLineRunner {
                         em.clear();
 
                         boolean approved = RANDOM.nextBoolean();
-                        gradeAppealRepository.save(GradesAppeal.builder()
+                        LocalDateTime appealCa = semAppealAt(sem.start());
+                        GradesAppeal appeal = gradeAppealRepository.save(GradesAppeal.builder()
                                 .grade(em.getReference(Grade.class, c.getCourseId()))
                                 .memberCode(c.getStudentCode())
                                 .reason("성적 산정 오류 이의신청")
                                 .status(approved ? EnumAppealStatus.APPROVED : EnumAppealStatus.REJECTED)
                                 .rejectReason(approved ? null : "검토 결과 이상 없음")
                                 .build());
+                        appealRows.add(new Object[]{java.sql.Timestamp.valueOf(appealCa), appeal.getCourseId()});
 
                         if (approved) {
                             gradeRepository.updateScores(c.getCourseId(), 75, 75, 75, 100,
@@ -825,198 +863,78 @@ public class CoreDataSeeder implements CommandLineRunner {
                 }
             }
         }
+        if (!appealRows.isEmpty()) {
+            em.flush(); em.clear();
+            jdbcTemplate.batchUpdate("UPDATE grades_appeal SET created_at = ? WHERE course_id = ?", appealRows);
+        }
         log.info("[CoreDataSeeder] GradesAppeal 생성 완료");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 15. 성능 테스트 데이터 (JdbcTemplate 전용 — OOM 방지 필수)
-    //     ⚠️ JPA 엔티티 List 루프 금지
+    // 최종 학생 상태 분배
+    //    ENROLLED 75% / ABSENCE 10% / GRADUATION 8% / EXPULSION 4% / QUIT 3%
     // ══════════════════════════════════════════════════════════════════════════
-    private void runPerformanceData() throws InterruptedException {
-        log.info("[CoreDataSeeder] PERF 학생 캐시 {}명 INSERT...", SeedConstants.PERF_STUDENT_COUNT);
-        insertPerfStudentCaches();
+    private void applyFinalStudentStatuses() {
+        List<StudentCache> all = new ArrayList<>(studentCacheRepository.findAll());
+        Collections.shuffle(all, new Random(42));
+        int total = all.size();
+        int enrolledEnd   = (int)(total * 0.75);
+        int absenceEnd    = enrolledEnd   + (int)(total * 0.10);
+        int graduationEnd = absenceEnd    + (int)(total * 0.08);
+        int expulsionEnd  = graduationEnd + (int)(total * 0.04);
 
-        log.info("[CoreDataSeeder] PERF 강의 {}개 INSERT...", SeedConstants.PERF_LECTURE_COUNT);
-        List<long[]> lectures = insertPerfLectures();
-
-        log.info("[CoreDataSeeder] PERF 수강 {}건 INSERT...", SeedConstants.PERF_ENROLLMENT_COUNT);
-        List<long[]> courses = insertPerfCourses(lectures);
-
-        long attendCount = (long) SeedConstants.PERF_ENROLLMENT_COUNT * 13;
-        log.info("[CoreDataSeeder] PERF 출석 {}건 INSERT...", attendCount);
-        insertPerfAttendances(courses, lectures);
+        for (int i = 0; i < total; i++) {
+            EnumStudentStatus status;
+            if      (i < enrolledEnd)   status = EnumStudentStatus.ENROLLED;
+            else if (i < absenceEnd)    status = EnumStudentStatus.ABSENCE;
+            else if (i < graduationEnd) status = EnumStudentStatus.GRADUATION;
+            else if (i < expulsionEnd)  status = EnumStudentStatus.EXPULSION;
+            else                        status = EnumStudentStatus.QUIT;
+            studentCacheRepository.updateStatus(all.get(i).getMemberCode(), status);
+        }
+        log.info("[CoreDataSeeder] 최종 학생 상태: ENROLLED 75% / ABSENCE 10% / GRADUATION 8% / EXPULSION 4% / QUIT 3%");
     }
 
-    private void insertPerfStudentCaches() throws InterruptedException {
-        int batch = 500;
-        List<Object[]> rows = new ArrayList<>();
-        for (int i = 0; i < SeedConstants.PERF_STUDENT_COUNT; i++) {
-            long mc = SeedConstants.PERF_STUDENT_BASE + i;
-            Long majorId = SeedConstants.MAJOR_IDS.get(i % 25);
-            rows.add(new Object[]{mc, "PERF학생" + i, "perf" + i + "@perf.ac.kr",
-                    majorId, null, 1, 1, "ENROLLED", false, false, false});
-            if (rows.size() == batch) {
-                jdbcTemplate.batchUpdate(
-                    "INSERT IGNORE INTO student_cache " +
-                    "(member_code,name,email,major_id,minor_id,academic_year,semester," +
-                    "status,is_transfer,is_multi_child,is_veteran) VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows);
-                rows.clear();
-                Thread.sleep(1);
-            }
-        }
-        if (!rows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT IGNORE INTO student_cache " +
-            "(member_code,name,email,major_id,minor_id,academic_year,semester," +
-            "status,is_transfer,is_multi_child,is_veteran) VALUES (?,?,?,?,?,?,?,?,?,?,?)", rows);
+    // ── 학기 시점 헬퍼 ──────────────────────────────────────────────────────
+
+    private LocalDateTime semTuitionAt(LocalDate semStart) {
+        return semStart.minusMonths(1).plusDays(RANDOM.nextInt(7))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
     }
 
-    // lectureId, credit 반환
-    private List<long[]> insertPerfLectures() throws InterruptedException {
-        List<long[]> result = new ArrayList<>();
-        List<Object[]> rows = new ArrayList<>();
-        int batch = 500;
-        Long profCode = activeProfessorCodes.isEmpty() ? 20202001L : activeProfessorCodes.get(0);
-        Long majorId  = SeedConstants.MAJOR_IDS.get(0);
-        LocalDateTime startDt = LocalDateTime.of(2026, 3, 3,  9, 0);
-        LocalDateTime endDt   = LocalDateTime.of(2026, 7, 20, 18, 0);
-
-        for (int i = 0; i < SeedConstants.PERF_LECTURE_COUNT; i++) {
-            long lectureId = PERF_ID.incrementAndGet();
-            int credit = (i % 3 == 0) ? 3 : 2;
-            result.add(new long[]{lectureId, credit});
-            rows.add(new Object[]{lectureId, profCode, majorId, SeedConstants.PERF_YEAR, SeedConstants.PERF_SEMESTER,
-                    "PERF강의" + i, credit, "MAJOR_ELECTIVE",
-                    "참고도서", "목표", "주차계획", 1, 35, "APPROVED",
-                    startDt, endDt, profCode, "관리자1", false, null, LocalDateTime.now()});
-            if (rows.size() == batch) {
-                jdbcTemplate.batchUpdate(
-                    "INSERT IGNORE INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
-                    "credit,lecture_type,ref_books,goal,weekly_plan,academic_year,max_std,status," +
-                    "start_date,end_date,approver_code,approver_name,is_del,deleted_at,created_at) " +
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows);
-                rows.clear();
-                Thread.sleep(1);
-            }
-        }
-        if (!rows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT IGNORE INTO lecture (lecture_id,member_code,major_id,year,semester,lecture_name," +
-            "credit,lecture_type,ref_books,goal,weekly_plan,academic_year,max_std,status," +
-            "start_date,end_date,approver_code,approver_name,is_del,deleted_at,created_at) " +
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows);
-        return result;
+    private LocalDateTime semScholarshipAt(LocalDate semStart) {
+        return semStart.minusMonths(1).plusDays(RANDOM.nextInt(10))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
     }
 
-    // courseId, studentCode, lectureId, credit 반환
-    // ⚠️ unique(student_code, lecture_id, year, semester) 충돌 방지
-    //    student-first 이중 루프로 학생당 고정 10개 강의를 순차 배정
-    //    각 학생 내부에서 lectureIdx가 겹치지 않음을 보장
-    private List<long[]> insertPerfCourses(List<long[]> lectures) throws InterruptedException {
-        List<long[]> result = new ArrayList<>();
-        List<Object[]> courseRows = new ArrayList<>();
-        List<Object[]> gradeRows  = new ArrayList<>();
-        int batch = 500;
-        LocalDateTime now = LocalDateTime.now();
-
-        // 학생당 수강 강의 수 (100,000 / 10,000 = 10)
-        int coursesPerStudent = SeedConstants.PERF_ENROLLMENT_COUNT / SeedConstants.PERF_STUDENT_COUNT;
-
-        for (int si = 0; si < SeedConstants.PERF_STUDENT_COUNT; si++) {
-            long studentCode = SeedConstants.PERF_STUDENT_BASE + si;
-
-            for (int ci = 0; ci < coursesPerStudent; ci++) {
-                // 학생마다 시작 인덱스를 달리하여 (student×10 + ci) % 강의수
-                // → 같은 학생 내 10개 강의가 서로 다름, 학생 간 중복은 허용(다른 studentCode)
-                int lectureIdx = (si * coursesPerStudent + ci) % lectures.size();
-                long[] ld = lectures.get(lectureIdx);
-                long lectureId = ld[0];
-                long courseId  = PERF_ID.incrementAndGet();
-
-                result.add(new long[]{courseId, studentCode, lectureId, ld[1]});
-                courseRows.add(new Object[]{courseId, studentCode, lectureId, SeedConstants.PERF_YEAR, SeedConstants.PERF_SEMESTER, false, null, now});
-                gradeRows.add(new Object[]{courseId, 0, 0, 0, 0, 0, null, now});
-
-                if (courseRows.size() == batch) {
-                    jdbcTemplate.batchUpdate(
-                        "INSERT IGNORE INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
-                        "VALUES (?,?,?,?,?,?,?,?)", courseRows);
-                    jdbcTemplate.batchUpdate(
-                        "INSERT IGNORE INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
-                        "VALUES (?,?,?,?,?,?,?,?)", gradeRows);
-                    courseRows.clear();
-                    gradeRows.clear();
-                    Thread.sleep(1);
-                }
-            }
-        }
-        if (!courseRows.isEmpty()) {
-            jdbcTemplate.batchUpdate(
-                "INSERT IGNORE INTO course (course_id,student_code,lecture_id,year,semester,is_del,deleted_at,created_at) " +
-                "VALUES (?,?,?,?,?,?,?,?)", courseRows);
-            jdbcTemplate.batchUpdate(
-                "INSERT IGNORE INTO grade (course_id,mid_score,fin_score,assignment_score,attend_score,total_score,grade_letter,created_at) " +
-                "VALUES (?,?,?,?,?,?,?,?)", gradeRows);
-        }
-        return result;
+    private LocalDateTime semLectureAt(LocalDate semStart) {
+        return semStart.minusWeeks(2).minusDays(RANDOM.nextInt(7))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
     }
 
-    private void insertPerfAttendances(List<long[]> courses, List<long[]> lectures)
-            throws InterruptedException {
-        // 강의당 AttendanceSession 13개 생성
-        Map<Long, List<Long>> sessionsByLecture = new HashMap<>();
-        List<Object[]> sessionRows = new ArrayList<>();
-        int batch = 500;
-        LocalDate semStart = LocalDate.of(2026, 3, 3);
-        LocalDateTime now  = LocalDateTime.now();
+    private LocalDateTime semRejectionAt(LocalDate semStart) {
+        return semStart.minusWeeks(3).plusDays(RANDOM.nextInt(7))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
+    }
 
-        for (long[] ld : lectures) {
-            long lectureId = ld[0];
-            List<Long> sIds = new ArrayList<>();
-            for (int w = 0; w < 13; w++) {
-                long sessionId = PERF_ID.incrementAndGet();
-                sIds.add(sessionId);
-                LocalDate classDate = semStart.plusWeeks(w);
-                sessionRows.add(new Object[]{sessionId, lectureId, false, "NORMAL",
-                        classDate, classDate.atTime(9, 0), null, null});
-                if (sessionRows.size() == batch) {
-                    jdbcTemplate.batchUpdate(
-                        "INSERT IGNORE INTO attendance_session " +
-                        "(attendsession_id,lecture_id,is_active,session_type,class_date,started_at,ended_at,original_date) " +
-                        "VALUES (?,?,?,?,?,?,?,?)", sessionRows);
-                    sessionRows.clear();
-                    Thread.sleep(1);
-                }
-            }
-            sessionsByLecture.put(lectureId, sIds);
-        }
-        if (!sessionRows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT IGNORE INTO attendance_session " +
-            "(attendsession_id,lecture_id,is_active,session_type,class_date,started_at,ended_at,original_date) " +
-            "VALUES (?,?,?,?,?,?,?,?)", sessionRows);
+    private LocalDateTime semCourseAt(LocalDate semStart) {
+        return semStart.minusDays(7).plusDays(RANDOM.nextInt(5))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
+    }
 
-        // Attendance INSERT
-        String[] statusArr = {"ATTEND","ATTEND","ATTEND","ATTEND","ATTEND","ATTEND",
-                              "ATTEND","ATTEND","ATTEND","LATE","LATE","ABSENT"};
-        List<Object[]> attendRows = new ArrayList<>();
+    private LocalDateTime semGradeAt(LocalDate semStart) {
+        return semStart.plusWeeks(16).plusDays(RANDOM.nextInt(14))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
+    }
 
-        for (long[] cd : courses) {
-            long courseId = cd[0], studentCode = cd[1], lectureId = cd[2];
-            List<Long> sIds = sessionsByLecture.getOrDefault(lectureId, Collections.emptyList());
-            for (Long sessionId : sIds) {
-                long attendId = PERF_ID.incrementAndGet();
-                String status = statusArr[RANDOM.nextInt(statusArr.length)];
-                attendRows.add(new Object[]{attendId, sessionId, courseId, studentCode, status, null, now});
-                if (attendRows.size() == batch) {
-                    jdbcTemplate.batchUpdate(
-                        "INSERT IGNORE INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
-                        "VALUES (?,?,?,?,?,?,?)", attendRows);
-                    attendRows.clear();
-                    Thread.sleep(1);
-                }
-            }
-        }
-        if (!attendRows.isEmpty()) jdbcTemplate.batchUpdate(
-            "INSERT IGNORE INTO attendance (attend_id,attendsession_id,course_id,student_code,status,reason,created_at) " +
-            "VALUES (?,?,?,?,?,?,?)", attendRows);
+    private LocalDateTime semAppealAt(LocalDate semStart) {
+        return semStart.plusWeeks(17).plusDays(RANDOM.nextInt(10))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
+    }
+
+    private LocalDateTime semEvalAt(LocalDate semStart) {
+        return semStart.plusWeeks(14).plusDays(RANDOM.nextInt(14))
+                .atTime(9 + RANDOM.nextInt(8), RANDOM.nextInt(60));
     }
 
     // ── 유틸리티 ────────────────────────────────────────────────────────────────
