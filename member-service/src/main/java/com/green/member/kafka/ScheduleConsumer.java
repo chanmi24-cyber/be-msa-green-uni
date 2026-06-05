@@ -24,8 +24,7 @@ public class ScheduleConsumer {
 
     @Transactional
     @KafkaListener(topics = KafkaTopic.SCHEDULE, groupId = "member-service-group")
-    public void consume(String message) throws JsonProcessingException {
-        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+    public void consume(ScheduleEvent event){
 
         // MAJOR_CHANGE, SEMESTER_START, SEMESTER_END만 저장
         if (event.getType() != EnumScheduleType.MAJOR_CHANGE
@@ -50,8 +49,7 @@ public class ScheduleConsumer {
 
     @KafkaListener(topics = KafkaTopic.SCHEDULE_DELETE, groupId = "member-service-group")
     @Transactional
-    public void consumeDelete(String message) throws JsonProcessingException {
-        ScheduleEvent event = objectMapper.readValue(message, ScheduleEvent.class);
+    public void consumeDelete(ScheduleEvent event){
         log.info("Schedule 삭제 이벤트 수신: {}", event);
         scheduleCacheRepository.deleteByScheduleId(event.getScheduleId());
     }
