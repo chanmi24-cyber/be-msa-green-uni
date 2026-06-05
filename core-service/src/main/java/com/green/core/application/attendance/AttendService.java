@@ -248,7 +248,7 @@ public class AttendService {
         }
         return attendanceSessionRepository
                 .findByLecture_LectureIdAndClassDate(lectureId, LocalDate.now())
-                .map(s -> new AttendTodaySessionRes(s.getAttendsessionId(), s.getClassDate(), s.getIsActive()));
+                .map(s -> new AttendTodaySessionRes(s.getAttendsessionId(), s.getClassDate(), s.getIsActive(), s.getSessionType().name()));
     }
 
     // ── 활성 세션 조회 (페이지 재진입 시 기존 세션 복구용) ───────────────────────

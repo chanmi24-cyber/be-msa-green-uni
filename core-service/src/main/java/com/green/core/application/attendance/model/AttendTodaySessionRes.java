@@ -11,4 +11,5 @@ public class AttendTodaySessionRes {
     private Long sessionId;
     private LocalDate classDate;
     private Boolean isActive;
+    private String sessionType;
 }
