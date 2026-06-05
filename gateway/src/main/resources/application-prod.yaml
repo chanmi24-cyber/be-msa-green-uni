@@ -10,6 +10,7 @@ spring:
     import:
       - optional:classpath:application-common.yaml
       - optional:classpath:application-auth.yaml
+      - optional:classpath:application-redis-prod.yaml
       - optional:file:.env[.properties]
   cloud:
     gateway:
