@@ -4,4 +4,5 @@ import com.green.core.entity.lecture.LectureRejection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LectureRejectionRepository extends JpaRepository<LectureRejection, Long> {
+    boolean existsByLecture_LectureId(Long lectureId);
 }

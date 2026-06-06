@@ -296,6 +296,10 @@ public class LectureService {
             throw new BusinessException(LectureErrorCode.LECTURE_NOT_DELETABLE);
         }
 
+        if (lectureRejectionRepository.existsByLecture_LectureId(lectureId)) {
+            throw new BusinessException(LectureErrorCode.LECTURE_REJECTED_NOT_DELETABLE);
+        }
+
         //히스토리 저장용
         try {
             Map<String, Object> beforeMap = new HashMap<>();
