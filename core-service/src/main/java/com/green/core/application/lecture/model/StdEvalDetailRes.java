@@ -12,6 +12,8 @@ public class StdEvalDetailRes {
     private Long lectureId;
     private String lectureName;
     private String proName;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long memberCode;
     private Integer year;
     private Integer semester;
     private LocalDateTime startDate;

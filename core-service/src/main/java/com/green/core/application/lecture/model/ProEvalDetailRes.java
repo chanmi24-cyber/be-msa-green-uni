@@ -1,5 +1,7 @@
 package com.green.core.application.lecture.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,6 +12,8 @@ public class ProEvalDetailRes {
     private Long lectureId;
     private String lectureName;
     private String proName;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long memberCode;
     private Integer year;
     private Integer semester;
     private LocalDateTime startDate;

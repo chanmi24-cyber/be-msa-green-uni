@@ -65,6 +65,7 @@
         <result property="lectureId"      column="lecture_id"/>
         <result property="lectureName"    column="lecture_name"/>
         <result property="proName"        column="pro_name"/>
+        <result property="memberCode"      column="pro_code"/>
         <result property="year"           column="year"/>
         <result property="semester"       column="semester"/>
         <result property="startDate"      column="start_date"/>
@@ -86,7 +87,8 @@
         SELECT
             l.lecture_id,
             l.lecture_name,
-            pc.name AS pro_name,
+            pc.name        AS pro_name,
+            l.member_code  AS pro_code,
             l.year,
             l.semester,
             sc.start_date AS start_date,
@@ -112,7 +114,7 @@
                  LEFT JOIN course c ON c.lecture_id = l.lecture_id
             LEFT JOIN lecture_evaluation le ON le.course_id = c.course_id AND le.created_at IS NOT NULL
         WHERE l.lecture_id = #{lectureId}
-        GROUP BY l.lecture_id, l.lecture_name, pc.name, sc.start_date, sc.end_date
+        GROUP BY l.lecture_id, l.lecture_name, pc.name, l.member_code, sc.start_date, sc.end_date
     </select>
 
     <select id="findCommentsByLectureId" resultType="String">
@@ -130,7 +132,8 @@
         SELECT
             l.lecture_id,
             l.lecture_name,
-            pc.name AS pro_name,
+            pc.name       AS pro_name,
+            l.member_code AS member_code,
             l.year,
             l.semester,
             sc.start_date AS start_date,
