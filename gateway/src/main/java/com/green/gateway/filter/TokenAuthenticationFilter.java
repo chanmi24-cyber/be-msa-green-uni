@@ -48,6 +48,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     JwtMember jwtMember = userPrincipal.getJwtMember();
                     log.info("================== jwtMember: {}", jwtMember);
                     String memberRole = jwtMember.getLoginMemberRole();
+                    // externalTrafficPolicy:Local 적용 시 gateway가 수신한 실제 클라이언트 IP
+                    String realIp = request.getRemoteAddr();
 
                     // 원본 요청을 감싸서 새 요청 생성
                     // 각 서비스가 토큰을 직접 파싱할 필요 없이 헤더에서 유저 정보를 꺼낼 수 있도록 설정
@@ -63,6 +65,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                             if ("X-Device-Id".equals(name)) {
                                 return jwtMember.getDeviceId();
                             }
+                            if ("X-Real-IP".equals(name)) {
+                                return realIp;
+                            }
                             return super.getHeader(name);
                         }
 
@@ -72,6 +77,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                             if (!names.contains("X-Member-Code")) names.add("X-Member-Code");
                             if (!names.contains("X-Member-Role")) names.add("X-Member-Role");
                             if (!names.contains("X-Device-Id")) names.add("X-Device-Id");
+                            if (!names.contains("X-Real-IP")) names.add("X-Real-IP");
                             return Collections.enumeration(names);
                         }
 
@@ -85,6 +91,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                             }
                             if ("X-Device-Id".equals(name)) {
                                 return Collections.enumeration(Collections.singletonList(jwtMember.getDeviceId()));
+                            }
+                            if ("X-Real-IP".equals(name)) {
+                                return Collections.enumeration(Collections.singletonList(realIp));
                             }
                             return super.getHeaders(name);
                         }

@@ -37,9 +37,13 @@ public class AttendStudentController {
         return ResponseEntity.ok(new ResultResponse<>("내 출석 조회 성공", attendService.getMyAttendance(lectureId)));
     }
 
-    // X-Forwarded-For 헤더 우선 확인 (프록시/게이트웨이 통과 시 실제 IP 추출)
+    // X-Real-IP(gateway 직접 주입) → X-Forwarded-For → remoteAddr 순으로 실제 IP 추출
     private String extractClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
+        // gateway의 TokenAuthenticationFilter가 request.getRemoteAddr()로 직접 주입
+        String ip = request.getHeader("X-Real-IP");
+        if (ip == null || ip.isBlank()) {
+            ip = request.getHeader("X-Forwarded-For");
+        }
         if (ip == null || ip.isBlank()) {
             ip = request.getRemoteAddr();
         } else {
