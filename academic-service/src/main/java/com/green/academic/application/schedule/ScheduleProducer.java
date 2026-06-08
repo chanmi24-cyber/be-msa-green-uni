@@ -24,8 +24,8 @@ public class ScheduleProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    // @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
-     @Scheduled(fixedDelay = 300_000) // 5분마다 테스트
+     @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
+//     @Scheduled(fixedDelay = 300_000) // 5분마다 테스트
 //    @Scheduled(cron = "0 0 9 * * *") // 매일 9시
     @Transactional
     public void updateActiveStatus() {
@@ -46,11 +46,10 @@ public class ScheduleProducer {
             boolean shouldBeActive = !now.isBefore(schedule.getStartDate())
                     && !now.isAfter(schedule.getEndDate());
 
-            // 활성화 상태가 바뀐 것만 Kafka 발행
             if (schedule.getIsActive() != shouldBeActive) {
                 schedule.updateActive(shouldBeActive);
-                sendKafkaEvent(schedule, shouldBeActive);
             }
+            sendKafkaEvent(schedule, shouldBeActive);
         }
         log.info("학사일정 활성화 상태 업데이트 완료");
     }

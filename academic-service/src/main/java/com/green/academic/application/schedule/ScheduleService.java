@@ -57,10 +57,10 @@ public class ScheduleService {
 
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
         log.info("저장 완료 - scheduleId: {}", saved.getScheduleId());
-        sendKafkaEvent(schedule);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                sendKafkaEvent(saved);
                 messagingTemplate.convertAndSend("/topic/banner", "refresh");
             }
         });
@@ -83,17 +83,17 @@ public class ScheduleService {
 
     //학사일정에 따른 메뉴 활성화 로직
     @Transactional(readOnly = true)
-    public Map<EnumScheduleType, Boolean> getActiveSchedules() {
+    public Map<String, Boolean> getActiveSchedules() {
         List<Schedule> activeSchedules = scheduleRepository.findByIsActiveTrue();
 
-        Map<EnumScheduleType, Boolean> data = new LinkedHashMap<>();
+        Map<String, Boolean> data = new LinkedHashMap<>();
         for (EnumScheduleType type : EnumScheduleType.values()) {
             if (type == EnumScheduleType.ETC) continue;
-            data.put(type, false);
+            data.put(type.getCode(), false);
         }
         for (Schedule schedule : activeSchedules) {
             if (schedule.getType() == EnumScheduleType.ETC) continue;
-            data.put(schedule.getType(), true);
+            data.put(schedule.getType().getCode(), true);
         }
         return data;
     }
@@ -112,10 +112,10 @@ public class ScheduleService {
         boolean isActive = !now.isBefore(schedule.getStartDate()) && !now.isAfter(schedule.getEndDate());
         schedule.updateActive(isActive);
 
-        sendKafkaEvent(schedule);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                sendKafkaEvent(schedule);
                 messagingTemplate.convertAndSend("/topic/banner", "refresh");
             }
         });
@@ -137,11 +137,11 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new BusinessException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
 
-        sendKafkaDeleteEvent(schedule);
         scheduleRepository.delete(schedule);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                sendKafkaDeleteEvent(schedule);
                 messagingTemplate.convertAndSend("/topic/banner", "refresh");
             }
         });

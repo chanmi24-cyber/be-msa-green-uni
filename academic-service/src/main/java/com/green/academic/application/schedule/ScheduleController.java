@@ -3,7 +3,6 @@ package com.green.academic.application.schedule;
 import com.green.academic.application.schedule.model.ScheduleBannerRes;
 import com.green.academic.application.schedule.model.ScheduleListReq;
 import com.green.academic.application.schedule.model.ScheduleListRes;
-import com.green.common.enumcode.EnumScheduleType;
 import com.green.common.model.ResultResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +27,8 @@ public class ScheduleController {
 
     // CAL-03 학사일정 활성화 상태 조회
     @GetMapping("/active")
-    public ResponseEntity<ResultResponse<Map<EnumScheduleType, Boolean>>> getActiveSchedules() {
-        Map<EnumScheduleType, Boolean> result = scheduleService.getActiveSchedules();
+    public ResponseEntity<ResultResponse<Map<String, Boolean>>> getActiveSchedules() {
+        Map<String, Boolean> result = scheduleService.getActiveSchedules();
         return ResponseEntity.ok(new ResultResponse<>("학사일정 활성화 상태 조회 완료", result));
     }
 
