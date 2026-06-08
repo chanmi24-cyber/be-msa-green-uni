@@ -645,10 +645,17 @@ public class AttendService {
     public List<AttendStuListRes> getMyAttendance(Long lectureId) {
         Long studentCode = MemberContext.get().memberCode();
 
-        // 1. 수강 중인 강의 ID 목록 조회
-        List<Long> lectureIds = lectureId != null
-                ? List.of(lectureId)
-                : attendEnrollmentRepository.findLectureIdsByStudentCode(studentCode);
+        // 1. 수강등록 + 출석기록 양쪽에서 강의 ID 수집
+        //    수강등록 없이 더미/과거 Attendance 데이터만 있는 강의도 누락 없이 포함
+        List<Long> lectureIds;
+        if (lectureId != null) {
+            lectureIds = List.of(lectureId);
+        } else {
+            java.util.Set<Long> idSet = new java.util.HashSet<>(
+                    attendEnrollmentRepository.findLectureIdsByStudentCode(studentCode));
+            idSet.addAll(attendanceRepository.findDistinctLectureIdsByStudentCode(studentCode));
+            lectureIds = new java.util.ArrayList<>(idSet);
+        }
 
         if (lectureIds.isEmpty()) return List.of();
 
