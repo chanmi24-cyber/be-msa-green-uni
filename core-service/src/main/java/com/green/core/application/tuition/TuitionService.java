@@ -48,6 +48,7 @@ public class TuitionService {
     private final ScholarshipRepository scholarshipRepository;
     private final SchedulePeriodValidator schedulePeriodValidator;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final TuitionMailAsyncService tuitionMailAsyncService;
 
     // ❌ private final KafkaTemplate<String, Object> kafkaTemplate; // 더 이상 카프카를 거치지 않으므로 제거
 
@@ -264,12 +265,14 @@ public class TuitionService {
                 .build();
     }
 
-    // 🎯 3단계 핵심 수정: Kafka 발행 로직 제거 후 EmailSender 직접 동기 호출
-    @Transactional
+    // 🎯 비동기로 변경된 메일 발송 로직
+    @Transactional(readOnly = true) // 💡 대량 조회가 주 목적이므로 readOnly=true로 변경하여 성능 최적화
     public void sendReminderEmailToUnpaidStudents(TuitionReq.MailSendRequest request, Long adminCode) {
         List<Tuition> unpaidList = tuitionRepository.findByYearAndSemesterAndStatus(
                 request.getYear(), request.getSemester(), EnumTuitionStatus.UNPAID
         );
+
+        log.info("[메일 발송 시작] 총 {}명의 미납자에게 비동기 메일 발송을 시작합니다.", unpaidList.size());
 
         for (Tuition tuition : unpaidList) {
             String studentEmail = studentCacheRepository.findByMemberCode(tuition.getStudentCode())
@@ -279,25 +282,12 @@ public class TuitionService {
             String mailTitle = String.format("[그린대학교] %d년도 %d학기 등록금 미납 안내", tuition.getYear(), tuition.getSemester());
             String mailContent = createTuitionTemplate(tuition);
 
-            boolean isSuccess = true;
-            try {
-                // 🎯 Kafka로 토픽을 쏘는 대신, 주입받은 emailSender의 메서드를 즉시 동기식으로 호출합니다.
-                emailSender.sendRawHtmlMail(studentEmail, mailTitle, mailContent);
-                log.info("등록금 미납 메일 발송 성공 - 학생코드: {}, 이메일: {}", tuition.getStudentCode(), studentEmail);
-            } catch (Exception e) {
-                // SMTP 전송 중 거부되거나 예외 발생 시 캐치하여 로깅 처리 및 결과 반영
-                isSuccess = false;
-                log.error("등록금 미납 메일 발송 실패 - 학생코드: {}, 사유: {}", tuition.getStudentCode(), e.getMessage());
-            }
-
-            // 이제 구글 메일 발송 결과(isSuccess)가 테이블에 완벽하게 정합성을 이루며 적재됩니다.
-            tuitionMailLogRepository.save(TuitionMailLog.builder()
-                    .tuition(tuition)
-                    .recipientEmail(studentEmail)
-                    .isSuccess(isSuccess)
-                    .senderCode(adminCode)
-                    .build());
+            // 🎯 핵심: 주입받은 비동기 서비스의 메서드를 호출합니다.
+            // 이 호출은 0.001초만에 지나가며, 실제 작업은 별도 스레드 풀에서 돌아갑니다.
+            tuitionMailAsyncService.sendEmailAndLog(tuition, studentEmail, mailTitle, mailContent, adminCode);
         }
+
+        log.info("[메일 발송 요청 완료] 모든 메일 발송 요청이 큐에 등록되었습니다. (관리자 응답 즉시 반환)");
     }
 
     public List<TuitionRes.PolicyRes> getTuitionPolicyList() {
