@@ -1,7 +1,5 @@
 package com.green.academic.application.schedule;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.academic.entity.Schedule;
 import com.green.common.kafka.KafkaTopic;
 import com.green.common.kafka.ScheduleEvent;
@@ -21,8 +19,7 @@ import java.util.List;
 public class ScheduleProducer {
 
     private final ScheduleRepository scheduleRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
     @Scheduled(cron = "0 0 9 * * *") // 매일 9시
@@ -55,21 +52,15 @@ public class ScheduleProducer {
     }
 
     private void sendKafkaEvent(Schedule schedule, boolean isActive) {
-        try {
-            ScheduleEvent event = ScheduleEvent.builder()
-                    .scheduleId(schedule.getScheduleId())
-                    .type(schedule.getType())
-                    .year(schedule.getYear())
-                    .semester(schedule.getSemester())
-                    .startDate(schedule.getStartDate())
-                    .endDate(schedule.getEndDate())
-                    .isActive(isActive)
-                    .build();
-            String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(KafkaTopic.SCHEDULE,
-                    String.valueOf(schedule.getScheduleId()), eventJson);
-        } catch (JsonProcessingException e) {
-            log.error("Kafka 직렬화 실패: {}", e.getMessage());
-        }
+        ScheduleEvent event = ScheduleEvent.builder()
+                .scheduleId(schedule.getScheduleId())
+                .type(schedule.getType())
+                .year(schedule.getYear())
+                .semester(schedule.getSemester())
+                .startDate(schedule.getStartDate())
+                .endDate(schedule.getEndDate())
+                .isActive(isActive)
+                .build();
+        kafkaTemplate.send(KafkaTopic.SCHEDULE, String.valueOf(schedule.getScheduleId()), event);
     }
 }

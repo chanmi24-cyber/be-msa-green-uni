@@ -1,7 +1,5 @@
 package com.green.academic.application.schedule;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.green.academic.application.schedule.model.*;
 import com.green.academic.entity.Schedule;
 import com.green.academic.exception.ScheduleErrorCode;
@@ -30,8 +28,7 @@ import java.util.Map;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
@@ -150,44 +147,32 @@ public class ScheduleService {
     // ===== Kafka 발행 공통 메서드 =====
     private void sendKafkaEvent(Schedule schedule) {
         log.info("Kafka 발행 시작 - scheduleId: {}", schedule.getScheduleId());
-        try {
-            ScheduleEvent event = ScheduleEvent.builder()
-                    .scheduleId(schedule.getScheduleId())
-                    .type(schedule.getType())
-                    .year(schedule.getYear())
-                    .semester(schedule.getSemester())
-                    .startDate(schedule.getStartDate())
-                    .endDate(schedule.getEndDate())
-                    .isActive(schedule.getIsActive())
-                    .build();
-            String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(KafkaTopic.SCHEDULE,
-                    String.valueOf(schedule.getScheduleId()), eventJson);
-            log.info("Kafka 발행 완료"); // 추가!
-        } catch (JsonProcessingException e) {
-            log.error("Kafka 직렬화 실패: {}", e.getMessage());
-        }
+        ScheduleEvent event = ScheduleEvent.builder()
+                .scheduleId(schedule.getScheduleId())
+                .type(schedule.getType())
+                .year(schedule.getYear())
+                .semester(schedule.getSemester())
+                .startDate(schedule.getStartDate())
+                .endDate(schedule.getEndDate())
+                .isActive(schedule.getIsActive())
+                .build();
+        kafkaTemplate.send(KafkaTopic.SCHEDULE, String.valueOf(schedule.getScheduleId()), event);
+        log.info("Kafka 발행 완료");
     }
 
     private void sendKafkaDeleteEvent(Schedule schedule) {
         log.info("Kafka 발행 시작 - scheduleId: {}", schedule.getScheduleId());
-        try {
-            ScheduleEvent event = ScheduleEvent.builder()
-                    .scheduleId(schedule.getScheduleId())
-                    .type(schedule.getType())
-                    .year(schedule.getYear())
-                    .semester(schedule.getSemester())
-                    .startDate(schedule.getStartDate())
-                    .endDate(schedule.getEndDate())
-                    .isActive(false)  // 삭제니까 false
-                    .build();
-            String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(KafkaTopic.SCHEDULE_DELETE,
-                    String.valueOf(schedule.getScheduleId()), eventJson);
-            log.info("Kafka 발행 완료"); // 추가
-        } catch (JsonProcessingException e) {
-            log.error("Kafka 직렬화 실패: {}", e.getMessage());
-        }
+        ScheduleEvent event = ScheduleEvent.builder()
+                .scheduleId(schedule.getScheduleId())
+                .type(schedule.getType())
+                .year(schedule.getYear())
+                .semester(schedule.getSemester())
+                .startDate(schedule.getStartDate())
+                .endDate(schedule.getEndDate())
+                .isActive(false)
+                .build();
+        kafkaTemplate.send(KafkaTopic.SCHEDULE_DELETE, String.valueOf(schedule.getScheduleId()), event);
+        log.info("Kafka 발행 완료");
     }
 
     @Transactional(readOnly = true)
