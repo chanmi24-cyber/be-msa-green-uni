@@ -22,8 +22,7 @@ public enum CourseErrorCode implements ErrorCode {
     MAJOR_NOT_MATCHED("COURSE_008", "신청 대상 학과가 아닙니다.", HttpStatus.UNPROCESSABLE_ENTITY),
     ACADEMIC_YEAR_NOT_MATCHED("COURSE_009", "신청 대상 학년이 아닙니다.", HttpStatus.UNPROCESSABLE_ENTITY),
     CREDIT_LIMIT_EXCEEDED("COURSE_010", "최대 신청 학점(18학점)을 초과합니다.", HttpStatus.UNPROCESSABLE_ENTITY),
-    // forbidden
-    LIBERAL_ARTS_MAJOR_RESTRICTED("COURSE_011", "해당 교양선택 과목은 소속 학과 학생이 수강할 수 없습니다.", HttpStatus.FORBIDDEN);
+    LIBERAL_ARTS_MAJOR_RESTRICTED("COURSE_011", "해당 교양선택 과목은 소속 학과 학생이 수강할 수 없습니다.", HttpStatus.UNPROCESSABLE_ENTITY);
 
     private final String code;
     private final String message;
