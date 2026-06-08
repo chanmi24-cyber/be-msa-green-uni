@@ -27,6 +27,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    ms.member_code       AS memberCode,
                    ms.name              AS studentName,
                    ma.name              AS updaterName,
+                   mr.updater_code     AS updaterCode,
                    mc.name             AS targetMajorName,
                    mc_current.name     AS currentMajorName,
                    mc_minor.name       AS currentMinorName,
@@ -79,6 +80,7 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.original_file_name  AS originalFileName,
                    mr.reject_reason       AS rejectReason,
                    um.name                AS updaterName,
+                   mr.updater_code        AS updaterCode,
                    s.status               AS academicStatus,
                    mr.created_at          AS createdAt,
                    mr.updated_at          AS updatedAt

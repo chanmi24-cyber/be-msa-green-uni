@@ -21,6 +21,7 @@ public interface AdminMajorRequestDetailDto {
     String getOriginalFileName();
     String getRejectReason();
     String getUpdaterName();
+    Long getUpdaterCode();
     Integer getAcademicYear();
     Integer getSemester();
     LocalDateTime getCreatedAt();
