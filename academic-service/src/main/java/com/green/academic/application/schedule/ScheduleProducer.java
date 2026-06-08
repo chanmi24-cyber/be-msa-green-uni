@@ -25,7 +25,8 @@ public class ScheduleProducer {
     private final ObjectMapper objectMapper;
 
     // @Scheduled(fixedDelay = 30_000) // 30초마다 테스트
-    @Scheduled(cron = "0 0 9 * * *") // 매일 9시
+     @Scheduled(fixedDelay = 300_000) // 5분마다 테스트
+//    @Scheduled(cron = "0 0 9 * * *") // 매일 9시
     @Transactional
     public void updateActiveStatus() {
         syncActiveStatus();
