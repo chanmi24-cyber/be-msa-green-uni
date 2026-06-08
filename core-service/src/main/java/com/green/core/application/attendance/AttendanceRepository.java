@@ -43,4 +43,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
   List<Attendance> findByStudentCodeAndLectureIdWithDetails(
           @Param("studentCode") Long studentCode,
           @Param("lectureId") Long lectureId);
+
+  // [추가] 출석 기록 기반 강의 ID 목록 — 수강등록 없이 더미/과거 데이터만 있는 강의도 포함
+  @Query("SELECT DISTINCT a.attendsession.lecture.lectureId FROM Attendance a WHERE a.studentCode = :studentCode")
+  List<Long> findDistinctLectureIdsByStudentCode(@Param("studentCode") Long studentCode);
 }
