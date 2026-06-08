@@ -4,7 +4,7 @@ constants:
 
 school:
   network:
-    cidr: "0.0.0.0/0"
+    cidr: "192.168.0.0/24"
 
 mybatis:
   mapper-locations: classpath:mappers/**/*.xml

@@ -6,14 +6,12 @@ import com.green.core.application.attendance.model.AttendScanRes;
 import com.green.core.application.attendance.model.AttendStuListRes;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/student/attendances")
@@ -27,11 +25,6 @@ public class AttendStudentController {
             @RequestBody AttendScanReq req,
             HttpServletRequest request) {
         String clientIp = extractClientIp(request);
-        log.warn("[QR SCAN] remoteAddr={} | X-Forwarded-For={} | X-Real-IP={} | resolved={}",
-                request.getRemoteAddr(),
-                request.getHeader("X-Forwarded-For"),
-                request.getHeader("X-Real-IP"),
-                clientIp);
         AttendScanRes res = attendService.scan(req, clientIp);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ResultResponse<>("출석 처리되었습니다.", res));
     }
