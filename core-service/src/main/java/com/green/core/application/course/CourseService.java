@@ -223,7 +223,7 @@ public class CourseService {
         Long studentCode = Long.parseLong(request.getHeader("X-Member-Code"));
 
         // ② 학생 정보 조회
-        StudentCache student = studentCacheRepository.findById(studentCode)
+        StudentCache student = studentCacheRepository.findByMemberCode(studentCode)
                 .orElseThrow(() -> new BusinessException(CourseErrorCode.STUDENT_NOT_FOUND));
 
         // ③ 강의 조회
