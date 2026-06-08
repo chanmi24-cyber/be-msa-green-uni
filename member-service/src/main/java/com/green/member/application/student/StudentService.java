@@ -294,6 +294,16 @@ public class StudentService {
             throw new BusinessException(RequestErrorCode.INVALID_STATUS_REQUEST_TYPE);
         }
 
+        // 휴학 신청 시 복학 예정 연도/학기 필수 및 학기 값(1, 2) 검증
+        if (req.getType() == EnumStatusRequestType.ABSENCE) {
+            if (req.getReturnYear() == null || req.getReturnSemester() == null) {
+                throw new BusinessException(RequestErrorCode.INVALID_RETURN_PERIOD);
+            }
+            if (req.getReturnSemester() != 1 && req.getReturnSemester() != 2) {
+                throw new BusinessException(RequestErrorCode.INVALID_RETURN_PERIOD);
+            }
+        }
+
         // 파일 검증 및 디스크 저장
         String savedFileName = null;
         if (file != null) {
