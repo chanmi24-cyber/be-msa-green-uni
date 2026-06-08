@@ -8,9 +8,11 @@ import com.green.member.application.status.model.AdminStatusRequestListRes;
 import com.green.member.application.status.model.StudentStatusRequestDetailRes;
 import com.green.member.application.status.model.StudentStatusRequestListRes;
 import com.green.member.entity.student.StatusRequest;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,11 @@ import java.util.Optional;
 public interface StatusRequestRepository extends JpaRepository<StatusRequest, Long> {
     Optional<StatusRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
     boolean existsByStudent_MemberCodeAndStatus(Long memberCode, EnumApprovalStatus status);
+
+    // 관리자 처리(승인/반려) 시 동시 처리 방지를 위한 비관적 락 조회
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT sr FROM StatusRequest sr WHERE sr.requestId = :requestId")
+    Optional<StatusRequest> findByIdForUpdate(@Param("requestId") Long requestId);
 
     // 학생 본인 학적 변경 신청 목록 조회
     @Query(value = """
@@ -67,6 +74,7 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    ms.member_code       AS memberCode,
                    ms.name              AS studentName,
                    ma.name              AS updaterName,
+                   sr.updater_code     AS updaterCode,
                    sr.type             AS type,
                    sr.status           AS status,
                    sr.academic_year    AS academicYear,
@@ -110,6 +118,7 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    sr.original_file_name  AS originalFileName,
                    sr.reject_reason       AS rejectReason,
                    um.name                AS updaterName,
+                   sr.updater_code        AS updaterCode,
                    sr.start_date          AS startDate,
                    sr.created_at          AS createdAt,
                    sr.updated_at          AS updatedAt,

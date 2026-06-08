@@ -777,6 +777,7 @@ public class AdminService {
                 .originalFileName(detail.getOriginalFileName())
                 .rejectReason(detail.getRejectReason())
                 .updaterName(detail.getUpdaterName())
+                .updaterCode(detail.getUpdaterCode())
                 .academicYear(detail.getAcademicYear())
                 .semester(detail.getSemester())
                 .currentMajorName(detail.getCurrentMajorName())
@@ -794,7 +795,7 @@ public class AdminService {
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
-        MajorRequest request = majorRequestRepository.findById(requestId)
+        MajorRequest request = majorRequestRepository.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_MAJOR_REQUEST));
         // PENDING 상태만 처리 가능
         if (request.getStatus() != EnumApprovalStatus.PENDING) {
@@ -916,6 +917,7 @@ public class AdminService {
                 .originalFileName(detail.getOriginalFileName())
                 .rejectReason(detail.getRejectReason())
                 .updaterName(detail.getUpdaterName())
+                .updaterCode(detail.getUpdaterCode())
                 .academicYear(detail.getAcademicYear())
                 .returnYear(detail.getReturnYear())
                 .returnSemester(detail.getReturnSemester())
@@ -947,7 +949,7 @@ public class AdminService {
         if (req.getStatus() != EnumApprovalStatus.APPROVED && req.getStatus() != EnumApprovalStatus.REJECTED) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
-        StatusRequest request = statusRequestRepository.findById(requestId)
+        StatusRequest request = statusRequestRepository.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new BusinessException(RequestErrorCode.NOT_STATUS_REQUEST));
         // PENDING 상태만 처리 가능
         if (request.getStatus() != EnumApprovalStatus.PENDING) {

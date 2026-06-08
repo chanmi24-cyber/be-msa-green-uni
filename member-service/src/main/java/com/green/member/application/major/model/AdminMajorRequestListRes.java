@@ -10,6 +10,7 @@ public interface AdminMajorRequestListRes {
     String getCurrentMajorName();
     String getCurrentMinorName();
     String getUpdaterName();
+    Long getUpdaterCode();
     Integer getAcademicYear();
     Integer getSemester();
     String getType();
