@@ -8,9 +8,11 @@ import com.green.member.application.major.model.StudentMajorHistoryRes;
 import com.green.member.application.major.model.StudentMajorRequestDetailRes;
 import com.green.member.application.major.model.StudentMajorRequestListRes;
 import com.green.member.entity.student.MajorRequest;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,11 @@ import java.util.Optional;
 public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long> {
     Optional<MajorRequest> findByRequestIdAndStudent_MemberCode(Long requestId, Long memberCode);
     boolean existsByStudent_MemberCodeAndStatus(Long memberCode, EnumApprovalStatus status);
+
+    // 관리자 처리(승인/반려) 시 동시 처리 방지를 위한 비관적 락 조회
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT mr FROM MajorRequest mr WHERE mr.requestId = :requestId")
+    Optional<MajorRequest> findByIdForUpdate(@Param("requestId") Long requestId);
 
     // 관리자 전공 변경 신청 목록 조회 (status/search 필터 + 페이지네이션)
     @Query(value = """
