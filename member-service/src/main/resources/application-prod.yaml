@@ -39,7 +39,7 @@ spring:
     bootstrap-servers: kafka.infra.svc.cluster.local:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     consumer:
       group-id: member-service-group
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer

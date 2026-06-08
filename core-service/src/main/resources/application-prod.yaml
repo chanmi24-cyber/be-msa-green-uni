@@ -43,8 +43,6 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       group-id: core-service-group
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.green.common.model,com.green.common.kafka"
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 outbox:
   enabled: true

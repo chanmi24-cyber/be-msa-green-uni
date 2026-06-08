@@ -63,6 +63,10 @@ public class StudentConsumer {
                             event.getAcademicYear(),
                             event.getSemester()
                     );
+                } else if (UpdateType.MAJOR_TRANSFER == updateType) {
+                    studentCacheRepository.updateMajorId(event.getMemberCode(), event.getMajorId());
+                } else if (UpdateType.MAJOR_MINOR == updateType) {
+                    studentCacheRepository.updateMinorId(event.getMemberCode(), event.getMinorId());
                 }
             }
 
