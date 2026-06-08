@@ -70,8 +70,9 @@ spring:
     # [수신] Student, Professor, Calendar 캐시를 업데이트
     consumer:
       group-id: core-service-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 추가
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 변경
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
         spring.json.trusted.packages: "*"
 outbox:

@@ -44,9 +44,7 @@ spring:
     # [발행] student, professor 이벤트를 Outbox에 담아 보냄
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: true   # 추가
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     # [수신] Major 캐시 정보를 받기 위한 설정
     consumer:
       group-id: member-service-group

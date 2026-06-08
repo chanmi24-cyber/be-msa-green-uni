@@ -50,6 +50,16 @@ public interface StudentCacheRepository extends JpaRepository<StudentCache, Long
                         @Param("academicYear") Integer academicYear,
                         @Param("semester") Integer semester);
 
+    // 전과 승인 시
+    @Modifying
+    @Query("UPDATE StudentCache s SET s.majorId = :majorId WHERE s.memberCode = :memberCode")
+    void updateMajorId(@Param("memberCode") Long memberCode, @Param("majorId") Long majorId);
+
+    // 부전공 승인 시
+    @Modifying
+    @Query("UPDATE StudentCache s SET s.minorId = :minorId WHERE s.memberCode = :memberCode")
+    void updateMinorId(@Param("memberCode") Long memberCode, @Param("minorId") Long minorId);
+
     List<StudentCache> findAllByStatus(EnumStudentStatus status);
     List<StudentCache> findByNameContaining(String name);
 }
