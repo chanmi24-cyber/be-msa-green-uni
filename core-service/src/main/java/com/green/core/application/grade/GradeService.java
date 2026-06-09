@@ -3,6 +3,8 @@ package com.green.core.application.grade;
 import com.green.common.auth.MemberContext;
 import com.green.common.enumcode.EnumApprovalStatus;
 import com.green.common.exception.BusinessException;
+import com.green.common.exception.SchedulePeriodErrorCode;
+import com.green.core.entity.cache.ScheduleCache;
 import com.green.core.application.grade.model.GradeLectureListRes;
 import com.green.core.application.grade.model.GradeListRes;
 import com.green.core.application.grade.model.GradeAppealProDetailRes;
@@ -40,6 +42,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 // [추가] 성적 서비스 — 교수 성적 조회/입력 구현 (학생 성적 조회는 추후 추가)
@@ -247,6 +250,8 @@ public class GradeService {
                 .collect(Collectors.toMap(GradesAppeal::getCourseId,
                         a -> a.getStatus().getCode()));
 
+        Optional<ScheduleCache> activeAppeal = schedulePeriodValidator.findActiveGradeAppealSchedule();
+
         List<GradeStudentDetailRes.GradeItem> gradeList = grades.stream().map(g -> {
             var course  = g.getCourse();
             var lecture = course.getLecture();
@@ -257,6 +262,9 @@ public class GradeService {
             Integer totalCount = letter != null
                     ? gradeRepository.countByLectureId(lecture.getLectureId())
                     : null;
+            boolean canAppeal = activeAppeal.isPresent()
+                    && course.getYear().equals(activeAppeal.get().getYear())
+                    && course.getSemester().equals(activeAppeal.get().getSemester());
             return new GradeStudentDetailRes.GradeItem(
                     g.getCourseId(),
                     course.getYear(),
@@ -273,7 +281,8 @@ public class GradeService {
                     letter != null ? (letter == EnumGradeLetter.F ? 0.0 : g.getTotalScore() * 4.5 / 100.0) : null,
                     myRank,
                     totalCount,
-                    appealStatusMap.get(g.getCourseId())
+                    appealStatusMap.get(g.getCourseId()),
+                    canAppeal
             );
         }).toList();
 
@@ -324,16 +333,12 @@ public class GradeService {
             if (majorTotalCount == 0) { majorTotalCount = 1; majorRank = 1; }
         }
 
-        boolean isAppealPeriod;
-        try { schedulePeriodValidator.checkGradeAppeal(); isAppealPeriod = true; }
-        catch (BusinessException e) { isAppealPeriod = false; }
-
         return new GradeStudentDetailRes(
                 studentInfo,
                 gradeList,
                 new GradeStudentDetailRes.Summary(averageGpa, convertedScore, totalCredits,
                         averageScore, averageGrade, majorRank, majorTotalCount),
-                isAppealPeriod);
+                activeAppeal.isPresent());
     }
 
     // ── 학생 이의신청 내역 조회 (GET /student/grades/appeals/my) ─────────────────
@@ -403,7 +408,8 @@ public class GradeService {
     // ── API-GPA-07: 이의신청 제출 (POST /student/grades/{gradeId}/appeal) ──────
     @Transactional
     public void submitAppeal(Long gradeId, GradeAppealReq req) {
-        schedulePeriodValidator.checkGradeAppeal();
+        ScheduleCache appealSchedule = schedulePeriodValidator.findActiveGradeAppealSchedule()
+                .orElseThrow(() -> new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_APPEAL_PERIOD));
 
         Long studentCode = MemberContext.get().memberCode();
 
@@ -413,6 +419,12 @@ public class GradeService {
         // G021: 본인 성적 확인
         if (!grade.getCourse().getStudentCode().equals(studentCode)) {
             throw new BusinessException(GradeErrorCode.NOT_OWN_GRADE);
+        }
+
+        // G026: 현재 이의신청 기간의 연도/학기와 일치하는 성적만 허용
+        if (!grade.getCourse().getYear().equals(appealSchedule.getYear()) ||
+            !grade.getCourse().getSemester().equals(appealSchedule.getSemester())) {
+            throw new BusinessException(GradeErrorCode.APPEAL_NOT_CURRENT_SEMESTER);
         }
 
         GradesAppeal existing = gradeAppealRepository.findById(gradeId).orElse(null);

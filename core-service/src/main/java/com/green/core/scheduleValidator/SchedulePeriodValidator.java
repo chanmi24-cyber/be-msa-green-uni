@@ -51,10 +51,15 @@ public class SchedulePeriodValidator {
 
     // 성적이의신청 기간 체크
     public void checkGradeAppeal() {
-        boolean isActive = !scheduleCacheRepository
-                .findByTypeAndIsActiveTrue(EnumScheduleType.GRADE_APPEAL)
-                .isEmpty();
-        if (!isActive) throw new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_APPEAL_PERIOD);
+        if (findActiveGradeAppealSchedule().isEmpty())
+            throw new BusinessException(SchedulePeriodErrorCode.NOT_GRADE_APPEAL_PERIOD);
+    }
+
+    // 활성 이의신청 일정 반환 (year/semester 포함) — 기간 아닐 경우 empty
+    public Optional<ScheduleCache> findActiveGradeAppealSchedule() {
+        List<ScheduleCache> list = scheduleCacheRepository
+                .findByTypeAndIsActiveTrue(EnumScheduleType.GRADE_APPEAL);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
     // 강의평가 기간 체크

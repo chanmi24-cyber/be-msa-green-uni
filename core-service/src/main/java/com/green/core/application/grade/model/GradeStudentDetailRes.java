@@ -44,6 +44,7 @@ public class GradeStudentDetailRes {
         private Integer myRank;          // null = 성적 미입력
         private Integer totalCount;      // null = 성적 미입력
         private String  appealStatus;    // null (추후 구현)
+        private boolean canAppeal;       // 현재 학기 + 기간 활성일 때만 true
     }
 
     @Getter

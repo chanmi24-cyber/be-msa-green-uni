@@ -22,7 +22,8 @@ public enum GradeErrorCode implements ErrorCode {
     GRADE_NOT_FOUND("G022", "존재하지 않는 성적입니다.", HttpStatus.NOT_FOUND),
     APPEAL_NOT_FOUND("G023", "존재하지 않는 이의신청입니다.", HttpStatus.NOT_FOUND),
     APPEAL_NOT_REJECTED("G024", "반려된 이의신청만 재신청 가능합니다.", HttpStatus.BAD_REQUEST),
-    REJECT_REASON_REQUIRED("G025", "반려 시 사유를 입력해야 합니다.", HttpStatus.BAD_REQUEST);
+    REJECT_REASON_REQUIRED("G025", "반려 시 사유를 입력해야 합니다.", HttpStatus.BAD_REQUEST),
+    APPEAL_NOT_CURRENT_SEMESTER("G026", "현재 학기의 성적만 이의신청할 수 있습니다.", HttpStatus.FORBIDDEN);
 
     private final String code;
     private final String message;
