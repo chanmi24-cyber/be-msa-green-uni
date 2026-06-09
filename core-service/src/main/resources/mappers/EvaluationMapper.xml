@@ -55,7 +55,6 @@
         LIMIT 1
         )
         WHERE l.member_code = #{memberCode}
-        AND l.end_date &lt; NOW()
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
