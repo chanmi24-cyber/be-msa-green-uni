@@ -53,17 +53,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     String xff = request.getHeader("X-Forwarded-For");
                     String nginxRealIp = request.getHeader("X-Real-IP");
                     log.warn("[IP-DEBUG] remoteAddr={} | X-Forwarded-For={} | X-Real-IP(nginx)={}", request.getRemoteAddr(), xff, nginxRealIp);
-                    String realIp;
+                    String rawIp;
                     if (xff != null && !xff.isBlank()) {
-                        realIp = xff.split(",")[0].trim();
+                        rawIp = xff.split(",")[0].trim();
                     } else if (nginxRealIp != null && !nginxRealIp.isBlank()) {
-                        realIp = nginxRealIp;
+                        rawIp = nginxRealIp;
                     } else {
-                        realIp = request.getRemoteAddr();
+                        rawIp = request.getRemoteAddr();
                     }
-                    if (realIp.startsWith("::ffff:")) {
-                        realIp = realIp.substring(7);
-                    }
+                    // 익명 클래스에서 캡처하려면 effectively final이어야 하므로 별도 변수 사용
+                    final String realIp = rawIp.startsWith("::ffff:") ? rawIp.substring(7) : rawIp;
                     log.warn("[IP-DEBUG] → injecting X-Real-IP={}", realIp);
 
                     // 원본 요청을 감싸서 새 요청 생성
