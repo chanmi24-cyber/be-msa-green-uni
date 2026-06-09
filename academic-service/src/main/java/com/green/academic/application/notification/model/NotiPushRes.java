@@ -15,6 +15,7 @@ public class NotiPushRes {
     private String url;
     private Long refId;
     private LocalDateTime createdAt;
+    private Integer unreadCount;
 
     public static NotiPushRes from(Notification notification) {
         return NotiPushRes.builder()
@@ -24,6 +25,18 @@ public class NotiPushRes {
                 .url(notification.getUrl())
                 .refId(notification.getRefId())
                 .createdAt(notification.getCreatedAt())
+                .build();
+    }
+
+    public static NotiPushRes from(Notification notification, long unreadCount) {
+        return NotiPushRes.builder()
+                .notiId(notification.getNotiId())
+                .type(notification.getType())
+                .message(notification.getMessage())
+                .url(notification.getUrl())
+                .refId(notification.getRefId())
+                .createdAt(notification.getCreatedAt())
+                .unreadCount((int) unreadCount)
                 .build();
     }
 }
