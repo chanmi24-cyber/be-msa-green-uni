@@ -17,4 +17,5 @@ public interface StudentStatusRequestDetailRes {
     Integer getReturnYear();
     Integer getReturnSemester();
     LocalDateTime getCreatedAt();
+    LocalDateTime getUpdatedAt();
 }

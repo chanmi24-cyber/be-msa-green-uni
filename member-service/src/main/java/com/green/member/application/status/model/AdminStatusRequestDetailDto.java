@@ -16,7 +16,7 @@ public interface AdminStatusRequestDetailDto {
     String getOriginalFileName();
     String getRejectReason();
     String getUpdaterName();
-    Long getUpdaterCode();
+    String getUpdaterCode();
     Integer getAcademicYear();
     Integer getSemester();
     Integer getReturnYear();

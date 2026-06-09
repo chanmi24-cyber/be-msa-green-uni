@@ -59,7 +59,8 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    sr.start_date          AS startDate,
                    sr.return_year         AS returnYear,
                    sr.return_semester     AS returnSemester,
-                   sr.created_at          AS createdAt
+                   sr.created_at          AS createdAt,
+                   sr.updated_at          AS updatedAt
             FROM status_request sr
             WHERE sr.request_id  = :requestId
               AND sr.student_code = :memberCode
@@ -73,9 +74,9 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
             SELECT sr.request_id       AS requestId,
                    ms.member_code       AS memberCode,
                    ms.name              AS studentName,
-                   ma.name              AS updaterName,
-                   sr.updater_code     AS updaterCode,
-                   sr.type             AS type,
+                   ma.name                      AS updaterName,
+                   CAST(sr.updater_code AS CHAR) AS updaterCode,
+                   sr.type                      AS type,
                    sr.status           AS status,
                    sr.academic_year    AS academicYear,
                    sr.semester         AS semester,
@@ -117,9 +118,9 @@ public interface StatusRequestRepository extends JpaRepository<StatusRequest, Lo
                    sr.return_semester     AS returnSemester,
                    sr.original_file_name  AS originalFileName,
                    sr.reject_reason       AS rejectReason,
-                   um.name                AS updaterName,
-                   sr.updater_code        AS updaterCode,
-                   sr.start_date          AS startDate,
+                   um.name                       AS updaterName,
+                   CAST(sr.updater_code AS CHAR)  AS updaterCode,
+                   sr.start_date                  AS startDate,
                    sr.created_at          AS createdAt,
                    sr.updated_at          AS updatedAt,
                    sr.total_credits           AS totalCredits,

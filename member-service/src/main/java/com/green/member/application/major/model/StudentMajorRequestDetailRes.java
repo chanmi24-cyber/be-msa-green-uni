@@ -18,4 +18,5 @@ public interface StudentMajorRequestDetailRes {
     String getCurrentMajorName();
     String getCurrentMinorName();
     LocalDateTime getCreatedAt();
+    LocalDateTime getUpdatedAt();
 }

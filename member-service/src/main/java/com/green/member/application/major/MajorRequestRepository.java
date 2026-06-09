@@ -33,9 +33,9 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
             SELECT mr.request_id       AS requestId,
                    ms.member_code       AS memberCode,
                    ms.name              AS studentName,
-                   ma.name              AS updaterName,
-                   mr.updater_code     AS updaterCode,
-                   mc.name             AS targetMajorName,
+                   ma.name                      AS updaterName,
+                   CAST(mr.updater_code AS CHAR) AS updaterCode,
+                   mc.name                      AS targetMajorName,
                    mc_current.name     AS currentMajorName,
                    mc_minor.name       AS currentMinorName,
                    mr.type             AS type,
@@ -86,9 +86,9 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.semester            AS semester,
                    mr.original_file_name  AS originalFileName,
                    mr.reject_reason       AS rejectReason,
-                   um.name                AS updaterName,
-                   mr.updater_code        AS updaterCode,
-                   s.status               AS academicStatus,
+                   um.name                       AS updaterName,
+                   CAST(mr.updater_code AS CHAR)  AS updaterCode,
+                   s.status                       AS academicStatus,
                    mr.created_at          AS createdAt,
                    mr.updated_at          AS updatedAt
             FROM major_request mr
@@ -135,7 +135,8 @@ public interface MajorRequestRepository extends JpaRepository<MajorRequest, Long
                    mr.semester            AS semester,
                    mc_current.name        AS currentMajorName,
                    mc_minor.name          AS currentMinorName,
-                   mr.created_at          AS createdAt
+                   mr.created_at          AS createdAt,
+                   mr.updated_at          AS updatedAt
             FROM major_request mr
             JOIN major_cache mc_target  ON mc_target.major_id  = mr.target_major_id
             JOIN major_cache mc_current ON mc_current.major_id = mr.current_major_id

@@ -24,7 +24,7 @@ public class AdminStatusRequestDetailRes {
     String originalFileName;
     String rejectReason;
     String updaterName;
-    Long updaterCode;
+    String updaterCode;
     Integer academicYear;
     Integer semester;
     Integer returnYear;

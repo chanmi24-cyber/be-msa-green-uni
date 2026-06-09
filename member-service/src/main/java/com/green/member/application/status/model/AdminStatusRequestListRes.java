@@ -7,7 +7,7 @@ public interface AdminStatusRequestListRes {
     Long getMemberCode();
     String getStudentName();
     String getUpdaterName();
-    Long getUpdaterCode();
+    String getUpdaterCode();
     Integer getAcademicYear();
     Integer getSemester();
     String getType();
