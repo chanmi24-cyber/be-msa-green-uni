@@ -48,8 +48,18 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     JwtMember jwtMember = userPrincipal.getJwtMember();
                     log.info("================== jwtMember: {}", jwtMember);
                     String memberRole = jwtMember.getLoginMemberRole();
-                    // externalTrafficPolicy:Local 적용 시 gateway가 수신한 실제 클라이언트 IP
-                    String realIp = request.getRemoteAddr();
+                    // nginx 역방향 프록시가 X-Forwarded-For에 실제 클라이언트 IP를 설정
+                    // request.getRemoteAddr()는 nginx의 IP이므로 XFF를 우선 사용
+                    String xff = request.getHeader("X-Forwarded-For");
+                    String realIp;
+                    if (xff != null && !xff.isBlank()) {
+                        realIp = xff.split(",")[0].trim();
+                    } else {
+                        realIp = request.getRemoteAddr();
+                    }
+                    if (realIp.startsWith("::ffff:")) {
+                        realIp = realIp.substring(7);
+                    }
 
                     // 원본 요청을 감싸서 새 요청 생성
                     // 각 서비스가 토큰을 직접 파싱할 필요 없이 헤더에서 유저 정보를 꺼낼 수 있도록 설정
