@@ -44,18 +44,18 @@ public class NotificationConsumer {
     }
 
     private void pushToWebSocket(Notification notification) {
-        NotiPushRes res = NotiPushRes.from(notification);
-
         if (notification.getMemberCode() != null) {
-            // 개인 알림: /user/{memberCode}/queue/notifications
+            long unreadCount = notificationRepository.countByMemberCodeAndIsReadFalse(notification.getMemberCode());
+            NotiPushRes res = NotiPushRes.from(notification, unreadCount);
             messagingTemplate.convertAndSendToUser(
                     notification.getMemberCode().toString(),
                     "/queue/notifications",
                     res
             );
-            log.debug("WebSocket 개인 알림 push: memberCode={}", notification.getMemberCode());
+            log.debug("WebSocket 개인 알림 push: memberCode={}, unreadCount={}", notification.getMemberCode(), unreadCount);
         } else if (notification.getTargetRole() != null) {
-            // 역할 브로드캐스트: /topic/STUDENT 또는 /topic/PROFESSOR
+            // 역할 알림은 수신자마다 카운트가 다르므로 null로 전달 → 프론트에서 +1 처리 또는 재조회
+            NotiPushRes res = NotiPushRes.from(notification);
             messagingTemplate.convertAndSend(
                     "/topic/" + notification.getTargetRole(),
                     res
