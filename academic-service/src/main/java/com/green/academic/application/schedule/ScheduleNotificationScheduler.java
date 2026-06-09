@@ -4,12 +4,18 @@ import com.green.academic.entity.Schedule;
 import com.green.academic.kafka.AcademicNotificationProducer;
 import com.green.common.enumcode.EnumMemberRole;
 import com.green.common.enumcode.EnumScheduleType;
+import com.green.common.kafka.KafkaTopic;
+import com.green.common.kafka.ScheduleEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -19,21 +25,47 @@ public class ScheduleNotificationScheduler {
 
     private final ScheduleRepository scheduleRepository;
     private final AcademicNotificationProducer notificationProducer;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
+    @Transactional
     @Scheduled(cron = "0 * * * * *")
     public void sendScheduleNotifications() {
         LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
         List<Schedule> schedules = scheduleRepository.findAll();
+        boolean bannerChanged = false;
 
         for (Schedule schedule : schedules) {
             LocalDate startDate = schedule.getStartDate().toLocalDate();
             LocalDate endDate = schedule.getEndDate().toLocalDate();
 
-            // 이미 종료된 스케줄은 skip
+            // isActive 자동 동기화
+            boolean shouldBeActive = !now.isBefore(schedule.getStartDate()) && !now.isAfter(schedule.getEndDate());
+            if (schedule.getIsActive() != shouldBeActive) {
+                schedule.updateActive(shouldBeActive);
+                kafkaTemplate.send(KafkaTopic.SCHEDULE, String.valueOf(schedule.getScheduleId()),
+                        ScheduleEvent.builder()
+                                .scheduleId(schedule.getScheduleId())
+                                .type(schedule.getType())
+                                .year(schedule.getYear())
+                                .semester(schedule.getSemester())
+                                .startDate(schedule.getStartDate())
+                                .endDate(schedule.getEndDate())
+                                .isActive(shouldBeActive)
+                                .build());
+                bannerChanged = true;
+            }
+
+            // 이미 종료된 스케줄은 알림 skip
             if (today.isAfter(endDate)) continue;
 
             processStartNotification(schedule, today, startDate);
             processDeadlineNotifications(schedule, today, startDate, endDate);
+        }
+
+        if (bannerChanged) {
+            messagingTemplate.convertAndSend("/topic/banner", "refresh");
         }
 
         log.info("학사일정 알림 처리 완료: {}건", schedules.size());
@@ -211,8 +243,8 @@ public class ScheduleNotificationScheduler {
             case LECTURE_REGISTRATION -> "/lectures/my" + qs;
             case COURSE_REGISTRATION -> "/courses";
             case COURSE_MODIFICATION -> "/courses";
-            case GRADE_INPUT         -> "/grades";
-            case GRADE_VIEW          -> "/grades/my";
+            case GRADE_INPUT         -> "/professor/grades";
+            case GRADE_VIEW          -> "/grades";
             case GRADE_APPEAL        -> "/grades/appeal/my";
             case TUITION_PAYMENT     -> "/tuitions/my";
             case MAJOR_CHANGE        -> "/members/major-request";
