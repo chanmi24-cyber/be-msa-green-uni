@@ -85,6 +85,7 @@ Dev repo (push) → Deploy repo → Webhook → Jenkins (Kaniko 빌드) → Harb
 
 GitOps 방식으로, Harbor에 이미지가 등록되면 ArgoCD가 Manifest repo의 변경을 감지해 자동 배포합니다.
 <br>
+<br>
 
 ## 패키지 / 서비스별 구조
 
@@ -203,7 +204,7 @@ GitOps 방식으로, Harbor에 이미지가 등록되면 ArgoCD가 Manifest repo
 | 이름 | 담당 도메인 |
 |---|---|
 | [@chanmi24](https://github.com/chanmi24-cyber)(팀장) | 강의 (core-service) / 학사일정 / 알림 (academic-service) |
-| [@k28sy](https://github.com/k78sy) | 인증 (auth-service) / 회원 (member-service) / 게이트웨이 (gateway) |
+| [@k28y](https://github.com/k28y) | 인증 (auth-service) / 회원 (member-service) / 게이트웨이 (gateway) |
 | [@JunLee Lim](https://github.com/junlee-lim) | 학과 / 수강신청 / 등록금 / 장학금 (core-service) |
 | [@YouYoungGeun](https://github.com/qwazsx1346-cyber) | 출결 / 성적 (core-service) / 공지 (academic-service) |
 
@@ -224,7 +225,7 @@ docker-compose -f docker-redis/docker-compose.yml up -d
 ```
 
 ### 3. 환경변수 설정
-각 서비스 루트에 환경변수 파일(`.env`)을 생성하고 DB 접속 정보, 메일 발송 계정, JWT 시크릿 키, 파일 저장 경로, 서비스 간 통신 포트 등을 설정합니다. DB는 서비스별로 분리되어 있으며(`my_gu_auth`, `my_gu_member`, `my_gu_core`, `my_gu_academic`), 최초 실행 시 자동 생성됩니다.
+각 서비스 루트에 환경변수 파일(`.env`)을 생성하고 DB 접속 정보, 메일 발송 계정, JWT 시크릿 키, 파일 저장 경로, 서비스 간 통신 포트 등을 설정합니다. DB는 서비스별로 분리되어 있으며, 최초 실행 시 자동 생성됩니다.
 
 ### 4. 서비스 실행
 ```bash
