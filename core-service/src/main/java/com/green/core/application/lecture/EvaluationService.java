@@ -14,6 +14,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import com.green.core.entity.lecture.LectureEvaluation;
 import com.green.core.entity.lecture.Lecture;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,9 +33,13 @@ public class EvaluationService {
     private final CourseRepository courseRepository;
 
     // 학생 - 내 평가 목록
-    public List<EvalListRes> getStudentEvalList(MemberDto memberDto, EvalListReq req) {
+    public Page<EvalListRes> getStudentEvalList(MemberDto memberDto, EvalListReq req, Pageable pageable) {
         req.setMemberCode(memberDto.memberCode());
-        return evaluationMapper.findStudentEvalList(req);
+        req.setSize(pageable.getPageSize());
+        req.setStartIdx((int) pageable.getOffset());
+        List<EvalListRes> list = evaluationMapper.findStudentEvalList(req);
+        int total = evaluationMapper.countStudentEvalList(req);
+        return new PageImpl<>(list, pageable, total);
     }
 
     // 교수 - 내 강의 평가 목록
