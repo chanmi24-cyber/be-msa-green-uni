@@ -11,6 +11,7 @@ public interface EvaluationMapper {
 
     // 학생 - 내 평가 목록
     List<EvalListRes> findStudentEvalList(EvalListReq req);
+    int countStudentEvalList(EvalListReq req);
 
     // 교수 - 내 강의 평가 목록
     List<EvalListRes> findProfessorEvalList(EvalListReq req);

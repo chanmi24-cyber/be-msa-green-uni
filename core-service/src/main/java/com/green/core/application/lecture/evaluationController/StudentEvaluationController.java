@@ -6,6 +6,9 @@ import com.green.common.model.ResultResponse;
 import com.green.core.application.lecture.EvaluationService;
 import com.green.core.application.lecture.model.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,11 +20,13 @@ public class StudentEvaluationController {
     private final EvaluationService evaluationService;
 
     @GetMapping
-    public ResultResponse<List<EvalListRes>> getStudentEvalList(@ModelAttribute EvalListReq req) {
+    public ResultResponse<Page<EvalListRes>> getStudentEvalList(
+            @ModelAttribute EvalListReq req,
+            @PageableDefault(size = 10) Pageable pageable) {
         MemberDto memberDto = MemberContext.get();
-        return ResultResponse.<List<EvalListRes>>builder()
+        return ResultResponse.<Page<EvalListRes>>builder()
                 .message("나의 강의평가 목록 조회 성공")
-                .data(evaluationService.getStudentEvalList(memberDto, req))
+                .data(evaluationService.getStudentEvalList(memberDto, req, pageable))
                 .build();
     }
 

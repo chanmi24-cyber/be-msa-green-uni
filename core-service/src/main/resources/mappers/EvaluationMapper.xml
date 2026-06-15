@@ -32,6 +32,18 @@
         WHERE c.student_code = #{memberCode}
         <if test="year != null">AND l.year = #{year}</if>
         <if test="semester != null">AND l.semester = #{semester}</if>
+        LIMIT #{size} OFFSET #{startIdx}
+    </select>
+
+    <!-- EVAL-01 COUNT: 학생 강의평가 목록 전체 건수 -->
+    <select id="countStudentEvalList" resultType="int">
+        SELECT COUNT(*)
+        FROM course c
+        JOIN lecture l ON c.lecture_id = l.lecture_id
+        JOIN professor_cache pc ON l.member_code = pc.member_code
+        WHERE c.student_code = #{memberCode}
+        <if test="year != null">AND l.year = #{year}</if>
+        <if test="semester != null">AND l.semester = #{semester}</if>
     </select>
 
     <!-- EVAL-02 교수: 내 강의평가 목록 -->
