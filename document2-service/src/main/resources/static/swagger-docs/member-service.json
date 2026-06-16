@@ -9,8 +9,143 @@
     "url" : "http://localhost:8080"
   } ],
   "tags" : [ ],
-  "paths" : { },
+  "paths" : {
+    "/api/member/my" : {
+      "get" : {
+        "tags" : [ "Member" ],
+        "summary" : "로그인 멤버 프로파일 조회",
+        "description" : "현재 로그인된 회원의 상세 프로필 정보를 조회합니다.",
+        "operationId" : "find-login-user-profile",
+        "responses" : {
+          "200" : {
+            "description" : "200",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/api-member-my-697877694"
+                },
+                "examples" : {
+                  "find-login-user-profile" : {
+                    "value" : "{\"data\":{\"address\":\"대구시 중구\",\"birth\":\"2000-01-01\",\"detailAddress\":\"중앙대로 123\",\"email\":\"hong@test.com\",\"emergencyTel\":\"010-9876-5432\",\"entryDate\":\"2026-03-02\",\"memberCode\":1,\"name\":\"홍길동\",\"pic\":\"profile.png\",\"postcode\":\"12345\",\"role\":\"STUDENT\",\"tel\":\"010-1234-5678\"},\"message\":\"프로파일 조회\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Member" ],
+        "summary" : "로그인 멤버 내 정보 수정",
+        "description" : "현재 로그인된 회원의 프로필 정보를 수정합니다. (MultipartForm 데이터)",
+        "operationId" : "update-my-profile",
+        "responses" : {
+          "200" : {
+            "description" : "200",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/api-member-my-1186348594"
+                },
+                "examples" : {
+                  "update-my-profile" : {
+                    "value" : "{\"message\":\"내 정보 수정을 완료했습니다\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "components" : {
-    "schemas" : { }
+    "schemas" : {
+      "api-member-my-697877694" : {
+        "required" : [ "message" ],
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "required" : [ "address", "birth", "detailAddress", "email", "emergencyTel", "entryDate", "memberCode", "name", "postcode", "role", "tel" ],
+            "type" : "object",
+            "properties" : {
+              "memberCode" : {
+                "type" : "number",
+                "description" : "회원 고유 코드"
+              },
+              "address" : {
+                "type" : "string",
+                "description" : "기본 주소"
+              },
+              "role" : {
+                "type" : "string",
+                "description" : "회원 권한/역할"
+              },
+              "entryDate" : {
+                "type" : "string",
+                "description" : "등록일/입사일 (YYYY-MM-DD)"
+              },
+              "postcode" : {
+                "type" : "string",
+                "description" : "우편번호"
+              },
+              "birth" : {
+                "type" : "string",
+                "description" : "생년월일 (YYYY-MM-DD)"
+              },
+              "pic" : {
+                "type" : "string",
+                "description" : "프로필 이미지 파일명",
+                "nullable" : true
+              },
+              "emergencyTel" : {
+                "type" : "string",
+                "description" : "비상 연락처"
+              },
+              "name" : {
+                "type" : "string",
+                "description" : "회원 이름"
+              },
+              "detailAddress" : {
+                "type" : "string",
+                "description" : "상세 주소"
+              },
+              "tel" : {
+                "type" : "string",
+                "description" : "전화번호"
+              },
+              "exitDate" : {
+                "type" : "string",
+                "description" : "퇴사일/종료일 (YYYY-MM-DD)",
+                "nullable" : true
+              },
+              "email" : {
+                "type" : "string",
+                "description" : "이메일 주소"
+              }
+            }
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "결과 메시지"
+          }
+        }
+      },
+      "api-member-my-1186348594" : {
+        "required" : [ "message" ],
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "object",
+            "description" : "응답 데이터 (null)",
+            "nullable" : true
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "결과 메시지"
+          }
+        }
+      }
+    }
   }
 }

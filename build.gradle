@@ -55,7 +55,7 @@ configure(subprojects.findAll { it.name.endsWith('-service') || it.name == 'gate
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
         // 🔥 document-service는 비즈니스 코드가 없으므로 진짜 서비스들만 외부 모듈 격리 주입
-        if (project.name != 'document-service') {
+        if (project.name != 'document2-service') {
             implementation project(':common')
             // 🛠️ [이 부분을 수정] 생 라이브러리 대신 스프링 부트 전용 restdocs 스타터로 변경합니다.
             testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'

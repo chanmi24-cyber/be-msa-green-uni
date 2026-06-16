@@ -35,6 +35,9 @@ dependencies {
     // Excel 파일 처리 (일괄 등록)
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
 
+    // TTD 시 날짜가 필요한 경우
+    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
 }
 
 tasks.named('test') {
