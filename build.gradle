@@ -59,18 +59,25 @@ configure(subprojects.findAll { it.name.endsWith('-service') || it.name == 'gate
             implementation project(':common')
             // 🛠️ [이 부분을 수정] 생 라이브러리 대신 스프링 부트 전용 restdocs 스타터로 변경합니다.
             testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+
+            // 🔥 [핵심] WebMvcTest 가동 시 Security가 있으면 이 두 녀석이 '무조건' 세트로 존재해야 컨텍스트가 터지지 않습니다.
+            testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+            testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+
+            // OpenAPI 스펙 명세용 라이브러리
+            testImplementation 'org.springframework.boot:spring-boot-starter-restdocs'
             testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.20.1'
         }
         implementation 'me.paulschwarz:spring-dotenv:4.0.0'
     }
 
     // 🛠️ [여기에 추가!] document-service 모듈은 테스트 코드가 없으므로 test 태스크를 완전히 스킵합니다.
-    if (project.name == 'document-service') {
+    if (project.name == 'document2-service') {
         test.enabled = false
     }
 
     // 🔥 진짜 서비스 모듈들만 테스트 기반 API 스펙 자동 추출기 가동 (중복 완벽 제거)
-    if (project.name != 'document-service') {
+    if (project.name != 'document2-service') {
         openapi3 {
             server = 'http://localhost:8080' // Gateway 주소 권장
             title = "${project.name.toUpperCase()} API 문서"
@@ -96,7 +103,7 @@ subprojects {
             task.doLast {
                 copy {
                     from "${rootProject.projectDir}/swagger-docs"
-                    into "${rootProject.projectDir}/document-service/src/main/resources/static/swagger-docs"
+                    into "${rootProject.projectDir}/document2-service/src/main/resources/static/swagger-docs"
                 }
                 println "✨ [${project.name}] OpenAPI 스펙 파일이 document-service 모듈로 정상 복사되었습니다."
             }

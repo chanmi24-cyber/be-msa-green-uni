@@ -1,10 +1,10 @@
-package com.otd.documentservice;
+package com.green.documentservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DocumentServiceApplicationTests {
+class Document2ServiceApplicationTests {
 
     @Test
     void contextLoads() {

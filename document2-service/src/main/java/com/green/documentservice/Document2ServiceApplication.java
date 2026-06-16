@@ -1,13 +1,13 @@
-package com.otd.documentservice;
+package com.green.documentservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DocumentServiceApplication {
+public class Document2ServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DocumentServiceApplication.class, args);
+        SpringApplication.run(Document2ServiceApplication.class, args);
     }
 
 }
