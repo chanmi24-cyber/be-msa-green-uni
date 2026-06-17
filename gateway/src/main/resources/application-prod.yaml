@@ -55,5 +55,10 @@ spring:
               predicates:
                 - Path=/api/academic/**
 
+            - id: document2-service
+              uri: http://document2-service:80
+              predicates:
+                - Path=/swagger, /swagger-ui/**, /v3/api-docs/**, /swagger-docs/**
+
 server:
   port: 8080
