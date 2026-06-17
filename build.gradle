@@ -12,7 +12,7 @@ ext {
     springCloudVersion = "2025.1.1"
 }
 
-// 1. [공통 영역] 모든 하위 모듈(common, 모든 service)에 일괄 적용되는 설정
+// 1. [공통 영역] 모든 하위 모듈(common,모든 service)에 일괄 적용되는 설정
 subprojects {
     apply plugin: 'java'
     apply plugin: 'java-library'
