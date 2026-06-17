@@ -1,7 +1,4 @@
 dependencies {
-    // 공통 모듈 의존성 주입 (가장 중요)
-    implementation project(':common')
-
     // Spring Data Redis 라이브러리
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 

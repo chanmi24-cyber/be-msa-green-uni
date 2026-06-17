@@ -1,7 +1,4 @@
 dependencies {
-    // 공통 모듈 의존성 주입 (가장 중요)
-    implementation project(':common')
-
     // SQL 쿼리를 가독성 좋게(파라미터 포함) 로그로 남겨줍니다.
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 
@@ -37,6 +34,9 @@ dependencies {
 
     // Excel 파일 처리 (일괄 등록)
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
+    // TTD 시 날짜가 필요한 경우
+    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 }
 

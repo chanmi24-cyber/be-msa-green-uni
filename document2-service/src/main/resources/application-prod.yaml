@@ -1,0 +1,24 @@
+server:
+  port: 8080 # 문서 서버 포트 지정
+
+spring:
+  application:
+    name: document2-service
+  # 정적 리소스(swagger-docs)를 브라우저가 원활하게 읽어갈 수 있도록 캐싱 레이어 정렬 (선택사항)
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/static/swagger-docs/
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+    # 🔥 핵심: 루트 폴더에 집결된 JSON 파일들의 경로를 드롭다운 메뉴로 매핑합니다.
+    urls:
+      - name: "인증 서비스 (Auth)"
+        url: /swagger-docs/auth-service.json
+      - name: "아카데믹 서비스 (Academic)"
+        url: /swagger-docs/academic-service.json
+      - name: "코어 서비스 (Core)"
+        url: /swagger-docs/core-service.json
+      - name: "멤버 서비스 (Member)"
+        url: /swagger-docs/member-service.json

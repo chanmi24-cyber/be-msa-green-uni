@@ -1,0 +1,16 @@
+server:
+  port: 8001 # 문서 서버 포트 지정
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+    # 🔥 핵심: 루트 폴더에 집결된 JSON 파일들의 경로를 드롭다운 메뉴로 매핑합니다.
+    urls:
+      - name: "인증 서비스 (Auth)"
+        url: /swagger-docs/auth-service.json
+      - name: "아카데믹 서비스 (Academic)"
+        url: /swagger-docs/academic-service.json
+      - name: "코어 서비스 (Core)"
+        url: /swagger-docs/core-service.json
+      - name: "멤버 서비스 (Member)"
+        url: /swagger-docs/member-service.json
